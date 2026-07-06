@@ -18,7 +18,7 @@ allowed-tools: Bash, Read
 - Refactoring: `refactor/description`
 
 ## Commit Message Format
-Use Conventional Commits format:
+Use Conventional Commits format with **Simplified Chinese (简体中文)** description:
 - `feat:` - New features
 - `fix:` - Bug fixes
 - `refactor:` - Code refactoring
@@ -26,10 +26,16 @@ Use Conventional Commits format:
 - `chore:` - Build, version, or non-code changes
 - `docs:` - Documentation only
 
-**Format**: `type: short description`
-- Use lowercase
+**Format**: `type: 中文简短描述`
+- Type prefix stays English lowercase; description in 简体中文
 - Keep first line under 72 characters
-- Include issue number if applicable: `fix: resolve login bug OK-12345`
+- Use imperative mood in Chinese (e.g. `添加` not `添加了`)
+- Include issue number if applicable: `fix: 修复登录超时 OK-12345`
+
+**Examples**:
+- `feat: 添加用户资料页`
+- `fix: 修复 Android 底部安全区留白`
+- `refactor: 简化支付处理逻辑`
 
 **IMPORTANT - Claude Code commits**:
 - Do NOT include "Generated with Claude Code" link
@@ -37,10 +43,10 @@ Use Conventional Commits format:
 - Commit message should be indistinguishable from human-written commits
 
 ## PR Naming Convention
-Follow the same format as commit messages:
-- `feat: add dark mode support`
-- `fix: resolve authentication timeout issue`
-- `refactor: simplify payment processing logic`
+Follow the same format as commit messages (简体中文描述):
+- `feat: 添加深色模式支持`
+- `fix: 修复认证超时问题`
+- `refactor: 简化支付处理逻辑`
 
 ## Common Git Commands
 
@@ -69,7 +75,7 @@ yarn lint:staged
 yarn tsc:staged
 
 # If checks pass, commit
-git commit -m "feat: add user profile page"
+git commit -m "feat: 添加用户资料页"
 ```
 
 **IMPORTANT**:

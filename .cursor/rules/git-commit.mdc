@@ -1,0 +1,40 @@
+---
+description: Git commit 文案规范 — 使用简体中文
+alwaysApply: true
+---
+
+# Git Commit 文案规范
+
+生成或撰写 commit message 时，**描述部分必须使用简体中文**。
+
+## 格式
+
+沿用 Conventional Commits 前缀，描述用中文：
+
+```
+<type>: <中文描述>
+```
+
+常用 type：`feat` | `fix` | `refactor` | `perf` | `chore` | `docs` | `test` | `style` | `ci`
+
+## 要求
+
+- 第一行不超过 72 字符
+- 使用祈使语气（如「添加」「修复」「重构」），不用过去式
+- 聚焦「为什么」和改动目的，避免罗列文件名
+- 不要包含 AI 工具署名（如 Co-Authored-By、Generated with）
+- 可附 issue 编号：`fix: 修复登录超时 OK-12345`
+
+## 示例
+
+```
+feat: 添加底部「我的」Tab 页面
+fix: 修复 Android 底部安全区留白问题
+refactor: 简化 Tab 路由注册逻辑
+chore: 更新 Android 构建准备脚本
+docs: 补充二开路由说明
+```
+
+## 拆分提交
+
+若 diff 涉及多个独立改动，建议拆成多个 commit，每个 commit 仍遵循上述中文格式。

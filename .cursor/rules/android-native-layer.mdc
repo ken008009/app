@@ -1,0 +1,59 @@
+---
+description: 修改 Android 原生层（Gradle、Manifest、Java/Kotlin）时的规范
+globs: "apps/mobile/android/**"
+alwaysApply: false
+---
+
+# Android 原生层修改规范
+
+## 目录速查
+
+```
+apps/mobile/android/
+├── app/build.gradle          # 应用配置、渠道、BuildConfig
+├── app/src/main/
+│   ├── AndroidManifest.xml   # 权限、Activity、Provider
+│   ├── java/so/onekey/app/wallet/
+│   │   ├── MainActivity.java
+│   │   ├── MainApplication.java
+│   │   └── CustomReactNativeHost.java
+│   └── res/                  # 图标、启动页、strings
+├── gradle.properties
+└── build-logic/              # 隐私/安全 Gradle 插件（慎改）
+```
+
+## 何时才改原生层
+
+| 场景 | 改 JS/kit 即可 | 必须改原生 |
+|-----|--------------|-----------|
+| 页面 UI、业务逻辑 | ✅ | |
+| 新增 RN 库（有 Expo config plugin） | 通常 ✅ | 偶尔 |
+| 新权限（相机/NFC/通知等） | | ✅ Manifest |
+| 应用 ID、签名、渠道包 | | ✅ build.gradle |
+| 原生 Module 桥接 | | ✅ Java/Kotlin |
+| 启动页、应用图标 | app.json 部分 | ✅ res/ |
+
+## 修改检查清单
+
+1. **权限**：在 Manifest 声明；不需要的权限用 `tools:node="remove"`（项目已有先例）
+2. **渠道**：`direct` / `google` / `huawei` 对应不同 variant 和 Manifest overlay
+3. **Gradle 改完**：`cd apps/mobile/android && ./gradlew --stop` 后重编
+4. **patch-package**：改 `node_modules` 后运行 `npx patch-package <pkg>`，不要手改 `.patch` 文件
+5. **ProGuard**：Release 混淆规则在 `app/proguard-rules.pro`
+
+## 与 JS 层的边界
+
+- 原生 → JS：通过 React Native Bridge / Expo Modules
+- 不要在 Java 层写业务逻辑；钱包逻辑放 `kit` / `kit-bg`
+- `BuildConfig` 字段在 `app/build.gradle` 定义，JS 通过 `react-native-config` 或 expo-constants 读取
+
+## 构建变体
+
+```bash
+# Debug 本地开发
+yarn app:android   # ProdDebug variant
+
+# 渠道
+yarn android:google   # Google Play
+yarn android:huawei   # 华为
+```

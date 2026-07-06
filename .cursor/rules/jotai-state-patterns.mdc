@@ -1,0 +1,56 @@
+---
+description: Jotai 状态管理 — 二开改状态时必读
+globs: "**/states/**/*.{ts,tsx},**/atoms/**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Jotai 状态管理速查
+
+OneKey 用 Jotai 做原子化状态，类似 Vue Pinia 的 store 但粒度更细。
+
+## Atom 类型
+
+```tsx
+import { atom } from 'jotai';
+import { globalAtom } from '@onekeyhq/kit-bg/src/states/jotai/utils';
+
+// 全局持久化 atom（跨页面、可持久化到 MMKV）
+export const settingsAtom = globalAtom<{ theme: string }>({
+  name: 'settings',
+  initialValue: { theme: 'light' },
+});
+
+// 普通 atom（组件级或模块级）
+const countAtom = atom(0);
+```
+
+## 在组件中使用
+
+```tsx
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+
+// 读 + 写
+const [settings, setSettings] = useAtom(settingsAtom);
+
+// 只读（少 re-render）
+const settings = useAtomValue(settingsAtom);
+
+// 只写
+const setSettings = useSetAtom(settingsAtom);
+```
+
+## 二开注意
+
+- 改 atom 定义前，Grep 所有引用处（读写可能分散在多个 views）
+- 持久化 atom 改字段结构要考虑旧数据迁移
+- `kit-bg` 里的 atom 可能被 **bg JS 运行时** 和 **main 运行时** 各持有一份 JS 副本
+- 不要在 render 里 `setAtom`；在 event handler 或 effect 里更新
+- 复杂异步用 `useAsyncCall` / `usePromiseResult`，不要自己管 loading/error state
+
+## 找现有 atom
+
+```
+packages/kit/src/states/       # UI 相关状态
+packages/kit-bg/src/states/    # 后台/持久化状态
+packages/shared/src/states/    # 跨包共享
+```

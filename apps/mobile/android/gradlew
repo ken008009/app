@@ -64,6 +64,24 @@
 #
 ##############################################################################
 
+# OneKey: Gradle plugins invoke `node` during settings evaluation.
+# Android Studio / GUI launches often omit nvm or Homebrew from PATH.
+if ! command -v node > /dev/null 2>&1; then
+  if [ -x "/opt/homebrew/bin/node" ]; then
+    PATH="/opt/homebrew/bin:$PATH"
+  elif [ -x "/usr/local/bin/node" ]; then
+    PATH="/usr/local/bin:$PATH"
+  else
+    for _onekey_node_dir in "$HOME/.nvm/versions/node/"*/bin; do
+      if [ -x "$_onekey_node_dir/node" ]; then
+        PATH="$_onekey_node_dir:$PATH"
+        break
+      fi
+    done
+  fi
+  export PATH
+fi
+
 # Attempt to set APP_HOME
 
 # Resolve links: $0 may be a link

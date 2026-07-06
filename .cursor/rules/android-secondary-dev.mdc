@@ -1,0 +1,75 @@
+---
+description: Android 二开主指南 — 改哪里、怎么跑、边界在哪
+alwaysApply: true
+---
+
+# OneKey Android 二开指南
+
+## 你的背景 → 项目映射
+
+| 你熟悉的 | 在本项目里对应 |
+|---------|--------------|
+| Vue/Angular 组件 | `packages/components`（Tamagui UI）+ `packages/kit`（业务页面） |
+| 路由 | `packages/kit/src/routes/`（router.ts、Tab/、Modal/） |
+| 状态管理 | Jotai atoms（`packages/kit/src/states/`、`packages/shared/src/states/`） |
+| API 请求 | `packages/kit-bg/src/services/` + kit 里的 hooks |
+| 打包构建 | Metro（JS）+ Gradle（Android 原生） |
+
+## 代码分层 — 二开优先改这些
+
+```
+apps/mobile/          ← 入口、Expo 配置、Android 原生壳
+packages/kit/         ← 90% 业务 UI 和页面逻辑（首选）
+packages/components/  ← 通用 UI 组件（Button、Dialog 等）
+packages/kit-bg/      ← 后台服务、DB、API（改业务逻辑时）
+packages/shared/      ← 工具、平台检测、路由枚举
+packages/core/        ← 链协议、密码学（慎改，需深度 review）
+apps/mobile/android/  ← 仅改 Manifest、权限、原生桥、Gradle 时动
+```
+
+## Android 开发命令
+
+```bash
+# 从 monorepo 根目录
+yarn app:android              # 启动 Android 调试（含 Metro）
+cd apps/mobile && yarn android:device   # 真机调试
+
+# 提交前必跑
+yarn lint:staged && yarn tsc:staged
+```
+
+环境：`Node >= 22`、`JDK 17+`、`ANDROID_HOME` 指向 SDK。首次构建前 `apps/mobile/scripts/prepare-android-build.sh` 会自动处理。
+
+## 平台差异 — Android 特有注意点
+
+- 用 `platformEnv.isAndroid` / `platformEnv.isNative`，禁止硬编码 `Platform.OS`
+- Android 与 iOS 共享 `.native.ts`；仅 Android 差异用 `.android.ts`（项目里较少，优先查是否已有）
+- 安全区：Android 无刘海时 `safeAreaInsets.bottom` 可能为 0，底部 Tab/按钮要测真机
+- 键盘：`KeyboardAvoidingView` 在 Android 上行为与 iOS 不同，改输入页必测
+- 生产环境有 **双 JS 运行时**：`main`（UI）和 `background`（bg），存储/内存分析要区分
+
+## 二开安全边界（禁止随意改）
+
+- 密码学、助记词、私钥相关 → `packages/core/`、`packages/kit-bg/` 加密模块
+- 不要 log 敏感数据；不要绕过交易校验 / 风险检测
+- 不要直接 `import '@onekeyfe/hd-core'`，用 `CoreSDKLoader()` 动态加载
+- 不要改 auto-generated 翻译文件（`translations.ts`、`locale/json/*`）
+- 改 DB schema 必须同步 Realm + IndexedDB 并 bump `LOCAL_DB_VERSION`
+
+## 典型任务入口
+
+| 任务 | 从哪里找 |
+|-----|---------|
+| 改某个页面 UI | `packages/kit/src/views/` 下按功能域搜索 |
+| 加新页面/路由 | `packages/shared/src/routes/` 加枚举 → `packages/kit/src/routes/` 注册 |
+| 改底部 Tab | `packages/kit/src/routes/Tab/` |
+| 改 Android 权限/推送 | `apps/mobile/android/app/src/main/AndroidManifest.xml` |
+| 改应用名/图标/启动页 | `apps/mobile/app.json` + `android/app/src/main/res/` |
+| 改 Android 包名/渠道 | `android/app/build.gradle`（google/huawei/direct 渠道） |
+
+## AI 协作偏好
+
+- 用中文沟通；代码注释用英文
+- 改 UI 时说明影响平台：**Affects: Android** / **Does NOT affect: iOS, Web, Desktop**
+- 小步改动，不顺手重构无关代码
+- commit message 用简体中文

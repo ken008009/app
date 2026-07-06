@@ -24,6 +24,7 @@ import { deviceManagementRouters } from './DeviceManagement/router';
 import { discoveryRouters } from './Discovery/router';
 import { earnRouters } from './Earn/router';
 import { marketRouters } from './Marktet/router';
+import { mineRouters } from './Mine/router';
 import { multiTabBrowserRouters } from './MultiTabBrowser/router';
 import { referFriendsRouters } from './ReferFriends/router';
 import { swapRouters } from './Swap/router';
@@ -55,6 +56,10 @@ const nativeTabIcons = {
     focused
       ? require('@onekeyhq/components/svg/solid/coins.svg')
       : require('@onekeyhq/components/svg/outline/coins.svg'),
+  mine: ({ focused }: { focused: boolean }): INativeTabBarIcon =>
+    focused
+      ? require('@onekeyhq/components/svg/solid/people.svg')
+      : require('@onekeyhq/components/svg/outline/people.svg'),
   developer: ({ focused }: { focused: boolean }): INativeTabBarIcon =>
     focused
       ? require('@onekeyhq/components/svg/solid/code-brackets.svg')
@@ -95,6 +100,9 @@ const getDiscoverRouterConfig = (
   children: discoveryRouters,
   tabBarStyle,
   trackId: 'global-browser',
+  // Android BottomNavigationView supports at most 5 items; hide from bar on native
+  // so Mine + Developer tabs can stay visible during secondary development.
+  hideOnTabBar: platformEnv.isNative,
 });
 
 export const useTabRouterConfig = (params?: IGetTabRouterParams) => {
@@ -246,6 +254,20 @@ export const useTabRouterConfig = (params?: IGetTabRouterParams) => {
       !platformEnv.isNative ? referFriendsTabConfig : undefined,
       isShowMDDiscover ? getDiscoverRouterConfig(params) : undefined,
       isShowDesktopDiscover ? getDiscoverRouterConfig(params) : undefined,
+      platformEnv.isNative
+        ? {
+            name: ETabRoutes.Mine,
+            tabBarIcon: (focused?: boolean) =>
+              focused ? 'PeopleSolid' : 'PeopleOutline',
+            nativeTabBarIcon: nativeTabIcons.mine,
+            translationId: ETranslations.global_mine,
+            freezeOnBlur: Boolean(params?.freezeOnBlur),
+            rewrite: '/mine',
+            exact: true,
+            children: mineRouters,
+            trackId: 'global-mine',
+          }
+        : undefined,
       platformEnv.isDev
         ? {
             name: ETabRoutes.Developer,

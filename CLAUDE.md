@@ -83,7 +83,7 @@ When working with patch-package, never edit .patch files directly. Instead, modi
 
 - **Main branch**: `x` - Always use `x` as the base branch (not `master` or `main`)
 - **NEVER** work directly on the `x` branch → ALWAYS create feature branches
-- **Commit format**: `type: short description` (feat, fix, refactor, chore, docs)
+- **Commit format**: `type: 中文简短描述`（feat, fix, refactor, chore, docs 等前缀保持英文，描述用简体中文）
 - Do NOT include "Co-Authored-By" signatures in commits (no Claude, no Happy, no AI tool attribution)
 - Do NOT include "Generated with" or "via" tool attribution lines in commit messages
 - When creating PRs or commits, ensure the git history is clean. Never amend into merge commits. If multiple fixes are needed, squash them into logical commits before pushing.

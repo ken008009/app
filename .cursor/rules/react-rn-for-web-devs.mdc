@@ -1,0 +1,84 @@
+---
+description: 给有 Web 前端经验、React 新手的前端开发者 — RN/React 写法速查
+globs: "**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Web 前端 → React Native 写法对照
+
+## 组件写法（本项目强制规范）
+
+```tsx
+// ✅ 命名导出，不用 default export
+import { useMemo, useCallback } from 'react';
+import { Stack, Button } from '@onekeyhq/components';
+
+export function MyPage() {
+  const handlePress = useCallback(() => { /* ... */ }, []);
+  return (
+    <Stack flex={1}>
+      <Button onPress={handlePress}>Submit</Button>
+    </Stack>
+  );
+}
+
+// ❌ 禁止
+import React from 'react';           // 不要 default import React
+export default function MyPage() {}   // 不要 default export
+```
+
+## Web vs RN 常见差异
+
+| Web | React Native / 本项目 |
+|-----|----------------------|
+| `<div>` / `<span>` | `<Stack>` / `<XStack>` / `<YStack>` / `<Text>`（Tamagui） |
+| `className` + CSS | Tamagui props：`padding="$4"`、`backgroundColor="$bg"` |
+| `onClick` | `onPress` |
+| `window` / `document` | 不可用；用 `platformEnv` + 平台文件 |
+| `localStorage` | MMKV / Jotai persist atoms |
+| `fetch` + 自写状态 | 优先用 `usePromiseResult` / `useAsyncCall` |
+| `v-if` / `v-show` | `{condition ? <A /> : null}`（不用 `&&` 渲染数字 0） |
+
+## Hooks 要点
+
+```tsx
+// ✅ async 必须 await 或 void
+void loadData();
+await saveData();
+
+// ✅ 依赖数组写全
+useEffect(() => { /* ... */ }, [userId]);
+
+// ✅ 基于旧 state 更新用函数式
+setItems(prev => prev.filter(x => x.id !== id));
+
+// 本项目推荐的数据加载 hook
+const { result, isLoading, run } = usePromiseResult(
+  () => service.fetchList(accountId),
+  [accountId],
+);
+```
+
+## 样式与布局
+
+- 不用全局 CSS；Tamagui token（`$4`、`$bgSubdued`）保持一致性
+- Flexbox 默认可用，但 RN 没有 `display: grid`
+- 图片用 Tamagui `Image` 或 RN `Image`，注意 Android 网络图需 https
+- 列表用 `FlashList`（@shopify/flash-list），不用超长 `ScrollView + map`
+
+## 导航
+
+- 路由在 `packages/kit/src/routes/`，不在 React Router
+- 跳转用 kit 封装的 navigation utils，改前先搜同类页面的 `navigation.push` 用法
+- Modal / 全屏页有独立 Navigator，新页面要注册到对应 `routerPathConfig`
+
+## 国际化
+
+```tsx
+import { useIntl } from 'react-intl';
+import { ETranslations } from '@onekeyhq/shared/src/locale';
+
+const intl = useIntl();
+intl.formatMessage({ id: ETranslations.wallet__send_title });
+// ❌ 不要硬编码中文/英文字符串
+```

@@ -2,6 +2,8 @@
 
 This command helps you create well-formatted commits with conventional commit messages.
 
+**Language**: The description after `<type>:` MUST be written in **Simplified Chinese (简体中文)**. Keep the type prefix in English (e.g. `feat: 添加用户认证`).
+
 ## Usage
 
 To create a commit, just type:
@@ -41,7 +43,8 @@ Or with options:
   - `perf`: Performance improvements
   - `test`: Adding or fixing tests
   - `chore`: Changes to the build process, tools, etc.
-- **Present tense, imperative mood**: Write commit messages as commands (e.g., "add feature" not "added feature")
+- **Simplified Chinese description**: Write the message body in 简体中文 (e.g., `feat: 添加用户认证` not `feat: add user auth`)
+- **Present tense, imperative mood**: Use command-style Chinese (e.g., "添加" not "添加了")
 - **Concise first line**: Keep the first line under 72 characters
   - `feat`: New feature
   - `fix`: Bug fix
@@ -119,33 +122,33 @@ When analyzing the diff, consider splitting commits based on these criteria:
 
 ## Examples
 
-Good commit messages:
-- feat: add user authentication system
-- fix: resolve memory leak in rendering process
-- docs: update API documentation with new endpoints
-- refactor: simplify error handling logic in parser
-- fix: resolve linter warnings in component files
-- chore: improve developer tooling setup process
-- feat: implement business logic for transaction validation
-- fix: address minor styling inconsistency in header
-- fix: patch critical security vulnerability in auth flow
-- style: reorganize component structure for better readability
-- fix: remove deprecated legacy code
-- feat: add input validation for user registration form
-- fix: resolve failing CI pipeline tests
-- feat: implement analytics tracking for user engagement
-- fix: strengthen authentication password requirements
-- feat: improve form accessibility for screen readers
+Good commit messages (简体中文):
+- feat: 添加用户认证系统
+- fix: 修复渲染进程内存泄漏
+- docs: 更新 API 文档新增端点说明
+- refactor: 简化解析器错误处理逻辑
+- fix: 修复组件文件 lint 警告
+- chore: 改进开发者工具链配置
+- feat: 实现交易校验业务逻辑
+- fix: 修复头部样式不一致问题
+- fix: 修复认证流程严重安全漏洞
+- style: 重组组件结构提升可读性
+- fix: 移除已废弃的旧代码
+- feat: 添加用户注册表单输入校验
+- fix: 修复 CI 流水线测试失败
+- feat: 添加用户行为分析埋点
+- fix: 加强认证密码强度要求
+- feat: 改进表单无障碍读屏支持
 
 Example of splitting commits:
-- First commit: feat: add new solc version type definitions
-- Second commit: docs: update documentation for new solc versions
-- Third commit: chore: update package.json dependencies
-- Fourth commit: feat: add type definitions for new API endpoints
-- Fifth commit: feat: improve concurrency handling in worker threads
-- Sixth commit: fix: resolve linting issues in new code
-- Seventh commit: test: add unit tests for new solc version features
-- Eighth commit: fix: update dependencies with security vulnerabilities
+- First commit: feat: 添加 solc 新版本类型定义
+- Second commit: docs: 更新 solc 新版本文档
+- Third commit: chore: 更新 package.json 依赖
+- Fourth commit: feat: 添加新 API 端点类型定义
+- Fifth commit: feat: 改进 worker 线程并发处理
+- Sixth commit: fix: 修复新代码 lint 问题
+- Seventh commit: test: 添加 solc 新版本单元测试
+- Eighth commit: fix: 更新存在安全漏洞的依赖
 
 ## Command Options
 

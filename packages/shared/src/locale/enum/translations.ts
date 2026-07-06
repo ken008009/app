@@ -1441,6 +1441,7 @@ export enum ETranslations {
   global_my_address = 'global.my_address',
   global_my_device = 'global.my_device',
   global_my_device_dec = 'global.my_device_dec',
+  global_mine = 'global.mine',
   global_name = 'global.name',
   global_name_history = 'global.name_history',
   global_names_of_wallets_and_accounts = 'global.names_of_wallets_and_accounts',
