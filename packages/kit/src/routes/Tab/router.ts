@@ -70,6 +70,9 @@ type IGetTabRouterParams = {
   freezeOnBlur?: boolean;
 };
 
+// Set to true to restore Developer tab on native during secondary development.
+const ENABLE_DEVELOPER_TAB = false;
+
 const getDeveloperRouters = (): ITabSubNavigatorConfig<any, any>[] => {
   if (process.env.NODE_ENV === 'production') {
     return [];
@@ -100,9 +103,8 @@ const getDiscoverRouterConfig = (
   children: discoveryRouters,
   tabBarStyle,
   trackId: 'global-browser',
-  // Android BottomNavigationView supports at most 5 items; hide from bar on native
-  // so Mine + Developer tabs can stay visible during secondary development.
-  hideOnTabBar: platformEnv.isNative,
+  // Hide Discovery on iOS native to stay within tab bar limits; show on Android.
+  hideOnTabBar: platformEnv.isNativeIOS,
 });
 
 export const useTabRouterConfig = (params?: IGetTabRouterParams) => {
@@ -159,7 +161,9 @@ export const useTabRouterConfig = (params?: IGetTabRouterParams) => {
         tabBarIcon: (focused?: boolean) =>
           focused ? 'Wallet4Solid' : 'Wallet4Outline',
         nativeTabBarIcon: nativeTabIcons.wallet,
-        translationId: ETranslations.global_wallet,
+        translationId: platformEnv.isNative
+          ? ETranslations.global_asset
+          : ETranslations.global_wallet,
         freezeOnBlur: Boolean(params?.freezeOnBlur),
         rewrite: isWebDappMode ? '/wallet' : '/',
         exact: true,
@@ -268,7 +272,7 @@ export const useTabRouterConfig = (params?: IGetTabRouterParams) => {
             trackId: 'global-mine',
           }
         : undefined,
-      platformEnv.isDev
+      ENABLE_DEVELOPER_TAB && platformEnv.isDev
         ? {
             name: ETabRoutes.Developer,
             tabBarIcon: (focused?: boolean) =>
