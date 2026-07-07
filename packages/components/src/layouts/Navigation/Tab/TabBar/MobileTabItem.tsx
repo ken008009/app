@@ -2,6 +2,8 @@ import { Icon, SizableText, YStack } from '@onekeyhq/components/src/primitives';
 import type { IKeyOfIcons } from '@onekeyhq/components/src/primitives';
 import type { GetProps } from '@onekeyhq/components/src/shared/tamagui';
 
+import { TAB_BAR_ACTIVE_COLOR } from './tabBarActiveColor';
+
 import type { Animated, StyleProp, ViewStyle } from 'react-native';
 
 interface IMobileTabItemProps {
@@ -22,7 +24,7 @@ export function MobileTabItem(
         <Icon
           flexShrink={0}
           name={icon}
-          color={selected ? '$iconActive' : '$iconSubdued'}
+          color={selected ? TAB_BAR_ACTIVE_COLOR : '$iconSubdued'}
           size="$7"
         />
       ) : null}
@@ -31,7 +33,7 @@ export function MobileTabItem(
           numberOfLines={1}
           mt="$0.5"
           size="$headingXxs"
-          color={selected ? '$text' : '$textSubdued'}
+          color={selected ? TAB_BAR_ACTIVE_COLOR : '$textSubdued'}
         >
           {label}
         </SizableText>

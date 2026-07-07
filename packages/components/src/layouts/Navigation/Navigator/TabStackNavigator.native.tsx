@@ -22,6 +22,7 @@ import {
 import { createNativeBottomTabNavigator } from '../BottomTabs';
 import { makeTabScreenOptions } from '../GlobalScreenOptions';
 import { createStackNavigator } from '../StackNavigator';
+import { TAB_BAR_ACTIVE_COLOR } from '../Tab/TabBar/tabBarActiveColor';
 
 import type { ITabNavigatorProps, ITabSubNavigatorConfig } from './types';
 
@@ -230,7 +231,7 @@ export function TabStackNavigator<RouteName extends string>({
       ignoreBottomInsets
       sidebarAdaptable={false}
       tabBarHidden={hidden}
-      tabBarActiveTintColor={theme.iconActive.val}
+      tabBarActiveTintColor={TAB_BAR_ACTIVE_COLOR}
       tabBarInactiveTintColor={theme.iconSubdued.val}
       tabBarStyle={tabBarStyle}
       screenOptions={nativeTabScreenOptions}
