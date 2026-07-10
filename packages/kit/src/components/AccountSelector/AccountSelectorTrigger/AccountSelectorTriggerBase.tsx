@@ -34,6 +34,7 @@ export function AccountSelectorTriggerBase({
   showConnectWalletModalInDappMode,
   linkNetworkId,
   linkNetwork,
+  autoWidthForHome,
   ...others
 }: {
   num: number;
@@ -107,7 +108,10 @@ export function AccountSelectorTriggerBase({
         testID="AccountSelectorTriggerBase"
         role={isTriggerDisabled ? undefined : 'button'}
         alignItems="center"
-        width="$full"
+        width={autoWidthForHome && !horizontalLayout ? undefined : '$full'}
+        alignSelf={
+          autoWidthForHome && !horizontalLayout ? 'flex-start' : undefined
+        }
         // width="$80"
         // flex={1}
         py="$1"
@@ -163,17 +167,20 @@ export function AccountSelectorTriggerBase({
             </SizableText>
           ) : (
             <>
+              {showWalletName ? (
+                <SizableText
+                  size="$bodySm"
+                  color="$textSubdued"
+                  numberOfLines={1}
+                  flexShrink={1}
+                >
+                  {walletName}
+                </SizableText>
+              ) : null}
               <SizableText
-                size="$bodyMd"
+                size="$bodyMdMedium"
                 color="$text"
-                numberOfLines={horizontalLayout ? undefined : 1}
-                flexShrink={1}
-              >
-                {walletName}
-              </SizableText>
-              <SizableText
-                size="$bodyMd"
-                numberOfLines={horizontalLayout ? undefined : 1}
+                numberOfLines={1}
                 flexShrink={1}
                 testID="account-name"
               >
@@ -183,12 +190,19 @@ export function AccountSelectorTriggerBase({
           )}
         </Stack>
         {isTriggerDisabled ? null : (
-          <Icon name="ChevronDownSmallOutline" size="$5" color="$iconSubdued" />
+          <Icon
+            name={
+              horizontalLayout ? 'ChevronDownSmallOutline' : 'SwitchVerOutline'
+            }
+            size="$5"
+            color="$iconSubdued"
+          />
         )}
       </XStack>
     );
   }, [
     account,
+    autoWidthForHome,
     dbAccount,
     displayLabel,
     handleAccountSelectorPress,

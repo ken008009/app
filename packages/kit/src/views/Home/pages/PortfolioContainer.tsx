@@ -16,25 +16,24 @@ import {
 } from '@onekeyhq/components';
 import { EJotaiContextStoreNames } from '@onekeyhq/kit-bg/src/states/jotai/atoms';
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
-import { ETabRoutes } from '@onekeyhq/shared/src/routes';
 import { EHomeWalletTab } from '@onekeyhq/shared/types/wallet';
 
-import useListenTabFocusState from '../../../hooks/useListenTabFocusState';
 import { useActiveAccount } from '../../../states/jotai/contexts/accountSelector';
 import { ProviderJotaiContextDeFiList } from '../../../states/jotai/contexts/deFiList';
 import { ProviderJotaiContextHistoryList } from '../../../states/jotai/contexts/historyList';
 import useActiveTabDAppInfo from '../../DAppConnection/hooks/useActiveTabDAppInfo';
 import { EarnProviderMirror } from '../../Earn/EarnProviderMirror';
 import { DeFiListBlock } from '../components/DeFiListBlock';
-import { EarnListView } from '../components/EarnListView';
 import { HomeStickyHeaderContext } from '../components/HomeStickyHeaderContext';
 import { HomeTokenListProviderMirrorWrapper } from '../components/HomeTokenListProvider';
-import { PopularTrading } from '../components/PopularTrading';
+// Temporarily unused while Market + below modules are hidden:
+// import { EarnListView } from '../components/EarnListView';
+// import { PopularTrading } from '../components/PopularTrading';
+// import { SupportHub } from '../components/SupportHub';
+// import { Upgrade } from '../components/Upgrade';
 import { PullToRefresh, onHomePageRefresh } from '../components/PullToRefresh';
 import { RecentHistory } from '../components/RecentHistory';
-import { SupportHub } from '../components/SupportHub';
 import { TokenListBlock } from '../components/TokenListBlock';
-import { Upgrade } from '../components/Upgrade';
 import {
   PORTFOLIO_CONTAINER_RIGHT_SIDE_FIXED_WIDTH,
   STICKY_TOP_OFFSET,
@@ -61,15 +60,6 @@ function PortfolioContainer() {
   const stickyHeaderCtx = useContext(HomeStickyHeaderContext);
   const isTabFocused =
     stickyHeaderCtx?.activeTabId === EHomeWalletTab.Portfolio;
-  const [isHomeRouteVisible, setIsHomeRouteVisible] = useState(false);
-  const handleHomeRouteFocusChange = useCallback(
-    (isFocus: boolean, isHideByModal: boolean) => {
-      setIsHomeRouteVisible(isFocus && !isHideByModal);
-    },
-    [],
-  );
-
-  useListenTabFocusState(ETabRoutes.Home, handleHomeRouteFocusChange);
 
   const sidebarRef = useRef<HTMLElement | null>(null);
   const sidebarContentRef = useRef<HTMLElement | null>(null);
@@ -208,7 +198,6 @@ function PortfolioContainer() {
     () => !!extensionActiveTabDAppInfo?.showFloatingPanel,
     [extensionActiveTabDAppInfo?.showFloatingPanel],
   );
-  const isEarnListActive = isTabFocused && isHomeRouteVisible;
 
   // Use a stable tree structure (Stack > YStack > children) regardless of
   // layout mode so that TokenListBlock is never unmounted/remounted when the
@@ -234,10 +223,12 @@ function PortfolioContainer() {
             tableLayout={tableLayout || undefined}
           />
           <DeFiListBlock refreshCacheOnly />
+          {/* Temporarily hidden: Market + modules below it
           <PopularTrading tableLayout={tableLayout || undefined} />
           <EarnListView isActive={isEarnListActive} />
           <Upgrade />
           <SupportHub />
+          */}
         </YStack>
         {tableLayout && showRecentHistory ? (
           <YStack

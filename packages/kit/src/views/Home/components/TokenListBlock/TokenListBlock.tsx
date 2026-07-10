@@ -9,11 +9,12 @@ import {
 
 import { CanceledError } from 'axios';
 import BigNumber from 'bignumber.js';
-import { isEmpty, isNil, uniqBy } from 'lodash';
+import { debounce, isEmpty, isNil, uniqBy } from 'lodash';
 import { useIntl } from 'react-intl';
 
 import {
   IconButton,
+  SearchBar,
   Skeleton,
   Stack,
   XStack,
@@ -38,6 +39,7 @@ import useAppNavigation from '@onekeyhq/kit/src/hooks/useAppNavigation';
 import { useIsDeFiEnabled } from '@onekeyhq/kit/src/hooks/useIsDeFiEnabled';
 import { useManageToken } from '@onekeyhq/kit/src/hooks/useManageToken';
 import { usePromiseResult } from '@onekeyhq/kit/src/hooks/usePromiseResult';
+import { SEARCH_DEBOUNCE_INTERVAL } from '@onekeyhq/shared/src/consts/walletConsts';
 import { useRouteIsFocused } from '@onekeyhq/kit/src/hooks/useRouteIsFocused';
 import {
   useAccountOverviewActions,
@@ -2517,6 +2519,65 @@ function TokenListBlock({
     isLpTokenSwitchLoading,
   ]);
 
+  // Mobile: search current token list + manage-token entry (moved off the tab bar).
+  const handleSearchTextChange = useMemo(
+    () =>
+      debounce((text: string) => {
+        updateSearchKey(text);
+      }, SEARCH_DEBOUNCE_INTERVAL),
+    [updateSearchKey],
+  );
+
+  useEffect(
+    () => () => {
+      handleSearchTextChange.cancel();
+    },
+    [handleSearchTextChange],
+  );
+
+  const renderMobileSearchRow = useCallback(() => {
+    if (tableLayout) {
+      return null;
+    }
+
+    return (
+      <XStack
+        px="$pagePadding"
+        pb="$2"
+        pt="$1"
+        alignItems="center"
+        gap="$3"
+        testID="home-token-list-search-row"
+      >
+        <SearchBar
+          placeholder={intl.formatMessage({
+            id: ETranslations.global_search_asset,
+          })}
+          containerProps={{ flex: 1 }}
+          onChangeText={handleSearchTextChange}
+        />
+        {manageTokenEnabled ? (
+          <IconButton
+            testID="home-token-list-manage-token-btn"
+            title={intl.formatMessage({
+              id: ETranslations.manage_token_title,
+            })}
+            variant="tertiary"
+            icon="SliderHorOutline"
+            iconProps={{ color: '$iconSubdued' }}   // 弱化
+            onPress={handleOnManageToken}
+          />
+        ) : null}
+      </XStack>
+    );
+  }, [
+    tableLayout,
+    intl,
+    handleSearchTextChange,
+    manageTokenEnabled,
+    handleOnManageToken,
+  ]);
+
   const renderContent = useCallback(() => {
     return (
       <TokenListView
@@ -2606,17 +2667,21 @@ function TokenListBlock({
   ]);
 
   return (
-    <RichBlock
-      withTitleSeparator
-      title={intl.formatMessage({
-        id: ETranslations.global_universal_search_tabs_tokens,
-      })}
-      subTitle={renderSubTitle()}
-      headerActions={renderHeaderActions()}
-      headerContainerProps={{ px: '$pagePadding' }}
-      content={renderContent()}
-      plainContentContainer
-    />
+    <Stack>
+      {renderMobileSearchRow()}
+      <RichBlock
+        // Temporarily hide section title ("代币") + DeFi token switch row.
+        // withTitleSeparator
+        // title={intl.formatMessage({
+        //   id: ETranslations.global_universal_search_tabs_tokens,
+        // })}
+        // subTitle={renderSubTitle()}
+        // headerActions={renderHeaderActions()}
+        // headerContainerProps={{ px: '$pagePadding' }}
+        content={renderContent()}
+        plainContentContainer
+      />
+    </Stack>
   );
 }
 

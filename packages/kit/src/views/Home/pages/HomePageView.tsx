@@ -37,7 +37,6 @@ import platformEnv from '@onekeyhq/shared/src/platformEnv';
 import { ETabRoutes } from '@onekeyhq/shared/src/routes';
 import accountUtils from '@onekeyhq/shared/src/utils/accountUtils';
 import networkUtils from '@onekeyhq/shared/src/utils/networkUtils';
-import { swrKeys } from '@onekeyhq/shared/src/utils/swrCacheUtils';
 import type { EAccountSelectorSceneName } from '@onekeyhq/shared/types';
 import { EHomeWalletTab } from '@onekeyhq/shared/types/wallet';
 
@@ -71,12 +70,10 @@ import { NotBackedUpEmpty } from '../components/NotBakcedUp';
 import { PullToRefresh, onHomePageRefresh } from '../components/PullToRefresh';
 import { HomeTestIDs } from '../testIDs';
 
-import { DeFiContainerWithProvider } from './DeFiContainer';
 import { HomeHeaderContainer } from './HomeHeaderContainer';
 import { homePageContentMaxWidthSx } from './homePageContentMaxWidth';
 import { shouldShowNoWalletContent } from './homePageNoWalletContent';
 import { NFTListContainerWithProvider } from './NFTListContainer';
-import { PerpsContainer } from './PerpsContainer';
 import { PortfolioContainerWithProvider } from './PortfolioContainer';
 import { TabHeaderSettings } from './TabHeaderSettings';
 import { TxHistoryListContainerWithProvider } from './TxHistoryContainer';
@@ -297,32 +294,12 @@ export function HomePageView({
   // fallback to avoid tab config change on first render.
   const vaultSettings = fetchedVaultSettings ?? cachedVaultSettings;
 
-  const isNFTEnabled =
-    // All Networks always supports NFT; for single network check vaultSettings
-    network?.isAllNetworks ||
-    (vaultSettings?.NFTEnabled &&
-      networkUtils.getEnabledNFTNetworkIds().includes(network?.id ?? ''));
-
-  const { result: isDeFiEnabled = true } = usePromiseResult(
-    async () => {
-      if (!network?.id) return false;
-      if (networkUtils.isAllNetwork({ networkId: network.id })) return true;
-      const enabledNetworks =
-        await backgroundApiProxy.serviceDeFi.getDeFiEnabledNetworksMap();
-      return !!enabledNetworks[network.id];
-    },
-    [network?.id],
-    {
-      initResult: true,
-      swrKey: network?.id ? swrKeys.defiEnabled(network.id) : undefined,
-    },
-  );
-  const { perpDisabled, perpTabShowWeb } = usePerpTabConfig();
+  const { perpTabShowWeb } = usePerpTabConfig();
 
   const isWalletNotBackedUp = useMemo(() => {
-    if (wallet && wallet.type === WALLET_TYPE_HD && !wallet.backuped) {
-      return true;
-    }
+    // if (wallet && wallet.type === WALLET_TYPE_HD && !wallet.backuped) {
+    //   return true;
+    // }
     return false;
   }, [wallet]);
 
@@ -469,49 +446,23 @@ export function HomePageView({
       {
         id: EHomeWalletTab.Portfolio,
         name: intl.formatMessage({
-          id: ETranslations.dexmarket_spot,
+          id: ETranslations.global_universal_search_tabs_tokens,
         }),
         testID: HomeTestIDs.tabPortfolio,
         component: <PortfolioContainerWithProvider />,
       },
-      !perpDisabled
-        ? {
-            id: EHomeWalletTab.Perps,
-            name: intl.formatMessage({
-              id: ETranslations.global_perp,
-            }),
-            testID: HomeTestIDs.tabPerps,
-            component: (
-              <HomeTabContentMaxWidth>
-                <PerpsContainer />
-              </HomeTabContentMaxWidth>
-            ),
-          }
-        : undefined,
-      isDeFiEnabled
-        ? {
-            id: EHomeWalletTab.DeFi,
-            name: intl.formatMessage({
-              id: ETranslations.global_earn,
-            }),
-            testID: HomeTestIDs.tabDefi,
-            component: <DeFiContainerWithProvider />,
-          }
-        : undefined,
-      isNFTEnabled
-        ? {
-            id: EHomeWalletTab.NFT,
-            name: intl.formatMessage({
-              id: ETranslations.global_nft,
-            }),
-            testID: HomeTestIDs.tabNFT,
-            component: (
-              <HomeTabContentMaxWidth>
-                <NFTListContainerWithProvider />
-              </HomeTabContentMaxWidth>
-            ),
-          }
-        : undefined,
+      {
+        id: EHomeWalletTab.NFT,
+        name: intl.formatMessage({
+          id: ETranslations.global_nft,
+        }),
+        testID: HomeTestIDs.tabNFT,
+        component: (
+          <HomeTabContentMaxWidth>
+            <NFTListContainerWithProvider />
+          </HomeTabContentMaxWidth>
+        ),
+      },
       {
         id: EHomeWalletTab.History,
         name: intl.formatMessage({
@@ -524,8 +475,8 @@ export function HomePageView({
           </HomeTabContentMaxWidth>
         ),
       },
-    ].filter(Boolean);
-  }, [intl, isDeFiEnabled, isNFTEnabled, perpDisabled]);
+    ];
+  }, [intl]);
 
   const pagerTabConfigs = useMemo(
     () =>
@@ -1023,10 +974,11 @@ export function HomePageView({
   ]);
 
   // Initial heights based on measured header sizes on each platform.
-  // iOS measured: 162 (raw 182 - 20 offset). Must match actual layout
-  // to prevent content shift when onLayout fires.
+  // Home MDHeader is now 2 rows (account + network/address). Must match
+  // actual layout to prevent content covering the second row before onLayout.
+  // iOS measured ~162; Android ~128 (account row + network row + paddings).
   const [tabPageHeight, setTabPageHeight] = useState(
-    platformEnv.isNativeIOS ? 162 : 92,
+    platformEnv.isNativeIOS ? 162 : 128,
   );
   const handleTabPageLayout = useCallback((e: LayoutChangeEvent) => {
     const height = e.nativeEvent.layout.height - 20;
@@ -1091,6 +1043,7 @@ export function HomePageView({
                 bg="$bgApp"
                 pt="$5"
                 width="100%"
+                zIndex={20}
                 onLayout={handleTabPageLayout}
               >
                 <TabPageHeader

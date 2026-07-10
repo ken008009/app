@@ -1,16 +1,30 @@
-import { type ReactNode, useMemo } from 'react';
+import { type ReactNode, memo, useCallback, useMemo, useState } from 'react';
+
+import { useIntl } from 'react-intl';
 
 import {
   GlassButtonCapsule,
   Page,
+  SizableText,
+  Spinner,
   View,
   XStack,
+  YStack,
   isLiquidGlassAvailable,
   useSafeAreaInsets,
 } from '@onekeyhq/components';
-import type { ETranslations } from '@onekeyhq/shared/src/locale';
+import {
+  AccountSelectorActiveAccountHome,
+  AccountSelectorTriggerHome,
+} from '@onekeyhq/kit/src/components/AccountSelector';
+import { NetworkSelectorTriggerHome } from '@onekeyhq/kit/src/components/AccountSelector/NetworkSelectorTrigger';
+import { useSpotlight } from '@onekeyhq/kit/src/components/Spotlight';
+import useListenTabFocusState from '@onekeyhq/kit/src/hooks/useListenTabFocusState';
+import { useAppIsLockedAtom } from '@onekeyhq/kit-bg/src/states/jotai/atoms';
+import { ETranslations } from '@onekeyhq/shared/src/locale';
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
 import { ETabRoutes } from '@onekeyhq/shared/src/routes';
+import { ESpotlightTour } from '@onekeyhq/shared/src/spotlight';
 import accountUtils from '@onekeyhq/shared/src/utils/accountUtils';
 import { EAccountSelectorSceneName } from '@onekeyhq/shared/types';
 
@@ -19,31 +33,113 @@ import {
   useIsAccountSelectorSyncLoading,
 } from '../../states/jotai/contexts/accountSelector';
 import { HomeTokenListProviderMirror } from '../../views/Home/components/HomeTokenListProvider/HomeTokenListProviderMirror';
+import { AllNetworksManagerTrigger } from '../AccountSelector/AllNetworksManagerTrigger';
 import { MoreActionButton } from '../MoreActionButton';
 
 import { HeaderNotificationIconButton } from './components/HeaderNotificationIconButton';
+import { HeaderScanIconButton } from './components/HeaderScanIconButton';
 import { HeaderUpdateButton } from './components/HeaderUpdateButton';
 import { HeaderLeft } from './HeaderLeft';
 import { HeaderMDSearch } from './HeaderMDSearch';
 import { HeaderRight, SelectorTrigger } from './HeaderRight';
 import { HeaderTitle } from './HeaderTitle';
-import { LegacyUniversalSearchInput } from './LegacyUniversalSearchInput';
 
 import type { SharedValue } from 'react-native-reanimated';
 
-function HomeWalletConnectionRow({
-  headerPx,
-  selectedHeaderTab,
-  sceneName,
-  tabRoute,
-  customHeaderLeftItems,
-}: {
-  headerPx: string;
-  selectedHeaderTab?: ETranslations;
-  sceneName: EAccountSelectorSceneName;
-  tabRoute: ETabRoutes;
-  customHeaderLeftItems?: ReactNode;
-}) {
+function HomeAccountSelectorTrigger() {
+  const intl = useIntl();
+  const { tourTimes, tourVisited } = useSpotlight(
+    ESpotlightTour.switchDappAccount,
+  );
+  const [isLocked] = useAppIsLockedAtom();
+  const [isFocus, setIsFocus] = useState(false);
+
+  useListenTabFocusState(
+    ETabRoutes.Home,
+    async (focus: boolean, hideByModal: boolean) => {
+      setIsFocus(!hideByModal && focus);
+    },
+  );
+
+  const spotlightVisible = useMemo(
+    () => tourTimes === 1 && isFocus && !isLocked,
+    [isFocus, isLocked, tourTimes],
+  );
+
+  return (
+    <AccountSelectorTriggerHome
+      num={0}
+      horizontalLayout={false}
+      showWalletName
+      spotlightProps={{
+        visible: spotlightVisible,
+        content: (
+          <SizableText size="$bodyMd">
+            {intl.formatMessage({
+              id: ETranslations.spotlight_account_alignment_desc,
+            })}
+          </SizableText>
+        ),
+        onConfirm: () => {
+          void tourVisited(2);
+        },
+        childrenPaddingVertical: 0,
+      }}
+    />
+  );
+}
+
+const MemoizedHomeAccountSelectorTrigger = memo(HomeAccountSelectorTrigger);
+
+function HomeNetworkAndAddressRow() {
+  const {
+    activeAccount: { wallet, network },
+  } = useActiveAccount({ num: 0 });
+
+  const renderNetworkSelector = useCallback(() => {
+    if (
+      network?.isAllNetworks &&
+      !accountUtils.isOthersWallet({ walletId: wallet?.id ?? '' })
+    ) {
+      return <AllNetworksManagerTrigger num={0} unifiedMode />;
+    }
+
+    return (
+      <NetworkSelectorTriggerHome
+        num={0}
+        size="large"
+        recordNetworkHistoryEnabled
+        unifiedMode
+      />
+    );
+  }, [network?.isAllNetworks, wallet?.id]);
+
+  return (
+    <XStack
+      alignItems="center"
+      justifyContent="space-between"
+      minHeight={36}
+      width="100%"
+    >
+      <XStack flexShrink={1} minWidth={0} alignItems="center">
+        {renderNetworkSelector()}
+      </XStack>
+      <XStack flexShrink={0} alignItems="center" pl="$2">
+        <AccountSelectorActiveAccountHome
+          num={0}
+          showAccountAddress
+          showCopyButton
+          showCreateAddressButton={false}
+          showNoAddressTip={false}
+        />
+      </XStack>
+    </XStack>
+  );
+}
+
+function HomeMDHeaderRows({ headerPx }: { headerPx: string }) {
+  const { top } = useSafeAreaInsets();
+  const headerGlassActive = isLiquidGlassAvailable();
   const {
     activeAccount: { wallet, account },
   } = useActiveAccount({ num: 0 });
@@ -54,18 +150,60 @@ function HomeWalletConnectionRow({
   });
 
   if (hasNoUsableWallet && !isSyncLoading) {
-    return null;
+    return (
+      <XStack
+        h={top || '$2'}
+        {...(top || platformEnv.isNativeAndroid
+          ? { mt: top || '$2' }
+          : {})}
+      />
+    );
   }
 
-  return (
-    <XStack alignItems="center" px={headerPx} h={44}>
-      <HeaderLeft
-        selectedHeaderTab={selectedHeaderTab}
-        sceneName={sceneName}
-        tabRoute={tabRoute}
-        customHeaderLeftItems={customHeaderLeftItems}
-      />
+  const rightIconGroup = headerGlassActive ? (
+    <GlassButtonCapsule>
+      <HeaderNotificationIconButton testID="header-right-notification" />
+      <HeaderScanIconButton testID="header-right-scan" />
+      <MoreActionButton />
+    </GlassButtonCapsule>
+  ) : (
+    <XStack alignItems="center" gap="$3">
+      <HeaderNotificationIconButton testID="header-right-notification" />
+      <HeaderScanIconButton testID="header-right-scan" />
+      <MoreActionButton />
     </XStack>
+  );
+
+  return (
+    <YStack
+      px={headerPx}
+      gap="$2"
+      pb="$2"
+      {...(top || platformEnv.isNativeAndroid ? { mt: top || '$2' } : {})}
+    >
+      {/* Row 1: Account selector | notification + more */}
+      <XStack
+        alignItems="center"
+        justifyContent="space-between"
+        minHeight={44}
+        gap={headerGlassActive ? '$3' : '$4'}
+      >
+        <XStack flex={1} flexShrink={1} minWidth={0} alignItems="center">
+          {isSyncLoading && hasNoUsableWallet ? (
+            <Spinner size="small" />
+          ) : (
+            <MemoizedHomeAccountSelectorTrigger />
+          )}
+        </XStack>
+        <XStack alignItems="center" flexShrink={0} gap="$1">
+          <HeaderUpdateButton />
+          {rightIconGroup}
+        </XStack>
+      </XStack>
+
+      {/* Row 2: Network selector | address (space-between) */}
+      <HomeNetworkAndAddressRow />
+    </YStack>
   );
 }
 
@@ -95,10 +233,6 @@ export function MDHeader({
   pageScrollPosition?: SharedValue<number>;
 }) {
   const { top } = useSafeAreaInsets();
-  // iOS 26 only: when the search bar + buttons render as Liquid Glass capsules,
-  // tighten the gap between them. Off iOS 26 this is false, so the row keeps its
-  // original "$6" spacing (no change on other platforms / iOS < 26).
-  const headerGlassActive = isLiquidGlassAvailable();
 
   const rightActions = useMemo(() => {
     return sceneName === EAccountSelectorSceneName.homeUrlAccount ? (
@@ -142,46 +276,7 @@ export function MDHeader({
       {showBaseHeader ? (
         <>
           {isHomeTab ? (
-            <>
-              {/* Row 1: Search bar + notification + more */}
-              <XStack
-                alignItems="center"
-                px={headerPx}
-                h={56}
-                gap={headerGlassActive ? '$3' : '$6'}
-                {...(top || platformEnv.isNativeAndroid
-                  ? { mt: top || '$2' }
-                  : {})}
-              >
-                <XStack flex={1}>
-                  <LegacyUniversalSearchInput
-                    size="medium"
-                    glass
-                    containerProps={{
-                      width: '100%',
-                      $gtLg: undefined,
-                    }}
-                  />
-                </XStack>
-                <HeaderUpdateButton />
-                {/* iOS 26: the notification + menu buttons share ONE Liquid
-                    Glass capsule (this in-page header hides the native nav bar,
-                    so they can't get the system bar-button glass). Off iOS 26
-                    this is a passthrough — the two buttons stay as before. */}
-                <GlassButtonCapsule>
-                  <HeaderNotificationIconButton testID="header-right-notification" />
-                  <MoreActionButton />
-                </GlassButtonCapsule>
-              </XStack>
-              {/* Row 2: Wallet connection (account + network + address) */}
-              <HomeWalletConnectionRow
-                headerPx={headerPx}
-                selectedHeaderTab={selectedHeaderTab}
-                sceneName={sceneName}
-                tabRoute={tabRoute}
-                customHeaderLeftItems={customHeaderLeftItems}
-              />
-            </>
+            <HomeMDHeaderRows headerPx={headerPx} />
           ) : (
             <>
               <XStack

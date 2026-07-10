@@ -9,7 +9,6 @@ import {
   Stack,
   Switch,
   XStack,
-  useMedia,
 } from '@onekeyhq/components';
 import { useSettingsPersistAtom } from '@onekeyhq/kit-bg/src/states/jotai/atoms';
 import { getNetworksSupportFilterScamHistory } from '@onekeyhq/shared/src/config/presetNetworks';
@@ -20,46 +19,12 @@ import {
 import { ETranslations } from '@onekeyhq/shared/src/locale';
 
 import { ListItem } from '../../../components/ListItem';
-import { useManageToken } from '../../../hooks/useManageToken';
 import { useActiveAccount } from '../../../states/jotai/contexts/accountSelector';
 
 function TokenListSettings() {
-  const intl = useIntl();
-  const media = useMedia();
-  const {
-    activeAccount: {
-      account,
-      network,
-      wallet,
-      indexedAccount,
-      isOthersWallet,
-      deriveType,
-    },
-  } = useActiveAccount({ num: 0 });
-  const { handleOnManageToken, manageTokenEnabled } = useManageToken({
-    accountId: account?.id ?? '',
-    networkId: network?.id ?? '',
-    walletId: wallet?.id ?? '',
-    deriveType,
-    indexedAccountId: indexedAccount?.id,
-    isOthersWallet,
-  });
-
-  if (media.gtMd) {
-    return null;
-  }
-
-  return manageTokenEnabled ? (
-    <IconButton
-      testID="home-media-icon-btn"
-      title={intl.formatMessage({
-        id: ETranslations.manage_token_title,
-      })}
-      variant="tertiary"
-      icon="SliderHorOutline"
-      onPress={handleOnManageToken}
-    />
-  ) : null;
+  // Manage-token entry lives next to the home token search bar on mobile
+  // (`TokenListBlock` search row) and in RichBlock headerActions on desktop.
+  return null;
 }
 const filterScamHistorySupportedNetworks =
   getNetworksSupportFilterScamHistory();
@@ -187,7 +152,7 @@ function BasicTabHeaderSettings({ focusedTab }: { focusedTab: string }) {
   const portfolioName = useMemo(
     () =>
       intl.formatMessage({
-        id: ETranslations.dexmarket_spot,
+        id: ETranslations.global_universal_search_tabs_tokens,
       }),
     [intl],
   );

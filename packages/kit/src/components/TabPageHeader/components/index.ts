@@ -1,5 +1,7 @@
 export { HeaderNotificationIconButton } from './HeaderNotificationIconButton';
 export type { IHeaderNotificationIconButtonProps } from './HeaderNotificationIconButton';
+export { HeaderScanIconButton } from './HeaderScanIconButton';
+export type { IHeaderScanIconButtonProps } from './HeaderScanIconButton';
 export { OneKeyIdButton } from './OneKeyIdButton';
 export type { IOneKeyIdButtonProps } from './OneKeyIdButton';
 export { DownloadButton } from './DownloadButton';

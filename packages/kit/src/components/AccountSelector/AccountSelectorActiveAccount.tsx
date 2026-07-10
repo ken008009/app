@@ -80,7 +80,11 @@ const AllNetworkAccountSelector = ({
     return null;
   }
 
-  return showCopyButton ? (
+  if (!showCopyButton) {
+    return null;
+  }
+
+  return (
     <Tooltip
       shortcutKey={EShortcutEvents.CopyAddressOrUrl}
       renderContent={intl.formatMessage({
@@ -90,10 +94,11 @@ const AllNetworkAccountSelector = ({
       renderTrigger={
         <XStack
           testID="account-selector-copy-address-btn"
-          gap="$2"
+          gap="$1.5"
           p="$1"
           m="$-1"
           borderRadius="$2"
+          alignItems="center"
           hoverStyle={{
             bg: isCopyDisabled ? '$transparent' : '$bgHover',
           }}
@@ -119,7 +124,7 @@ const AllNetworkAccountSelector = ({
         </XStack>
       }
     />
-  ) : null;
+  );
 
   // const visible = isFirstVisit && isFocus;
   // console.log('AllNetworkAccountSelector____visible', visible);
@@ -361,6 +366,7 @@ export function AccountSelectorActiveAccountHome({
           renderTrigger={
             <XStack
               alignItems="center"
+              gap="$1.5"
               onPress={handleAddressOnPress}
               opacity={isCopyDisabled ? 0.5 : 1}
               py="$1"
@@ -400,6 +406,9 @@ export function AccountSelectorActiveAccountHome({
                   {accountUtils.shortenAddress({ address: account?.address })}
                 </SizableText>
               )}
+              {showCopyButton ? (
+                <Icon size="$5" name="Copy3Outline" color="$iconSubdued" />
+              ) : null}
             </XStack>
           }
         />
