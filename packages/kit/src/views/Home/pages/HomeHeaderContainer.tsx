@@ -59,7 +59,7 @@ function BaseHomeHeaderContainer() {
   // actually render; otherwise collapse to the shorter layout so we don't
   // leave an empty gap below WalletActions.
   let nativeMinHeight: number | undefined;
-  if (platformEnv.isNative && !isWalletNotBackedUp) {
+  if (platformEnv.isNative) {
     nativeMinHeight = shouldShowBanner ? 312 : 182;
   }
 
@@ -112,11 +112,9 @@ function BaseHomeHeaderContainer() {
             <HomeOverviewContainer />
           </Stack>
         </HeaderScrollGestureWrapper>
-        {isWalletNotBackedUp ? null : (
-          <HeaderScrollGestureWrapper onRefresh={onHomePageRefresh}>
-            <WalletActions />
-          </HeaderScrollGestureWrapper>
-        )}
+        <HeaderScrollGestureWrapper onRefresh={onHomePageRefresh}>
+          <WalletActions />
+        </HeaderScrollGestureWrapper>
       </Stack>
       {/* Always mount so initLocalBanners + remote fetch effects run.
           Without this, gating on `shouldShowBanner` (which requires

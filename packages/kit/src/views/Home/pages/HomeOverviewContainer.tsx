@@ -911,14 +911,14 @@ function HomeOverviewContainer() {
   return (
     <YStack
       gap="$2.5"
-      alignItems="flex-start"
+      alignItems="center"
       testID={HomeTestIDs.walletOverview}
     >
-      <YStack w="100%" gap="$2">
+      <YStack w="100%" gap="$2" alignItems="center">
         {showSkeleton ? (
           <Skeleton.Heading5Xl />
         ) : (
-          <XStack alignItems="center" gap="$3" h={48}>
+          <XStack alignItems="center" justifyContent="center" gap="$3" h={48}>
             <XStack
               flexShrink={1}
               borderRadius="$3"
@@ -951,6 +951,7 @@ function HomeOverviewContainer() {
                 fontSize={48}
                 lineHeight={48}
                 fontWeight={500}
+                textAlign="center"
                 {...numberFormatter}
               >
                 {renderedBalanceStringDisplay ?? '0'}

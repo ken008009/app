@@ -60,13 +60,6 @@ export function WalletActionCopy({ onClose }: { onClose: () => void }) {
       showBotWalletDisabledToast('copyAddress');
       return;
     }
-    if (
-      await backgroundApiProxy.serviceAccount.checkIsWalletNotBackedUp({
-        walletId: wallet?.id ?? '',
-      })
-    ) {
-      return;
-    }
 
     defaultLogger.wallet.walletActions.actionCopyAddress({
       walletType: wallet?.type ?? '',

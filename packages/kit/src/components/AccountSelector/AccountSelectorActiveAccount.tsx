@@ -65,16 +65,8 @@ const AllNetworkAccountSelector = ({
       showBotWalletDisabledToast('copyAddress');
       return;
     }
-
-    if (
-      await backgroundApiProxy.serviceAccount.checkIsWalletNotBackedUp({
-        walletId: activeAccount?.wallet?.id ?? '',
-      })
-    ) {
-      return;
-    }
     await handleAllNetworkCopyAddress(true);
-  }, [activeAccount?.wallet?.id, handleAllNetworkCopyAddress, isCopyDisabled]);
+  }, [handleAllNetworkCopyAddress, isCopyDisabled]);
 
   if (!isAllNetworkEnabled) {
     return null;
@@ -249,14 +241,6 @@ export function AccountSelectorActiveAccountHome({
       })
     ) {
       showBotWalletDisabledToast('copyAddress');
-      return;
-    }
-
-    if (
-      await backgroundApiProxy.serviceAccount.checkIsWalletNotBackedUp({
-        walletId: wallet.id,
-      })
-    ) {
       return;
     }
 

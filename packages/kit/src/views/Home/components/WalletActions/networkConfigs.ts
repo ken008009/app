@@ -18,58 +18,17 @@ const isExtPopupOrSidePanel =
   platformEnv.isExtensionUiPopup || platformEnv.isExtensionUiSidePanel;
 
 export const defaultWalletActionsConfig: INetworkWalletActionsConfig = {
+  // Home action row always shows the primary set (including zero-balance).
   mainActions: isExtPopupOrSidePanel
     ? ['send', 'receive', 'swap']
-    : ['send', 'receive', 'buy'],
-  moreActions: isExtPopupOrSidePanel
-    ? [
-        'buy',
-        'explorer',
-        'copy',
-        'addressList',
-        'coins',
-        'approvals',
-        'bulkSend',
-        'sign',
-        'reward',
-        'export',
-      ]
-    : [
-        'swap',
-        'explorer',
-        'copy',
-        'addressList',
-        'coins',
-        'approvals',
-        'bulkSend',
-        'sign',
-        'reward',
-        'export',
-      ],
+    : ['send', 'receive', 'buy', 'swap'],
+  // More menu: withdraw (sell) + copy address + view in explorer.
+  moreActions: ['sell', 'copy', 'explorer'],
   moreActionGroups: [
     {
-      type: 'trading',
-      actions: isExtPopupOrSidePanel ? ['buy'] : ['swap'],
-      order: 1,
-    },
-    {
       type: 'tools',
-      actions: [
-        'explorer',
-        'copy',
-        'addressList',
-        'coins',
-        'approvals',
-        'bulkSend',
-        'sign',
-        'reward',
-      ],
-      order: 2,
-    },
-    {
-      type: 'developer',
-      actions: ['export'],
-      order: 3,
+      actions: ['sell', 'copy', 'explorer'],
+      order: 1,
     },
   ],
 };
@@ -80,32 +39,12 @@ export const detailedNetworkConfigs: Record<
 > = {
   [networkIds.trx]: {
     mainActions: ['send', 'receive', 'staking'],
-    moreActions: [
-      'buy',
-      'swap',
-      'explorer',
-      'copy',
-      'bulkSend',
-      'sign',
-      'vote',
-      'reward',
-      'export',
-    ],
+    moreActions: ['sell', 'copy', 'explorer'],
     moreActionGroups: [
       {
-        type: 'trading',
-        actions: ['buy', 'swap'],
-        order: 1,
-      },
-      {
         type: 'tools',
-        actions: ['explorer', 'copy', 'bulkSend', 'sign', 'vote', 'reward'],
-        order: 2,
-      },
-      {
-        type: 'developer',
-        actions: ['export'],
-        order: 3,
+        actions: ['sell', 'copy', 'explorer'],
+        order: 1,
       },
     ],
     actionCustomization: {

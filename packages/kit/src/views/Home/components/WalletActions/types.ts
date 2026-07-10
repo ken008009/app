@@ -6,6 +6,7 @@ export type IWalletActionType =
   | 'swap'
   | 'bridge'
   | 'buy'
+  | 'sell'
   | 'staking'
   | 'perp'
   | 'earn'
