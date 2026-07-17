@@ -158,20 +158,14 @@ export async function navigateToNotificationDetailByLocalParams({
     targetParams.source = 'notification';
   }
 
-  // Handle Market/Earn tab redirection for native platforms
-  // On native, Market and Earn are sub-tabs within Discovery, not separate tabs
+  // Handle Earn tab redirection for native platforms
+  // On native, Earn is a sub-tab within Discovery, not a separate tab.
+  // Market is a top-level tab on native.
   // Returns a function that performs the redirection when called
   const createNativeTabRedirection = () => {
-    let tab:
-      | ETranslations.global_browser
-      | ETranslations.global_earn
-      | ETranslations.global_market
-      | undefined;
+    let tab: ETranslations.global_browser | ETranslations.global_earn | undefined;
     if (platformEnv.isNative) {
-      if (navigationParams?.screen === ETabRoutes.Market) {
-        navigationParams.screen = ETabRoutes.Discovery;
-        tab = ETranslations.global_market;
-      } else if (navigationParams?.screen === ETabRoutes.Earn) {
+      if (navigationParams?.screen === ETabRoutes.Earn) {
         navigationParams.screen = ETabRoutes.Discovery;
         tab = ETranslations.global_earn;
       }

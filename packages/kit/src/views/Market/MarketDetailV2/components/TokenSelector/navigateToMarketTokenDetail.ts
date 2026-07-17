@@ -1,6 +1,5 @@
 import { rootNavigationRef } from '@onekeyhq/components';
 import type { useTokenDetailActions } from '@onekeyhq/kit/src/states/jotai/contexts/marketV2';
-import platformEnv from '@onekeyhq/shared/src/platformEnv';
 import {
   ERootRoutes,
   ETabMarketRoutes,
@@ -28,9 +27,6 @@ export function navigateToMarketTokenDetail(
 
   opts.beforeNavigate?.();
 
-  const targetTab = platformEnv.isNative
-    ? ETabRoutes.Discovery
-    : ETabRoutes.Market;
   const params = {
     tokenAddress: token.address,
     network: shortCode || token.networkId,
@@ -41,7 +37,7 @@ export function navigateToMarketTokenDetail(
   };
   setTimeout(() => {
     rootNavigationRef.current?.navigate(ERootRoutes.Main, {
-      screen: targetTab,
+      screen: ETabRoutes.Market,
       params: {
         screen: ETabMarketRoutes.MarketDetailV2,
         params,

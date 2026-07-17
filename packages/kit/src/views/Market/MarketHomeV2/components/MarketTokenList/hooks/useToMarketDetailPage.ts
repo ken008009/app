@@ -30,8 +30,6 @@ interface IMarketToken {
 interface IUseToDetailPageOptions {
   /**
    * Switch to Market tab first before navigating to detail page.
-   * - On mobile (native): switches to Discovery tab first, then pushes detail
-   * - On desktop/web: switches to Market tab first, then pushes detail
    */
   switchToMarketTabFirst?: boolean;
   /**
@@ -95,29 +93,24 @@ export function useToDetailPage(options?: IUseToDetailPageOptions) {
         // Clear token detail before navigation
         tokenDetailActions.current.clearTokenDetail();
 
-        const targetTab = platformEnv.isNative
-          ? ETabRoutes.Discovery
-          : ETabRoutes.Market;
-
         if (platformEnv.isNative) {
-          // Navigate directly to the nested detail route to avoid briefly
-          // revealing the Discovery root page before entering Market detail.
+          // Navigate directly to Market detail to avoid briefly revealing home.
           rootNavigationRef.current?.navigate(ERootRoutes.Main, {
-            screen: targetTab,
+            screen: ETabRoutes.Market,
             params: {
               screen: ETabMarketRoutes.MarketDetailV2,
               params,
             },
           });
         } else {
-          // First switch to the appropriate tab to highlight it
-          navigation.switchTab(targetTab);
+          // First switch to Market tab to highlight it
+          navigation.switchTab(ETabRoutes.Market);
 
           // Then navigate to detail page using rootNavigationRef
           // because the current navigation context is from modal, not from the target tab
           setTimeout(() => {
             rootNavigationRef.current?.navigate(ERootRoutes.Main, {
-              screen: targetTab,
+              screen: ETabRoutes.Market,
               params: {
                 screen: ETabMarketRoutes.MarketDetailV2,
                 params,

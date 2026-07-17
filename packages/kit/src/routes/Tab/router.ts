@@ -155,6 +155,47 @@ export const useTabRouterConfig = (params?: IGetTabRouterParams) => {
   );
 
   return useMemo(() => {
+    // Market tab: shown on native tab bar (replaces Perp as the 3rd tab).
+    const marketTabConfig = shouldShowMarketTab
+      ? {
+          name: ETabRoutes.Market,
+          tabBarIcon: (focused?: boolean) =>
+            focused ? 'TradingViewCandlesSolid' : 'TradingViewCandlesOutline',
+          nativeTabBarIcon: nativeTabIcons.market,
+          translationId: ETranslations.global_market,
+          freezeOnBlur: Boolean(params?.freezeOnBlur),
+          rewrite: '/market',
+          exact: true,
+          children: marketRouters,
+          trackId: 'global-market',
+          // Only apply custom tab press handler for non-mobile platforms
+          ...(platformEnv.isDesktop ||
+          platformEnv.isWeb ||
+          platformEnv.isExtension
+            ? { onPressWhenSelected: handleMarketTabPress }
+            : {}),
+        }
+      : undefined;
+
+    const swapTabConfig = {
+      name: ETabRoutes.Swap,
+      tabBarIcon: (focused?: boolean) =>
+        focused ? 'SwitchHorSolid' : 'SwitchHorOutline',
+      nativeTabBarIcon: nativeTabIcons.swap,
+      translationId: ETranslations.global_trade,
+      freezeOnBlur: Boolean(params?.freezeOnBlur),
+      rewrite: '/swap',
+      exact: true,
+      children: swapRouters,
+      trackId: 'global-trade',
+    };
+
+    // Native visible order: Home → Swap → Market → Discovery → Mine
+    // (Market occupies the former Perp slot as the 3rd tab)
+    const marketAndSwapTabs = platformEnv.isNative
+      ? [swapTabConfig, marketTabConfig]
+      : [marketTabConfig, swapTabConfig];
+
     const tabs = [
       {
         name: ETabRoutes.Home,
@@ -171,39 +212,7 @@ export const useTabRouterConfig = (params?: IGetTabRouterParams) => {
         trackId: 'global-wallet',
         hiddenIcon: isWebDappMode,
       },
-      shouldShowMarketTab
-        ? {
-            name: ETabRoutes.Market,
-            tabBarIcon: (focused?: boolean) =>
-              focused ? 'TradingViewCandlesSolid' : 'TradingViewCandlesOutline',
-            translationId: ETranslations.global_market,
-            freezeOnBlur: Boolean(params?.freezeOnBlur),
-            rewrite: '/market',
-            exact: true,
-            children: marketRouters,
-            trackId: 'global-market',
-            // Hide Market tab on mobile (merged into Discovery)
-            hiddenIcon: platformEnv.isNative,
-            // Only apply custom tab press handler for non-mobile platforms
-            ...(platformEnv.isDesktop ||
-            platformEnv.isWeb ||
-            platformEnv.isExtension
-              ? { onPressWhenSelected: handleMarketTabPress }
-              : {}),
-          }
-        : undefined,
-      {
-        name: ETabRoutes.Swap,
-        tabBarIcon: (focused?: boolean) =>
-          focused ? 'SwitchHorSolid' : 'SwitchHorOutline',
-        nativeTabBarIcon: nativeTabIcons.swap,
-        translationId: ETranslations.global_trade,
-        freezeOnBlur: Boolean(params?.freezeOnBlur),
-        rewrite: '/swap',
-        exact: true,
-        children: swapRouters,
-        trackId: 'global-trade',
-      },
+      ...marketAndSwapTabs,
       {
         name: ETabRoutes.WebviewPerpTrade,
         tabBarIcon: (focused?: boolean) =>
@@ -215,7 +224,8 @@ export const useTabRouterConfig = (params?: IGetTabRouterParams) => {
         exact: true,
         children: perpWebviewRouters,
         trackId: 'global-perp',
-        hiddenIcon: perpDisabled || !perpTabShowWeb,
+        // Hide Perp on native — replaced by Market tab
+        hiddenIcon: perpDisabled || !perpTabShowWeb || platformEnv.isNative,
       },
       {
         name: ETabRoutes.Perp,
@@ -227,7 +237,8 @@ export const useTabRouterConfig = (params?: IGetTabRouterParams) => {
         children: perpRouters,
         rewrite: perpTabShowWeb ? undefined : '/perps',
         exact: true,
-        hiddenIcon: perpDisabled || perpTabShowWeb,
+        // Hide Perp on native — replaced by Market tab
+        hiddenIcon: perpDisabled || perpTabShowWeb || platformEnv.isNative,
         trackId: 'global-perp',
       },
       {

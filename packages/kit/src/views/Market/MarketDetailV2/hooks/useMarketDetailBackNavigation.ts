@@ -11,7 +11,6 @@ import useAppNavigation from '@onekeyhq/kit/src/hooks/useAppNavigation';
 import { EEnterWay } from '@onekeyhq/shared/src/logger/scopes/dex';
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
 import {
-  ETabDiscoveryRoutes,
   ETabMarketRoutes,
   ETabRoutes,
 } from '@onekeyhq/shared/src/routes';
@@ -36,14 +35,14 @@ export function useMarketDetailBackNavigation() {
         reactNavigation.dispatch(
           CommonActions.reset({
             index: 0,
-            routes: [{ name: ETabDiscoveryRoutes.TabDiscovery }],
+            routes: [{ name: ETabMarketRoutes.TabMarket }],
           }),
         );
         return;
       }
 
       navigation.pop();
-      navigation.switchTab(ETabRoutes.Discovery);
+      navigation.switchTab(ETabRoutes.Market);
       return;
     }
 
