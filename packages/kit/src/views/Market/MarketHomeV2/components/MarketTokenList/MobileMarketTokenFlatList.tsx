@@ -32,6 +32,8 @@ interface IMobileMarketTokenFlatListProps {
   };
   onStockDataChange?: (categoryId: string, isStockData: boolean) => void;
   shouldSuppressItemPress?: () => boolean;
+  sortBy?: string;
+  sortType?: 'asc' | 'desc';
 }
 
 const EMPTY_DATA: IMarketToken[] = [];
@@ -43,6 +45,8 @@ function MobileMarketTokenFlatListBase({
   listContainerProps,
   onStockDataChange,
   shouldSuppressItemPress,
+  sortBy: sortByProp = 'v24hUSD',
+  sortType: sortTypeProp = 'desc',
 }: IMobileMarketTokenFlatListProps) {
   const intl = useIntl();
   const toMarketDetailPage = useToDetailPage();
@@ -55,14 +59,21 @@ function MobileMarketTokenFlatListBase({
     isNetworkSwitching,
     canLoadMore,
     loadMore,
+    setSortBy,
+    setSortType,
   } = useMarketTokenList({
     networkId,
-    initialSortBy: 'v24hUSD',
-    initialSortType: 'desc',
+    initialSortBy: sortByProp,
+    initialSortType: sortTypeProp,
     pageSize: 20,
     type: selectedCategory,
     timeRange,
   });
+
+  useEffect(() => {
+    setSortBy(sortByProp);
+    setSortType(sortTypeProp);
+  }, [setSortBy, setSortType, sortByProp, sortTypeProp]);
 
   const isStockData = useMemo(
     () => shouldUseStockMetadataColumnsForTokens(data),

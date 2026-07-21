@@ -84,6 +84,7 @@ export function WalletConnectionGroup({
   showNetworkSelector = true,
   showAccountInfo = true,
 }: IWalletConnectionGroupProps) {
+  const intl = useIntl();
   const { md } = useMedia();
   const isMobileLayout = md || platformEnv.isNative;
   const {
@@ -154,6 +155,15 @@ export function WalletConnectionGroup({
   );
 
   const isSyncLoading = useIsAccountSelectorSyncLoading(0);
+
+  // Market home shows page title instead of account selector.
+  if (tabRoute === ETabRoutes.Market) {
+    return (
+      <SizableText size="$headingXl">
+        {intl.formatMessage({ id: ETranslations.global_market })}
+      </SizableText>
+    );
+  }
 
   if (
     !platformEnv.isWebDappMode &&

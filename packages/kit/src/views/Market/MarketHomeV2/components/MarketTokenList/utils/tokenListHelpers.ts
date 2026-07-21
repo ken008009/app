@@ -23,6 +23,8 @@ export const SORT_MAP: Record<string, keyof IMarketToken> = {
   liquidity: 'liquidity',
   mc: 'marketCap',
   v24hUSD: 'turnover',
+  price: 'price',
+  change24h: 'change24h',
 };
 
 export function normalizeStockMetadataValue(

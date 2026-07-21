@@ -29,6 +29,8 @@ interface IUseMarketTabsLogicOptions {
   spotCategories?: IMarketCategoryItem[];
   selectedSpotCategory?: string;
   onSpotCategoryChange?: (categoryId: string) => void;
+  /** Hide the Perps tab from the Market home tab bar. */
+  hidePerpsTab?: boolean;
 }
 
 export function useMarketTabsLogic(
@@ -38,12 +40,16 @@ export function useMarketTabsLogic(
   const intl = useIntl();
   const [{ tab: selectedTab }, setSelectedTabAtom] = useMarketSelectedTabAtom();
   const { perpDisabled } = usePerpTabConfig();
-  const showPerpsTab = !perpDisabled;
-  const { spotCategories, selectedSpotCategory, onSpotCategoryChange } =
-    options ?? {};
+  const {
+    spotCategories,
+    selectedSpotCategory,
+    onSpotCategoryChange,
+    hidePerpsTab = false,
+  } = options ?? {};
+  const showPerpsTab = !hidePerpsTab && !perpDisabled;
 
   const watchlistTabName = intl.formatMessage({
-    id: ETranslations.global_favorites,
+    id: ETranslations.global_watchlist,
   });
   const spotTabName = intl.formatMessage({
     id: ETranslations.dexmarket_spot,
@@ -53,11 +59,13 @@ export function useMarketTabsLogic(
   });
 
   const spotTabItems = useMemo<IMarketSpotTabItem[]>(() => {
-    const categories = spotCategories?.length
-      ? spotCategories
-      : [{ id: 'trending', name: spotTabName }];
+    // undefined = config not ready yet → keep a temporary trending tab.
+    // empty array = intentionally no visible spot tabs.
+    if (!spotCategories) {
+      return [{ id: 'trending', name: spotTabName }];
+    }
 
-    return categories.map((category) => ({
+    return spotCategories.map((category) => ({
       categoryId: category.id,
       tabName: category.name || category.id,
     }));

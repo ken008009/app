@@ -182,7 +182,10 @@ export const useTabRouterConfig = (params?: IGetTabRouterParams) => {
       tabBarIcon: (focused?: boolean) =>
         focused ? 'SwitchHorSolid' : 'SwitchHorOutline',
       nativeTabBarIcon: nativeTabIcons.swap,
-      translationId: ETranslations.global_trade,
+      // Native tab bar label: 兑换; desktop/web keep 交易.
+      translationId: platformEnv.isNative
+        ? ETranslations.global_swap
+        : ETranslations.global_trade,
       freezeOnBlur: Boolean(params?.freezeOnBlur),
       rewrite: '/swap',
       exact: true,
@@ -190,99 +193,81 @@ export const useTabRouterConfig = (params?: IGetTabRouterParams) => {
       trackId: 'global-trade',
     };
 
-    // Native visible order: Home → Swap → Market → Discovery → Mine
-    // (Market occupies the former Perp slot as the 3rd tab)
-    const marketAndSwapTabs = platformEnv.isNative
-      ? [swapTabConfig, marketTabConfig]
-      : [marketTabConfig, swapTabConfig];
+    const homeTabConfig = {
+      name: ETabRoutes.Home,
+      tabBarIcon: (focused?: boolean) =>
+        focused ? 'Wallet4Solid' : 'Wallet4Outline',
+      nativeTabBarIcon: nativeTabIcons.wallet,
+      translationId: platformEnv.isNative
+        ? ETranslations.global_asset
+        : ETranslations.global_wallet,
+      freezeOnBlur: Boolean(params?.freezeOnBlur),
+      rewrite: isWebDappMode ? '/wallet' : '/',
+      exact: true,
+      children: homeRouters,
+      trackId: 'global-wallet',
+      hiddenIcon: isWebDappMode,
+    };
 
-    const tabs = [
-      {
-        name: ETabRoutes.Home,
-        tabBarIcon: (focused?: boolean) =>
-          focused ? 'Wallet4Solid' : 'Wallet4Outline',
-        nativeTabBarIcon: nativeTabIcons.wallet,
-        translationId: platformEnv.isNative
-          ? ETranslations.global_asset
-          : ETranslations.global_wallet,
-        freezeOnBlur: Boolean(params?.freezeOnBlur),
-        rewrite: isWebDappMode ? '/wallet' : '/',
-        exact: true,
-        children: homeRouters,
-        trackId: 'global-wallet',
-        hiddenIcon: isWebDappMode,
-      },
-      ...marketAndSwapTabs,
-      {
-        name: ETabRoutes.WebviewPerpTrade,
-        tabBarIcon: (focused?: boolean) =>
-          focused ? 'TradeSolid' : 'TradeOutline',
-        translationId: ETranslations.global_perp,
-        nativeTabBarIcon: nativeTabIcons.perp,
-        freezeOnBlur: Boolean(params?.freezeOnBlur),
-        rewrite: perpTabShowWeb ? '/perps' : undefined,
-        exact: true,
-        children: perpWebviewRouters,
-        trackId: 'global-perp',
-        // Hide Perp on native — replaced by Market tab
-        hiddenIcon: perpDisabled || !perpTabShowWeb || platformEnv.isNative,
-      },
-      {
-        name: ETabRoutes.Perp,
-        tabBarIcon: (focused?: boolean) =>
-          focused ? 'TradeSolid' : 'TradeOutline',
-        translationId: ETranslations.global_perp,
-        nativeTabBarIcon: nativeTabIcons.perp,
-        freezeOnBlur: Boolean(params?.freezeOnBlur),
-        children: perpRouters,
-        rewrite: perpTabShowWeb ? undefined : '/perps',
-        exact: true,
-        // Hide Perp on native — replaced by Market tab
-        hiddenIcon: perpDisabled || perpTabShowWeb || platformEnv.isNative,
-        trackId: 'global-perp',
-      },
-      {
-        name: ETabRoutes.Earn,
-        tabBarIcon: (focused?: boolean) =>
-          focused ? 'CoinsSolid' : 'CoinsOutline',
-        translationId: ETranslations.global_earn,
-        freezeOnBlur: Boolean(params?.freezeOnBlur),
-        rewrite: '/defi',
-        exact: true,
-        children: earnRouters,
-        trackId: 'global-earn',
-        hideOnTabBar: platformEnv.isNative,
-      },
-      platformEnv.isNative
-        ? undefined
-        : {
-            name: ETabRoutes.DeviceManagement,
-            tabBarIcon: (focused?: boolean) =>
-              focused ? 'PhoneSolid' : 'PhoneOutline',
-            translationId: ETranslations.global_device,
-            freezeOnBlur: Boolean(params?.freezeOnBlur),
-            exact: true,
-            children: deviceManagementRouters,
-            trackId: 'global-my-onekey',
-            hideOnTabBar: isModalStack,
-          },
-      !platformEnv.isNative ? referFriendsTabConfig : undefined,
-      isShowMDDiscover ? getDiscoverRouterConfig(params) : undefined,
-      isShowDesktopDiscover ? getDiscoverRouterConfig(params) : undefined,
-      platformEnv.isNative
-        ? {
-            name: ETabRoutes.Mine,
-            tabBarIcon: (focused?: boolean) =>
-              focused ? 'PeopleSolid' : 'PeopleOutline',
-            nativeTabBarIcon: nativeTabIcons.mine,
-            translationId: ETranslations.global_mine,
-            freezeOnBlur: Boolean(params?.freezeOnBlur),
-            rewrite: '/mine',
-            exact: true,
-            children: mineRouters,
-            trackId: 'global-mine',
-          }
-        : undefined,
+    const perpWebviewTabConfig = {
+      name: ETabRoutes.WebviewPerpTrade,
+      tabBarIcon: (focused?: boolean) =>
+        focused ? 'TradeSolid' : 'TradeOutline',
+      translationId: ETranslations.global_perp,
+      nativeTabBarIcon: nativeTabIcons.perp,
+      freezeOnBlur: Boolean(params?.freezeOnBlur),
+      rewrite: perpTabShowWeb ? '/perps' : undefined,
+      exact: true,
+      children: perpWebviewRouters,
+      trackId: 'global-perp',
+      // Hide Perp on native — replaced by Market tab
+      hiddenIcon: perpDisabled || !perpTabShowWeb || platformEnv.isNative,
+    };
+
+    const perpTabConfig = {
+      name: ETabRoutes.Perp,
+      tabBarIcon: (focused?: boolean) =>
+        focused ? 'TradeSolid' : 'TradeOutline',
+      translationId: ETranslations.global_perp,
+      nativeTabBarIcon: nativeTabIcons.perp,
+      freezeOnBlur: Boolean(params?.freezeOnBlur),
+      children: perpRouters,
+      rewrite: perpTabShowWeb ? undefined : '/perps',
+      exact: true,
+      // Hide Perp on native — replaced by Market tab
+      hiddenIcon: perpDisabled || perpTabShowWeb || platformEnv.isNative,
+      trackId: 'global-perp',
+    };
+
+    const earnTabConfig = {
+      name: ETabRoutes.Earn,
+      tabBarIcon: (focused?: boolean) =>
+        focused ? 'CoinsSolid' : 'CoinsOutline',
+      translationId: ETranslations.global_earn,
+      freezeOnBlur: Boolean(params?.freezeOnBlur),
+      rewrite: '/defi',
+      exact: true,
+      children: earnRouters,
+      trackId: 'global-earn',
+      hideOnTabBar: platformEnv.isNative,
+    };
+
+    const mineTabConfig = platformEnv.isNative
+      ? {
+          name: ETabRoutes.Mine,
+          tabBarIcon: (focused?: boolean) =>
+            focused ? 'PeopleSolid' : 'PeopleOutline',
+          nativeTabBarIcon: nativeTabIcons.mine,
+          translationId: ETranslations.global_mine,
+          freezeOnBlur: Boolean(params?.freezeOnBlur),
+          rewrite: '/mine',
+          exact: true,
+          children: mineRouters,
+          trackId: 'global-mine',
+        }
+      : undefined;
+
+    const developerTabConfig =
       ENABLE_DEVELOPER_TAB && platformEnv.isDev
         ? {
             name: ETabRoutes.Developer,
@@ -296,8 +281,45 @@ export const useTabRouterConfig = (params?: IGetTabRouterParams) => {
             children: getDeveloperRouters(),
             trackId: 'global-dev',
           }
-        : undefined,
-    ].filter((i) => !!i);
+        : undefined;
+
+    // Android native tab bar: 资产 | 市场 | 发现 | 兑换 | 我的
+    // (iOS keeps Discovery registered but hideOnTabBar)
+    const tabs = platformEnv.isNative
+      ? [
+          homeTabConfig,
+          marketTabConfig,
+          isShowMDDiscover ? getDiscoverRouterConfig(params) : undefined,
+          swapTabConfig,
+          perpWebviewTabConfig,
+          perpTabConfig,
+          earnTabConfig,
+          mineTabConfig,
+          developerTabConfig,
+        ].filter((i) => !!i)
+      : [
+          homeTabConfig,
+          marketTabConfig,
+          swapTabConfig,
+          perpWebviewTabConfig,
+          perpTabConfig,
+          earnTabConfig,
+          {
+            name: ETabRoutes.DeviceManagement,
+            tabBarIcon: (focused?: boolean) =>
+              focused ? 'PhoneSolid' : 'PhoneOutline',
+            translationId: ETranslations.global_device,
+            freezeOnBlur: Boolean(params?.freezeOnBlur),
+            exact: true,
+            children: deviceManagementRouters,
+            trackId: 'global-my-onekey',
+            hideOnTabBar: isModalStack,
+          },
+          referFriendsTabConfig,
+          isShowMDDiscover ? getDiscoverRouterConfig(params) : undefined,
+          isShowDesktopDiscover ? getDiscoverRouterConfig(params) : undefined,
+          developerTabConfig,
+        ].filter((i) => !!i);
 
     if (isWebDappMode && tabs.length >= 2) {
       const marketTabIndex = tabs.findIndex(

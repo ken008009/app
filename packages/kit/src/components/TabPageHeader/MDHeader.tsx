@@ -261,6 +261,7 @@ export function MDHeader({
     return (
       tabRoute === ETabRoutes.Home ||
       tabRoute === ETabRoutes.Swap ||
+      tabRoute === ETabRoutes.Market ||
       tabRoute === ETabRoutes.Discovery ||
       tabRoute === ETabRoutes.Earn ||
       tabRoute === ETabRoutes.Perp ||
@@ -270,6 +271,15 @@ export function MDHeader({
   const isHomeTab =
     tabRoute === ETabRoutes.Home &&
     sceneName !== EAccountSelectorSceneName.homeUrlAccount;
+  const intl = useIntl();
+  const marketTitle = useMemo(
+    () => (
+      <SizableText size="$headingXl">
+        {intl.formatMessage({ id: ETranslations.global_market })}
+      </SizableText>
+    ),
+    [intl],
+  );
 
   return (
     <>
@@ -290,13 +300,17 @@ export function MDHeader({
                   : {})}
               >
                 <View>
-                  <HeaderLeft
-                    selectedHeaderTab={selectedHeaderTab}
-                    sceneName={sceneName}
-                    tabRoute={tabRoute}
-                    customHeaderLeftItems={customHeaderLeftItems}
-                    pageScrollPosition={pageScrollPosition}
-                  />
+                  {customHeaderLeftItems ??
+                    (tabRoute === ETabRoutes.Market ? (
+                      marketTitle
+                    ) : (
+                      <HeaderLeft
+                        selectedHeaderTab={selectedHeaderTab}
+                        sceneName={sceneName}
+                        tabRoute={tabRoute}
+                        pageScrollPosition={pageScrollPosition}
+                      />
+                    ))}
                 </View>
                 <View>
                   <HeaderTitle sceneName={sceneName} />

@@ -34,12 +34,14 @@ export function LegacyUniversalSearchInput({
   // its search doesn't surface market/perp/wallet results (OK-56756).
   filterTypes,
   glass = false,
+  placeholder,
 }: {
   containerProps?: IStackStyle;
   size?: 'large' | 'medium' | 'small';
   initialTab?: 'market' | 'dapp';
   filterTypes?: EUniversalSearchType[];
   glass?: boolean;
+  placeholder?: string;
 }) {
   const intl = useIntl();
   const navigation = useAppNavigation();
@@ -60,6 +62,11 @@ export function LegacyUniversalSearchInput({
   // keep the normal bar height.
   const baseSearchBarHeight = size === 'medium' ? 40 : 32;
   const searchBarHeight = glassActive ? 44 : baseSearchBarHeight;
+  const resolvedPlaceholder =
+    placeholder ??
+    intl.formatMessage({
+      id: ETranslations.global_search_everything,
+    });
 
   if (size === 'small') {
     return (
@@ -91,9 +98,7 @@ export function LegacyUniversalSearchInput({
       }}
       py="$2"
       key="searchInput"
-      placeholder={intl.formatMessage({
-        id: ETranslations.global_search_everything,
-      })}
+      placeholder={resolvedPlaceholder}
       addOns={[
         {
           label: (
@@ -147,12 +152,17 @@ export function LegacyUniversalSearchInput({
   );
 }
 
-export function MDUniversalSearchInput() {
+export function MDUniversalSearchInput({
+  placeholder,
+}: {
+  placeholder?: string;
+} = {}) {
   const isHorizontal = useIsWebHorizontalLayout();
   return isHorizontal ? null : (
     <XStack px="$pagePadding" pt="$0.5">
       <LegacyUniversalSearchInput
         size="medium"
+        placeholder={placeholder}
         containerProps={{
           width: '100%',
           $gtLg: undefined,

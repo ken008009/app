@@ -10,30 +10,25 @@ import {
 } from 'react';
 import type { RefObject } from 'react';
 
-import { IconButton, Tabs, XStack, YStack } from '@onekeyhq/components';
+import { Tabs, YStack } from '@onekeyhq/components';
 import type { ITabContainerRef } from '@onekeyhq/components';
 import { useTabBarHeight } from '@onekeyhq/components/src/layouts/Page/hooks';
 import { useTabContainerWidth } from '@onekeyhq/kit/src/hooks/useTabContainerWidth';
 import { useMarketWatchListV2Atom } from '@onekeyhq/kit/src/states/jotai/contexts/marketV2';
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
 
-import { MarketBannerList } from '../components/MarketBanner';
+import { EarnHomeWithProvider } from '../../../Earn/EarnHome';
 import { MarketFilterBarSmall } from '../components/MarketFilterBarSmall';
-import { MarketListColumnHeader } from '../components/MarketListColumnHeader';
-import { useSyncedMarketPerpsCategory } from '../components/MarketPerpsList/hooks/useSyncedMarketPerpsCategory';
-import { MarketPerpsCategorySelector } from '../components/MarketPerpsList/MarketPerpsCategorySelector';
-import { MobileMarketPerpsFlatList } from '../components/MarketPerpsList/MobileMarketPerpsFlatList';
-import { useIsWatchlistTokenCacheReady } from '../components/MarketTokenList/hooks/useMarketWatchlistTokenList';
 import {
-  type IWatchlistFilterType,
-  MarketWatchlistCategorySelector,
-} from '../components/MarketTokenList/MarketWatchlistCategorySelector';
+  type IMarketMobileSortOption,
+  type IMarketMobileSortValue,
+  MarketMobileSortSelect,
+} from '../components/MarketMobileSortSelect';
 import { MobileMarketTokenFlatList } from '../components/MarketTokenList/MobileMarketTokenFlatList';
 import { MobileMarketWatchlistFlatList } from '../components/MarketTokenList/MobileMarketWatchlistFlatList';
-import { useOpenMarketWatchlistEditDialog } from '../components/MarketTokenList/useOpenMarketWatchlistEditDialog';
 import { isMarketStockCategoryById } from '../utils';
 
-import { useMarketTabsLogic, useSyncedMarketTab } from './hooks';
+import { useNativeMarketHomeTabsLogic, useSyncedMarketTab } from './hooks';
 
 import type {
   ILiquidityFilter,
@@ -60,28 +55,30 @@ interface IMobileLayoutProps {
 // Context for dynamic tab bar values so renderTabBar stays stable.
 interface ITabBarDynamicContext {
   filterBarProps: IMobileLayoutProps['filterBarProps'];
-  watchlistFilter: IWatchlistFilterType;
-  onSelectWatchlistFilter: (filter: IWatchlistFilterType) => void;
   isWatchlistEmpty: boolean;
-  isTokenCacheReady: boolean;
-  onEditWatchlist: () => void;
   getSpotCategoryIdByTabName: (tabName: string) => string | undefined;
   stockDataCategoryMap: Record<string, boolean>;
-  perpsCategories: { tabId: string; name: string }[];
-  selectedCategoryId: string;
-  onSelectCategory: (categoryId: string) => void;
   activeTabName: string;
+  spotSortValue: IMarketMobileSortValue;
+  onSpotSortChange: (
+    value: IMarketMobileSortValue,
+    options?: IMarketMobileSortOption,
+  ) => void;
+  watchlistSortValue: IMarketMobileSortValue;
+  onWatchlistSortChange: (
+    value: IMarketMobileSortValue,
+    options?: IMarketMobileSortOption,
+  ) => void;
 }
 
 const TabBarDynamicContext = createContext<ITabBarDynamicContext | null>(null);
 
 interface IMarketHomeTabBarProps extends TabBarProps<string> {
   watchlistTabName: string;
-  perpsTabName: string;
 }
 
 const MARKET_ANDROID_SECONDARY_HEADER_HEIGHT = 76;
-const MARKET_ANDROID_COLUMN_HEADER_HEIGHT = 30;
+const MARKET_ANDROID_COLUMN_HEADER_HEIGHT = 44;
 const MARKET_TAB_CHANGE_TARGET_GUARD_MS = platformEnv.isNativeIOS ? 1000 : 350;
 const MARKET_TAB_SYNC_JUMP_DEFER_MS = platformEnv.isNativeIOS ? 180 : 0;
 const MARKET_TAB_USER_DRAG_ACCEPT_MS = platformEnv.isNativeIOS ? 700 : 350;
@@ -95,7 +92,6 @@ type IMarketPagerProps = Omit<PagerViewProps, 'onPageScroll' | 'initialPage'>;
 
 function MarketHomeTabBar({
   watchlistTabName,
-  perpsTabName,
   ...tabBarProps
 }: IMarketHomeTabBarProps) {
   const ctx = useContext(TabBarDynamicContext)!;
@@ -117,7 +113,6 @@ function MarketHomeTabBar({
   const showSpotFilterBar = Boolean(
     currentSpotCategoryId && !currentSpotCategoryHasStockData,
   );
-  const showPerpsSubHeader = currentFocusedTabName === perpsTabName;
   const fixedSecondaryHeaderHeight = useMemo(() => {
     if (!platformEnv.isNativeAndroid) {
       return undefined;
@@ -127,58 +122,37 @@ function MarketHomeTabBar({
       return 0;
     }
 
+    // Watchlist only shows the sort bar now.
+    if (showWatchlistSubHeader) {
+      return MARKET_ANDROID_COLUMN_HEADER_HEIGHT;
+    }
+
     if (showSpotSubHeader && !showSpotFilterBar) {
       return MARKET_ANDROID_COLUMN_HEADER_HEIGHT;
     }
 
-    if (showPerpsSubHeader && ctx.perpsCategories.length === 0) {
-      return MARKET_ANDROID_COLUMN_HEADER_HEIGHT;
+    if (showSpotSubHeader) {
+      return MARKET_ANDROID_SECONDARY_HEADER_HEIGHT;
     }
 
-    return MARKET_ANDROID_SECONDARY_HEADER_HEIGHT;
+    // DeFi / Lending tabs have no secondary header.
+    return 0;
   }, [
-    ctx.perpsCategories.length,
     ctx.isWatchlistEmpty,
     showSpotFilterBar,
-    showPerpsSubHeader,
     showSpotSubHeader,
     showWatchlistSubHeader,
   ]);
 
   const renderWatchlistSubHeaderContent = useCallback(
     () => (
-      <>
-        <XStack alignItems="center" pr="$3">
-          <XStack flex={1}>
-            <MarketWatchlistCategorySelector
-              selectedFilter={ctx.watchlistFilter}
-              onSelectFilter={ctx.onSelectWatchlistFilter}
-              containerStyle={{
-                px: '$5',
-                pt: '$3',
-                pb: '$2',
-              }}
-            />
-          </XStack>
-          {ctx.isTokenCacheReady ? (
-            <IconButton
-              testID="market-render-watchlist-sub-header-content-icon-btn"
-              icon="PencilOutline"
-              size="small"
-              variant="tertiary"
-              onPress={ctx.onEditWatchlist}
-            />
-          ) : null}
-        </XStack>
-        <MarketListColumnHeader />
-      </>
+      <MarketMobileSortSelect
+        mode="watchlist"
+        value={ctx.watchlistSortValue}
+        onChange={ctx.onWatchlistSortChange}
+      />
     ),
-    [
-      ctx.isTokenCacheReady,
-      ctx.onEditWatchlist,
-      ctx.onSelectWatchlistFilter,
-      ctx.watchlistFilter,
-    ],
+    [ctx.onWatchlistSortChange, ctx.watchlistSortValue],
   );
 
   const renderSpotSubHeaderContent = useCallback(
@@ -192,29 +166,14 @@ function MarketHomeTabBar({
             onTimeRangeChange={ctx.filterBarProps.onTimeRangeChange}
           />
         ) : null}
-        <MarketListColumnHeader />
-      </>
-    ),
-    [ctx.filterBarProps, showSpotFilterBar],
-  );
-
-  const renderPerpsSubHeaderContent = useCallback(
-    () => (
-      <>
-        <MarketPerpsCategorySelector
-          categories={ctx.perpsCategories}
-          selectedCategoryId={ctx.selectedCategoryId}
-          onSelectCategory={ctx.onSelectCategory}
-          containerStyle={{
-            px: '$5',
-            pt: '$3',
-            pb: '$2',
-          }}
+        <MarketMobileSortSelect
+          mode="spot"
+          value={ctx.spotSortValue}
+          onChange={ctx.onSpotSortChange}
         />
-        <MarketListColumnHeader />
       </>
     ),
-    [ctx.onSelectCategory, ctx.perpsCategories, ctx.selectedCategoryId],
+    [ctx.filterBarProps, ctx.onSpotSortChange, ctx.spotSortValue, showSpotFilterBar],
   );
 
   return (
@@ -258,17 +217,6 @@ function MarketHomeTabBar({
         >
           {renderSpotSubHeaderContent()}
         </YStack>
-        <YStack
-          display={showPerpsSubHeader ? 'flex' : 'none'}
-          position={showPerpsSubHeader ? 'relative' : 'absolute'}
-          top={0}
-          left={0}
-          right={0}
-          opacity={showPerpsSubHeader ? 1 : 0}
-          pointerEvents={showPerpsSubHeader ? 'auto' : 'none'}
-        >
-          {renderPerpsSubHeaderContent()}
-        </YStack>
       </YStack>
     </YStack>
   );
@@ -282,17 +230,14 @@ function MobileLayoutComponent({
   isFocused = true,
   nestedPager = false,
 }: IMobileLayoutProps) {
-  const openMarketWatchlistEditDialog = useOpenMarketWatchlistEditDialog();
-  const isTokenCacheReady = useIsWatchlistTokenCacheReady();
   const {
+    tabs: marketHomeTabs,
+    tabNames,
     watchlistTabName,
-    spotTabItems,
-    perpsTabName,
-    showPerpsTab,
     handleTabChange,
     getSpotCategoryIdByTabName,
     selectedTabName,
-  } = useMarketTabsLogic(onTabChange, {
+  } = useNativeMarketHomeTabsLogic(onTabChange, {
     spotCategories: filterBarProps.categories,
     selectedSpotCategory: filterBarProps.selectedCategory,
     onSpotCategoryChange: filterBarProps.onCategoryChange,
@@ -301,14 +246,40 @@ function MobileLayoutComponent({
   const tabBarHeight = useTabBarHeight();
   const tabContainerWidth = useTabContainerWidth() as number | undefined;
 
-  // Watchlist state — used to hide category selector when empty
+  // Watchlist tab only shows perps favorites on native Market home.
   const [watchlistState] = useMarketWatchListV2Atom();
-  const isWatchlistEmpty =
-    !watchlistState.data || watchlistState.data.length === 0;
+  const isWatchlistEmpty = !watchlistState.data?.some(
+    (item) => !!item.perpsCoin,
+  );
 
-  // Watchlist category filter state
-  const [watchlistFilter, setWatchlistFilter] =
-    useState<IWatchlistFilterType>('all');
+  const [spotSortValue, setSpotSortValue] =
+    useState<IMarketMobileSortValue>('Default');
+  const [spotSortBy, setSpotSortBy] = useState<string | undefined>('v24hUSD');
+  const [spotSortType, setSpotSortType] = useState<'asc' | 'desc' | undefined>(
+    'desc',
+  );
+  const [watchlistSortValue, setWatchlistSortValue] =
+    useState<IMarketMobileSortValue>('Default');
+  const [watchlistSortBy, setWatchlistSortBy] = useState<string | undefined>();
+  const [watchlistSortType, setWatchlistSortType] = useState<
+    'asc' | 'desc' | undefined
+  >();
+  const handleSpotSortChange = useCallback(
+    (value: IMarketMobileSortValue, options?: IMarketMobileSortOption) => {
+      setSpotSortValue(value);
+      setSpotSortBy(options?.sortBy ?? 'v24hUSD');
+      setSpotSortType(options?.sortType ?? 'desc');
+    },
+    [],
+  );
+  const handleWatchlistSortChange = useCallback(
+    (value: IMarketMobileSortValue, options?: IMarketMobileSortOption) => {
+      setWatchlistSortValue(value);
+      setWatchlistSortBy(options?.sortBy);
+      setWatchlistSortType(options?.sortType);
+    },
+    [],
+  );
   const [stockDataCategoryMap, setStockDataCategoryMap] = useState<
     Record<string, boolean>
   >({});
@@ -326,9 +297,6 @@ function MobileLayoutComponent({
     },
     [],
   );
-
-  const { perpsCategories, selectedCategoryId, handleSelectCategory } =
-    useSyncedMarketPerpsCategory();
 
   const expectedTabChangeTargetRef = useRef<string | undefined>(undefined);
   const expectedTabChangeTargetStartedAtRef = useRef(0);
@@ -444,17 +412,8 @@ function MobileLayoutComponent({
   const containerProps = useMemo(
     () => ({
       allowHeaderOverscroll: true,
-      // NOTE: renderHeader must never return a 0-height tree after it had
-      // a positive height, because react-native-collapsible-tab-view's
-      // useLayoutHeight guard ignores 0-height re-layouts once a positive
-      // height has been measured. Wrapping in a YStack with minHeight={1}
-      // ensures the layout callback always fires with height >= 1 so the
-      // library re-measures correctly when the banner disappears.
-      renderHeader: () => (
-        <YStack bg="$bgApp" pointerEvents="box-none" minHeight={1}>
-          <MarketBannerList />
-        </YStack>
-      ),
+      // Banner temporarily hidden — omit renderHeader so no 1px stub line
+      // appears above the category TabBar.
     }),
     [],
   );
@@ -488,11 +447,10 @@ function MobileLayoutComponent({
           {...tabBarProps}
           onTabPress={handleTabPress}
           watchlistTabName={watchlistTabName}
-          perpsTabName={perpsTabName}
         />
       );
     },
-    [markExpectedTabChangeTarget, perpsTabName, watchlistTabName],
+    [markExpectedTabChangeTarget, watchlistTabName],
   );
 
   const onTabChangeHandler = useCallback(
@@ -594,14 +552,6 @@ function MobileLayoutComponent({
     },
     [],
   );
-  const tabNames = useMemo(
-    () => [
-      watchlistTabName,
-      ...spotTabItems.map((item) => item.tabName),
-      ...(showPerpsTab ? [perpsTabName] : []),
-    ],
-    [perpsTabName, showPerpsTab, spotTabItems, watchlistTabName],
-  );
 
   const handlePagerPageSelected = useCallback(
     (event: PagerViewOnPageSelectedEvent) => {
@@ -670,65 +620,94 @@ function MobileLayoutComponent({
   const dynamicCtx = useMemo<ITabBarDynamicContext>(
     () => ({
       filterBarProps,
-      watchlistFilter,
-      onSelectWatchlistFilter: setWatchlistFilter,
       isWatchlistEmpty,
-      isTokenCacheReady,
-      onEditWatchlist: openMarketWatchlistEditDialog,
       getSpotCategoryIdByTabName,
       stockDataCategoryMap,
-      perpsCategories,
-      selectedCategoryId,
-      onSelectCategory: handleSelectCategory,
       activeTabName,
+      spotSortValue,
+      onSpotSortChange: handleSpotSortChange,
+      watchlistSortValue,
+      onWatchlistSortChange: handleWatchlistSortChange,
     }),
     [
       filterBarProps,
-      watchlistFilter,
       isWatchlistEmpty,
-      isTokenCacheReady,
-      openMarketWatchlistEditDialog,
       getSpotCategoryIdByTabName,
       stockDataCategoryMap,
-      perpsCategories,
-      selectedCategoryId,
-      handleSelectCategory,
       activeTabName,
+      spotSortValue,
+      handleSpotSortChange,
+      watchlistSortValue,
+      handleWatchlistSortChange,
     ],
   );
 
-  const tabElements = [
-    <Tabs.Tab key={watchlistTabName} name={watchlistTabName}>
-      <MobileMarketWatchlistFlatList
-        selectedFilter={watchlistFilter}
-        listContainerProps={listContainerProps}
-        shouldSuppressItemPress={shouldSuppressItemPress}
-      />
-    </Tabs.Tab>,
-    ...spotTabItems.map((item) => (
-      <Tabs.Tab key={item.categoryId} name={item.tabName}>
-        <MobileMarketTokenFlatList
-          networkId={selectedNetworkId}
-          selectedCategory={item.categoryId}
-          timeRange={filterBarProps.timeRange}
-          listContainerProps={listContainerProps}
-          onStockDataChange={handleStockDataChange}
-          shouldSuppressItemPress={shouldSuppressItemPress}
-        />
-      </Tabs.Tab>
-    )),
-    ...(showPerpsTab
-      ? [
-          <Tabs.Tab key={perpsTabName} name={perpsTabName}>
-            <MobileMarketPerpsFlatList
-              selectedCategoryId={selectedCategoryId}
+  const tabElements = marketHomeTabs.map((tab) => {
+    switch (tab.id) {
+      case 'watchlist':
+        return (
+          <Tabs.Tab key={tab.id} name={tab.tabName}>
+            <MobileMarketWatchlistFlatList
+              selectedFilter="perps"
               listContainerProps={listContainerProps}
               shouldSuppressItemPress={shouldSuppressItemPress}
+              sortBy={watchlistSortBy}
+              sortType={watchlistSortType}
             />
-          </Tabs.Tab>,
-        ]
-      : []),
-  ];
+          </Tabs.Tab>
+        );
+      case 'hot':
+      case 'stock':
+        return (
+          <Tabs.Tab key={tab.categoryId ?? tab.id} name={tab.tabName}>
+            <MobileMarketTokenFlatList
+              networkId={selectedNetworkId}
+              selectedCategory={tab.categoryId ?? ''}
+              timeRange={filterBarProps.timeRange}
+              listContainerProps={listContainerProps}
+              onStockDataChange={handleStockDataChange}
+              shouldSuppressItemPress={shouldSuppressItemPress}
+              sortBy={spotSortBy}
+              sortType={spotSortType}
+            />
+          </Tabs.Tab>
+        );
+      case 'defi':
+        return (
+          <Tabs.Tab key={tab.id} name={tab.tabName}>
+            <YStack flex={1}>
+              <EarnHomeWithProvider
+                showHeader={false}
+                showContent={
+                  isFocused &&
+                  (activeTabName === tab.tabName || !activeTabName)
+                }
+                lockedMode="earn"
+              />
+            </YStack>
+          </Tabs.Tab>
+        );
+      case 'lending':
+        return (
+          <Tabs.Tab key={tab.id} name={tab.tabName}>
+            <YStack flex={1}>
+              <EarnHomeWithProvider
+                showHeader={false}
+                showContent={
+                  isFocused &&
+                  (activeTabName === tab.tabName || !activeTabName)
+                }
+                lockedMode="borrow"
+              />
+            </YStack>
+          </Tabs.Tab>
+        );
+      default: {
+        const _exhaustive: never = tab;
+        return _exhaustive;
+      }
+    }
+  });
 
   return (
     <TabBarDynamicContext.Provider value={dynamicCtx}>

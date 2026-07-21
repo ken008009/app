@@ -34,6 +34,7 @@ import { EAccountSelectorSceneName } from '@onekeyhq/shared/types';
 
 import useAppNavigation from '../../hooks/useAppNavigation';
 import { getHomeTabStackLength } from '../../views/Home/pages/urlAccount/urlAccountUtils';
+import { DISCOVERY_NATIVE_HIDE_MARKET_EARN_TABS } from '../../views/Discovery/consts';
 import { AccountSelectorProviderMirror } from '../AccountSelector/AccountSelectorProvider';
 
 import { WalletConnectionGroup } from './components';
@@ -48,12 +49,16 @@ export function HeaderLeftCloseButton() {
     </Page.Close>
   );
 }
+
+// Native: only Browser while Market / DeFi are temporarily hidden.
 const discoveryTabs = platformEnv.isNative
-  ? [
-      ETranslations.global_market,
-      ETranslations.global_earn,
-      ETranslations.global_browser,
-    ]
+  ? DISCOVERY_NATIVE_HIDE_MARKET_EARN_TABS
+    ? [ETranslations.global_browser]
+    : [
+        ETranslations.global_market,
+        ETranslations.global_earn,
+        ETranslations.global_browser,
+      ]
   : [ETranslations.global_market, ETranslations.global_earn];
 
 // Static styles for animated text to match $headingXl token
@@ -191,6 +196,7 @@ export function HeaderLeft({
 }) {
   const { gtMd: _gtMd } = useMedia();
   const navigation = useAppNavigation();
+  const intl = useIntl();
 
   const items = useMemo(() => {
     if (customHeaderLeftItems) {
@@ -245,10 +251,20 @@ export function HeaderLeft({
       ) : null;
     }
 
+    // Market home: page title only — no account selector.
+    if (tabRoute === ETabRoutes.Market) {
+      return (
+        <SizableText size="$headingXl">
+          {intl.formatMessage({ id: ETranslations.global_market })}
+        </SizableText>
+      );
+    }
+
     // For mobile and native platforms, keep the original layout
     return <WalletConnectionGroup tabRoute={tabRoute} />;
   }, [
     customHeaderLeftItems,
+    intl,
     navigation,
     sceneName,
     tabRoute,

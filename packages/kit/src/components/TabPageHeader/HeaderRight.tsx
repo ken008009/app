@@ -142,7 +142,8 @@ export function HeaderRight({
           </>
         );
       case ETabRoutes.Market:
-        return <>{fixedItems}</>;
+        // Title + search only; match Market home design without trailing actions.
+        return null;
       case ETabRoutes.Swap:
         // Account lives in HeaderLeft; settings/history stay in SwapHeaderContainer.
         return null;

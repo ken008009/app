@@ -62,6 +62,7 @@ import { HandleRebuildBrowserData } from '../../components/HandleData/HandleRebu
 import HeaderRightToolBar from '../../components/HeaderRightToolBar';
 import MobileBrowserBottomBar from '../../components/MobileBrowser/MobileBrowserBottomBar';
 import { OuterTabPagerView } from '../../components/OuterTabPagerView';
+import { DISCOVERY_NATIVE_HIDE_MARKET_EARN_TABS } from '../../consts';
 import { useDAppNotifyChanges } from '../../hooks/useDAppNotifyChanges';
 // import { useEdgeSwipeDetection } from '../../hooks/useEdgeSwipeDetection';
 import useMobileBottomBarAnimation from '../../hooks/useMobileBottomBarAnimation';
@@ -94,6 +95,16 @@ function getExploreTabName(tab: ETranslations): IExploreTabName {
     return 'earn';
   }
   return 'browser';
+}
+
+function resolveDiscoveryHeaderTab(tab: ETranslations): ETranslations {
+  if (
+    DISCOVERY_NATIVE_HIDE_MARKET_EARN_TABS &&
+    (tab === ETranslations.global_market || tab === ETranslations.global_earn)
+  ) {
+    return ETranslations.global_browser;
+  }
+  return tab;
 }
 
 const useAndroidHardwareBack = platformEnv.isNativeAndroid
@@ -192,8 +203,9 @@ function MobileBrowser() {
   const isLandscape = useIsSplitView();
   const { defaultTab, earnTab } = route?.params || {};
   const [settings] = useSettingsPersistAtom();
-  const selectedHeaderTab =
+  const selectedHeaderTabRaw =
     settings.selectedBrowserTab || ETranslations.global_browser;
+  const selectedHeaderTab = resolveDiscoveryHeaderTab(selectedHeaderTabRaw);
   const exploreTabSwitchTypeRef = useRef<IExploreTabSwitchType>('default');
   const hasLoggedExploreTabViewRef = useRef(false);
 
@@ -205,6 +217,15 @@ function MobileBrowser() {
     return 2;
   }, [selectedHeaderTab]);
   const outerPageScrollPosition = useSharedValue(initialPageIndex);
+
+  useEffect(() => {
+    if (selectedHeaderTabRaw === selectedHeaderTab) {
+      return;
+    }
+    void backgroundApiProxy.serviceSetting.setSelectedBrowserTab(
+      selectedHeaderTab,
+    );
+  }, [selectedHeaderTab, selectedHeaderTabRaw]);
 
   // Under the Browser tab the universal search defaults to the Dapps tab so its
   // results show dapp content first, while keeping the full search scope so the
@@ -257,7 +278,7 @@ function MobileBrowser() {
       previousDefaultTab.current = defaultTab;
       if (defaultTab) {
         void backgroundApiProxy.serviceSetting.setSelectedBrowserTab(
-          defaultTab,
+          resolveDiscoveryHeaderTab(defaultTab),
         );
       }
     }
@@ -311,17 +332,18 @@ function MobileBrowser() {
       switchType?: IExploreTabSwitchType;
     }) => {
       exploreTabSwitchTypeRef.current = event.switchType ?? 'default';
+      const nextTab = resolveDiscoveryHeaderTab(event.tab);
 
       // State machine: when WebView is open (displayHomePage === false) and
       // switching to a non-Browser tab, first collapse the WebView back to
       // Dashboard before switching the main tab.
       // If the target is Browser itself, do NOT collapse the WebView.
-      if (!displayHomePage && event.tab !== ETranslations.global_browser) {
+      if (!displayHomePage && nextTab !== ETranslations.global_browser) {
         setDisplayHomePage(true);
       }
 
-      await backgroundApiProxy.serviceSetting.setSelectedBrowserTab(event.tab);
-      if (event.tab === ETranslations.global_browser && event.openUrl) {
+      await backgroundApiProxy.serviceSetting.setSelectedBrowserTab(nextTab);
+      if (nextTab === ETranslations.global_browser && event.openUrl) {
         setTimeout(() => {
           popToDiscoveryHomePage();
         }, 50);
@@ -448,7 +470,12 @@ function MobileBrowser() {
   // view is set — fall back to the phone-style pager so Market/Earn/Browser
   // can still render. Without this, dual-screen Android with split-screen
   // off renders a blank Market/DeFi page.
-  const useOuterPager = !isTabletMainView && !isTabletDetailView;
+  // When Market/DeFi are temporarily hidden, skip the outer pager and render
+  // Browser content only (no swipe to hidden segments).
+  const useOuterPager =
+    !DISCOVERY_NATIVE_HIDE_MARKET_EARN_TABS &&
+    !isTabletMainView &&
+    !isTabletDetailView;
   const handleExploreTabSwipe = useCallback(() => {
     exploreTabSwitchTypeRef.current = 'swipe';
   }, []);
@@ -570,8 +597,9 @@ function MobileBrowser() {
           />
         ) : (
           <>
-            {/* Tablet / DualScreen: keep legacy display:none/flex switching */}
-            {isShowContent ? (
+            {/* Tablet / DualScreen: keep legacy display:none/flex switching.
+                Market / DeFi panes are skipped while temporarily hidden. */}
+            {!DISCOVERY_NATIVE_HIDE_MARKET_EARN_TABS && isShowContent ? (
               <View
                 style={{
                   flex: 1,
@@ -626,7 +654,7 @@ function MobileBrowser() {
                 </Animated.View>
               </Freeze>
             </Stack>
-            {isShowContent ? (
+            {!DISCOVERY_NATIVE_HIDE_MARKET_EARN_TABS && isShowContent ? (
               <View
                 style={{
                   flex: 1,

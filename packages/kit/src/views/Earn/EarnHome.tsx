@@ -72,6 +72,7 @@ function BasicEarnHome({
   tabsRef,
   useSwipePager,
   earnBorrowPagerRef,
+  lockedMode,
 }: {
   showHeader?: boolean;
   showContent?: boolean;
@@ -79,6 +80,8 @@ function BasicEarnHome({
   tabsRef?: React.RefObject<ITabContainerRef | null>;
   useSwipePager?: boolean;
   earnBorrowPagerRef?: React.RefObject<IEarnBorrowPagerViewRef | null>;
+  /** Embed a single mode without MarketSelector (e.g. Market home tabs). */
+  lockedMode?: 'earn' | 'borrow';
 }) {
   const route = useAppRoute<ITabEarnParamList, ETabEarnRoutes.EarnHome>();
   const actions = useEarnActions();
@@ -311,7 +314,7 @@ function BasicEarnHome({
   const navigation = useAppNavigation();
 
   const defaultTab = overrideDefaultTab || route.params?.tab;
-  const defaultMode = route.params?.mode || 'earn';
+  const defaultMode = lockedMode || route.params?.mode || 'earn';
   const isEarnMode = defaultMode === 'earn';
   const isBorrowMode = defaultMode === 'borrow';
   const isEarnContentActive =
@@ -360,6 +363,9 @@ function BasicEarnHome({
   }, [defaultMode, isEarnTabFocused, showContent]);
 
   useEffect(() => {
+    if (lockedMode) {
+      return undefined;
+    }
     const handleSwitchEarnMode = ({
       mode,
       switchType,
@@ -375,15 +381,21 @@ function BasicEarnHome({
     return () => {
       appEventBus.off(EAppEventBusNames.SwitchEarnMode, handleSwitchEarnMode);
     };
-  }, [defaultMode, handleModeChange]);
+  }, [defaultMode, handleModeChange, lockedMode]);
 
   const media = useMedia();
   const earnFocusTabRoutes = useMemo(
-    () =>
-      platformEnv.isNative
-        ? [ETabRoutes.Earn, ETabRoutes.Discovery]
-        : [ETabRoutes.Earn],
-    [],
+    () => {
+      if (!platformEnv.isNative) {
+        return [ETabRoutes.Earn];
+      }
+      // Market home embeds DeFi/Lending as primary tabs.
+      if (lockedMode) {
+        return [ETabRoutes.Market, ETabRoutes.Discovery];
+      }
+      return [ETabRoutes.Earn, ETabRoutes.Discovery];
+    },
+    [lockedMode],
   );
 
   const handleListenTabFocusState = useCallback(
@@ -442,6 +454,9 @@ function BasicEarnHome({
 
   const handleHeaderHorizontalSwipe = useCallback(
     (direction: 'left' | 'right') => {
+      if (lockedMode) {
+        return;
+      }
       const currentMode = defaultModeRef.current;
       if (direction === 'left' && currentMode === 'earn') {
         handleModeChange('borrow', 'swipe');
@@ -454,7 +469,7 @@ function BasicEarnHome({
         });
       }
     },
-    [handleModeChange],
+    [handleModeChange, lockedMode],
   );
 
   const mobileContainerProps = useMemo(
@@ -515,6 +530,36 @@ function BasicEarnHome({
   }
 
   if (platformEnv.isNative) {
+    // Market home embeds earn/borrow as separate primary tabs — no mode switcher.
+    if (lockedMode === 'earn') {
+      return (
+        <YStack flex={1}>
+          <EarnMainTabs
+            faqList={faqList || []}
+            isFaqLoading={isFaqLoading}
+            defaultTab={defaultTab}
+            portfolioData={portfolioData}
+            containerProps={mobileContainerProps}
+            tabsRef={tabsRef}
+            nestedPager
+            isActive={isEarnContentActive}
+          />
+        </YStack>
+      );
+    }
+    if (lockedMode === 'borrow') {
+      return (
+        <YStack flex={1}>
+          <BorrowHome
+            isActive={isBorrowMode && showContent !== false}
+            pendingTxs={borrowPendingTxs}
+            onRegisterBorrowRefresh={handleRegisterBorrowRefresh}
+            onBorrowNetworksChange={handleBorrowNetworksChange}
+          />
+        </YStack>
+      );
+    }
+
     // Phone with swipe pager: EarnBorrowPagerView replaces display:none/flex
     if (useSwipePager) {
       return (
@@ -691,6 +736,7 @@ export function EarnHomeWithProvider({
   tabsRef,
   useSwipePager,
   earnBorrowPagerRef,
+  lockedMode,
 }: {
   showHeader?: boolean;
   showContent?: boolean;
@@ -698,6 +744,7 @@ export function EarnHomeWithProvider({
   tabsRef?: React.RefObject<ITabContainerRef | null>;
   useSwipePager?: boolean;
   earnBorrowPagerRef?: React.RefObject<IEarnBorrowPagerViewRef | null>;
+  lockedMode?: 'earn' | 'borrow';
 }) {
   return (
     <AccountSelectorProviderMirror
@@ -715,6 +762,7 @@ export function EarnHomeWithProvider({
           tabsRef={tabsRef}
           useSwipePager={useSwipePager}
           earnBorrowPagerRef={earnBorrowPagerRef}
+          lockedMode={lockedMode}
         />
       </EarnProviderMirror>
     </AccountSelectorProviderMirror>

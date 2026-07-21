@@ -155,7 +155,8 @@ export const isMarketStockCategory = (
   return (
     normalizedId.includes('stock') ||
     normalizedName.includes('stock') ||
-    normalizedName.includes('股票')
+    normalizedName.includes('股票') ||
+    normalizedName.includes('币股')
   );
 };
 
@@ -171,3 +172,4 @@ export const isMarketStockCategoryById = (
     (category) => category.id === categoryId && isMarketStockCategory(category),
   );
 };
+

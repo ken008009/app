@@ -1,7 +1,12 @@
 import { EAtomNames } from '../atomNames';
 import { globalAtom } from '../utils';
 
-export type IMarketSelectedTab = 'watchlist' | 'trending' | 'perps';
+export type IMarketSelectedTab =
+  | 'watchlist'
+  | 'trending'
+  | 'perps'
+  | 'defi'
+  | 'lending';
 
 export interface IMarketSelectedTabAtom {
   tab: IMarketSelectedTab;

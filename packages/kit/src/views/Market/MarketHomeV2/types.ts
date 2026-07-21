@@ -12,6 +12,10 @@ export enum EMarketHomeTab {
   Watchlist = 'watchlist',
   Trending = 'trending',
   Perps = 'perps',
+  /** Earn / DeFi module embedded in native Market home */
+  Defi = 'defi',
+  /** Borrow / lending module embedded in native Market home */
+  Lending = 'lending',
 }
 
 export type IMarketHomeTabValue = `${EMarketHomeTab}`;

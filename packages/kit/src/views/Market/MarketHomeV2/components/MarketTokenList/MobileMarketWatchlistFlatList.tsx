@@ -51,6 +51,8 @@ interface IMobileMarketWatchlistFlatListProps {
     paddingBottom: number;
   };
   shouldSuppressItemPress?: () => boolean;
+  sortBy?: string;
+  sortType?: 'asc' | 'desc';
 }
 
 const EMPTY_DATA: IMarketToken[] = [];
@@ -65,6 +67,8 @@ function MobileMarketWatchlistFlatListImpl({
   selectedFilter = 'all',
   listContainerProps,
   shouldSuppressItemPress,
+  sortBy: sortByProp,
+  sortType: sortTypeProp,
 }: IMobileMarketWatchlistFlatListProps) {
   const intl = useIntl();
   const toMarketDetailPage = useToDetailPage();
@@ -99,7 +103,21 @@ function MobileMarketWatchlistFlatListImpl({
   const watchlistResult = useMarketWatchlistTokenList({
     watchlist,
     pageSize: 999,
+    initialSortBy: sortByProp,
+    initialSortType: sortTypeProp,
   });
+  const { setSortBy: setWatchlistSortBy, setSortType: setWatchlistSortType } =
+    watchlistResult;
+
+  useEffect(() => {
+    setWatchlistSortBy(sortByProp);
+    setWatchlistSortType(sortTypeProp);
+  }, [
+    sortByProp,
+    sortTypeProp,
+    setWatchlistSortBy,
+    setWatchlistSortType,
+  ]);
 
   const filteredGroups = useWatchlistFilteredGroups(watchlistResult.data);
 
@@ -403,7 +421,12 @@ function MobileMarketWatchlistFlatListImpl({
     return <Tabs.ScrollView />;
   }
 
-  if (watchlist.length === 0 && !showSkeleton) {
+  const hasPerpsWatchlistItems = watchlist.some((item) => !!item.perpsCoin);
+  if (
+    !showSkeleton &&
+    (watchlist.length === 0 ||
+      (selectedFilter === 'perps' && !hasPerpsWatchlistItems))
+  ) {
     return (
       <Tabs.ScrollView>
         <Stack

@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import { memo } from 'react';
 
-import { NumberSizeableText, XStack, useThemeName } from '@onekeyhq/components';
+import { NumberSizeableText, SizableText, XStack, useThemeName } from '@onekeyhq/components';
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
 
 import { MarketTestIDs } from '../../../testIDs';
@@ -63,7 +63,19 @@ const BasicTokenListItem: FC<ITokenListItemProps> = ({
   const isDarkMode = themeName?.includes('dark');
   const isHighlighted = Boolean(isPrimed || (isDragging && isDarkMode));
   const priceChange =
-    item.priceChangeRaw === '-' ? item.priceChangeRaw : item.change24h;
+    item.priceChangeRaw === '-' ||
+    item.change24h === null ||
+    item.change24h === undefined ||
+    Number.isNaN(Number(item.change24h))
+      ? '-'
+      : item.change24h;
+  const rawPrice = item.price as number | string | null | undefined;
+  const hasValidPrice =
+    rawPrice !== null &&
+    rawPrice !== undefined &&
+    rawPrice !== '' &&
+    rawPrice !== 'null' &&
+    !(typeof rawPrice === 'number' && Number.isNaN(rawPrice));
 
   return (
     <XStack
@@ -101,16 +113,28 @@ const BasicTokenListItem: FC<ITokenListItemProps> = ({
       </XStack>
 
       <XStack alignItems="center" gap="$2">
-        <NumberSizeableText
-          userSelect="none"
-          flexShrink={1}
-          numberOfLines={1}
-          size="$bodyLgMedium"
-          formatter="price"
-          formatterOptions={{ currency: '$' }}
-        >
-          {item.price}
-        </NumberSizeableText>
+        {hasValidPrice ? (
+          <NumberSizeableText
+            userSelect="none"
+            flexShrink={1}
+            numberOfLines={1}
+            size="$bodyLgMedium"
+            formatter="price"
+            formatterOptions={{ currency: '$' }}
+          >
+            {item.price}
+          </NumberSizeableText>
+        ) : (
+          <SizableText
+            userSelect="none"
+            flexShrink={1}
+            numberOfLines={1}
+            size="$bodyLgMedium"
+            color="$textSubdued"
+          >
+            -
+          </SizableText>
+        )}
         <PriceChangeBadge change={priceChange} />
       </XStack>
     </XStack>
