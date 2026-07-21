@@ -3,17 +3,19 @@ import { ESwapTabSwitchType } from '@onekeyhq/shared/types/swap/types';
 import { getVisibleSwapTabSwitchUpdate } from './swapTypeUtils';
 
 describe('swapTypeUtils', () => {
-  it('updates cached raw Bridge state to visible Swap', () => {
+  it('keeps Bridge as its own visible tab', () => {
     expect(
       getVisibleSwapTabSwitchUpdate({
         currentSwapType: ESwapTabSwitchType.BRIDGE,
         nextSwapType: ESwapTabSwitchType.BRIDGE,
       }),
     ).toEqual({
-      nextVisibleSwapType: ESwapTabSwitchType.SWAP,
-      shouldUpdate: true,
+      nextVisibleSwapType: ESwapTabSwitchType.BRIDGE,
+      shouldUpdate: false,
     });
+  });
 
+  it('updates when switching between Swap and Bridge', () => {
     expect(
       getVisibleSwapTabSwitchUpdate({
         currentSwapType: ESwapTabSwitchType.BRIDGE,
@@ -23,17 +25,15 @@ describe('swapTypeUtils', () => {
       nextVisibleSwapType: ESwapTabSwitchType.SWAP,
       shouldUpdate: true,
     });
-  });
 
-  it('does not rewrite visible Swap just because execution is Bridge', () => {
     expect(
       getVisibleSwapTabSwitchUpdate({
         currentSwapType: ESwapTabSwitchType.SWAP,
         nextSwapType: ESwapTabSwitchType.BRIDGE,
       }),
     ).toEqual({
-      nextVisibleSwapType: ESwapTabSwitchType.SWAP,
-      shouldUpdate: false,
+      nextVisibleSwapType: ESwapTabSwitchType.BRIDGE,
+      shouldUpdate: true,
     });
   });
 

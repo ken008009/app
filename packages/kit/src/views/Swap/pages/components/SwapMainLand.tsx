@@ -1314,12 +1314,9 @@ const SwapMainLoad = ({ swapInitParams, pageType }: ISwapMainLoadProps) => {
         quoteLoading={quoteLoading}
         quoteEventFetching={quoteEventFetching}
         alerts={alerts}
-        onTokenPress={onTokenPress}
         onSelectRecentTokenPairs={onSelectRecentTokenPairs}
-        onOpenOrdersClick={onOpenOrdersClick}
         fromTokenAmountValue={fromTokenAmount.value}
         swapRecentTokenPairs={swapRecentTokenPairs}
-        supportNetworksList={swapBridgeSupportNetworksFilterAllNet}
       />
     );
   }, [
@@ -1337,8 +1334,8 @@ const SwapMainLoad = ({ swapInitParams, pageType }: ISwapMainLoadProps) => {
     quoteLoading,
     quoteEventFetching,
     alerts,
-    onTokenPress,
     onSelectRecentTokenPairs,
+    onTokenPress,
     onOpenOrdersClick,
     fromTokenAmount.value,
     swapRecentTokenPairs,

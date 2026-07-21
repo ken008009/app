@@ -143,6 +143,9 @@ export function HeaderRight({
         );
       case ETabRoutes.Market:
         return <>{fixedItems}</>;
+      case ETabRoutes.Swap:
+        // Account lives in HeaderLeft; settings/history stay in SwapHeaderContainer.
+        return null;
       case ETabRoutes.Discovery:
         if (selectedHeaderTab === ETranslations.global_earn) {
           return (

@@ -260,6 +260,7 @@ export function MDHeader({
   const showBaseHeader = useMemo(() => {
     return (
       tabRoute === ETabRoutes.Home ||
+      tabRoute === ETabRoutes.Swap ||
       tabRoute === ETabRoutes.Discovery ||
       tabRoute === ETabRoutes.Earn ||
       tabRoute === ETabRoutes.Perp ||

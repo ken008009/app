@@ -2911,7 +2911,10 @@ class ContentJotaiActionsSwap extends ContextJotaiActionsBase {
         defaultNetworkId &&
         swapSupportNetworks.some((net) => net.networkId === defaultNetworkId)
       ) {
-        if (normalizedType === ESwapTabSwitchType.SWAP) {
+        if (
+          normalizedType === ESwapTabSwitchType.SWAP ||
+          normalizedType === ESwapTabSwitchType.BRIDGE
+        ) {
           if (
             !fromToken &&
             fromNetworkDefault?.fromToken?.isNative &&

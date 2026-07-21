@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useRef } from 'react';
 
 import {
   EPageType,
@@ -7,13 +7,10 @@ import {
   YStack,
   useScrollContentTabBarOffset,
 } from '@onekeyhq/components';
-import platformEnv from '@onekeyhq/shared/src/platformEnv';
 import { ESwapDirectionType } from '@onekeyhq/shared/types/swap/types';
 import type {
-  IFetchLimitOrderRes,
   IFetchQuoteResult,
   ISwapAlertState,
-  ISwapNetwork,
   ISwapToken,
 } from '@onekeyhq/shared/types/swap/types';
 
@@ -21,7 +18,6 @@ import SwapRecentTokenPairsGroup from '../../components/SwapRecentTokenPairsGrou
 
 import SwapActionsState from './SwapActionsState';
 import SwapAlertContainer from './SwapAlertContainer';
-import SwapProTabListContainer from './SwapProTabListContainer';
 import SwapQuoteInput from './SwapQuoteInput';
 import SwapQuoteResult from './SwapQuoteResult';
 import SwapTipsContainer from './SwapTipsContainer';
@@ -46,7 +42,6 @@ interface ISwapSwapMbContainerProps {
     states: ISwapAlertState[];
     quoteId: string;
   };
-  onTokenPress: (token: ISwapToken) => void;
   onSelectRecentTokenPairs: ({
     fromToken,
     toToken,
@@ -54,10 +49,8 @@ interface ISwapSwapMbContainerProps {
     fromToken: ISwapToken;
     toToken: ISwapToken;
   }) => void;
-  onOpenOrdersClick: (item: IFetchLimitOrderRes) => void;
   fromTokenAmountValue: string;
   swapRecentTokenPairs: { fromToken: ISwapToken; toToken: ISwapToken }[];
-  supportNetworksList: ISwapNetwork[];
 }
 
 const SwapSwapMbContainer = ({
@@ -75,33 +68,13 @@ const SwapSwapMbContainer = ({
   quoteLoading,
   quoteEventFetching,
   alerts,
-  onTokenPress,
   onSelectRecentTokenPairs,
-  onOpenOrdersClick,
   fromTokenAmountValue,
   swapRecentTokenPairs,
-  supportNetworksList,
 }: ISwapSwapMbContainerProps) => {
   const tabBarHeight = useScrollContentTabBarOffset();
   const scrollViewRef = useRef<KeyboardAwareScrollViewRef>(null);
   const bottomOffset = KEYBOARD_AWARE_SCROLL_BOTTOM_OFFSET + 60;
-  const onSearchClickCallback = useCallback(() => {
-    onSelectToken(ESwapDirectionType.FROM);
-    scrollViewRef.current?.scrollTo({
-      y: 0,
-      animated: false,
-    });
-  }, [onSelectToken]);
-  const onTokenPressCallback = useCallback(
-    (token: ISwapToken) => {
-      onTokenPress(token);
-      scrollViewRef.current?.scrollTo({
-        y: 0,
-        animated: true,
-      });
-    },
-    [onTokenPress],
-  );
   return (
     <Keyboard.AwareScrollView
       keyboardShouldPersistTaps="handled"
@@ -150,14 +123,6 @@ const SwapSwapMbContainer = ({
           tokenPairs={swapRecentTokenPairs}
           fromTokenAmount={fromTokenAmountValue}
         />
-        {platformEnv.isNative && !fromTokenAmountValue ? (
-          <SwapProTabListContainer
-            onTokenPress={onTokenPressCallback}
-            onOpenOrdersClick={onOpenOrdersClick}
-            onSearchClick={onSearchClickCallback}
-            supportNetworksList={supportNetworksList}
-          />
-        ) : null}
       </YStack>
     </Keyboard.AwareScrollView>
   );
