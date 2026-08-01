@@ -62,9 +62,7 @@ function getRouteTabParamFromSwapType(type: ESwapTabSwitchType) {
 }
 
 function isSwapOrBridgeTab(type: ESwapTabSwitchType) {
-  return (
-    type === ESwapTabSwitchType.SWAP || type === ESwapTabSwitchType.BRIDGE
-  );
+  return type === ESwapTabSwitchType.SWAP || type === ESwapTabSwitchType.BRIDGE;
 }
 
 function CustomTabItem({
@@ -185,12 +183,7 @@ const SwapHeaderContainer = ({
         fromToken?.networkId || networkId,
       );
     }
-  }, [
-    fromToken?.networkId,
-    networkId,
-    swapTypeSwitch,
-    swapTypeSwitchAction,
-  ]);
+  }, [fromToken?.networkId, networkId, swapTypeSwitch, swapTypeSwitchAction]);
 
   const updateSelectedAccountNetworkAction = useCallback(
     async (targetNetworkId: string) => {

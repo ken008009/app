@@ -173,7 +173,12 @@ function MarketHomeTabBar({
         />
       </>
     ),
-    [ctx.filterBarProps, ctx.onSpotSortChange, ctx.spotSortValue, showSpotFilterBar],
+    [
+      ctx.filterBarProps,
+      ctx.onSpotSortChange,
+      ctx.spotSortValue,
+      showSpotFilterBar,
+    ],
   );
 
   return (
@@ -679,8 +684,9 @@ function MobileLayoutComponent({
               <EarnHomeWithProvider
                 showHeader={false}
                 showContent={
-                  isFocused &&
-                  (activeTabName === tab.tabName || !activeTabName)
+                  isFocused
+                    ? activeTabName === tab.tabName || !activeTabName
+                    : null
                 }
                 lockedMode="earn"
               />
@@ -694,8 +700,9 @@ function MobileLayoutComponent({
               <EarnHomeWithProvider
                 showHeader={false}
                 showContent={
-                  isFocused &&
-                  (activeTabName === tab.tabName || !activeTabName)
+                  isFocused
+                    ? activeTabName === tab.tabName || !activeTabName
+                    : null
                 }
                 lockedMode="borrow"
               />

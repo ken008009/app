@@ -7,7 +7,10 @@
  */
 import BigNumber from 'bignumber.js';
 
-import { buildHomeDefaultTokenMapKey } from '@onekeyhq/shared/src/utils/tokenUtils';
+import {
+  buildHomeDefaultTokenMapKey,
+  isHomePinnedTokenSymbol,
+} from '@onekeyhq/shared/src/utils/tokenUtils';
 import type {
   IAccountToken,
   ICustomTokenItem,
@@ -220,6 +223,15 @@ export function computeNonZeroIds(params: IComputeNonZeroIdsParams): string[] {
     }
 
     if (keepDefault && meta) {
+      // Home pin list (MSUSD/USDT/…/BNB) must stay visible at zero balance,
+      // including synthesized cross-network stubs on single-chain views.
+      if (
+        isHomePinnedTokenSymbol(meta.commonSymbol ?? meta.symbol) &&
+        (meta.isNative || meta.isAggregateToken)
+      ) {
+        return true;
+      }
+
       const defaultKey = buildHomeDefaultTokenMapKey({
         networkId: meta.networkId ?? '',
         symbol: meta.commonSymbol ?? meta.symbol ?? '',

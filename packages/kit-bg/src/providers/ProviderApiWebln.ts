@@ -1,3 +1,4 @@
+import { APP_BRAND_NAME } from '@onekeyhq/shared/src/config/appBrand';
 import { web3Errors } from '@onekeyfe/cross-inpage-provider-errors';
 import { IInjectedProviderNames } from '@onekeyfe/cross-inpage-provider-types';
 import BigNumber from 'bignumber.js';
@@ -93,7 +94,7 @@ class ProviderApiWebln extends ProviderApiBase {
   public async getInfo() {
     return Promise.resolve({
       node: {
-        alias: 'OneKey',
+        alias: APP_BRAND_NAME,
       },
       methods: [
         'getInfo',

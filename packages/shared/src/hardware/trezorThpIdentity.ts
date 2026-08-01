@@ -1,3 +1,4 @@
+import { APP_DISPLAY_NAME } from '../config/appBrand';
 import platformEnv from '../platformEnv';
 
 type IPlatformIdentityEnv = {
@@ -7,7 +8,11 @@ type IPlatformIdentityEnv = {
   isWeb?: boolean;
 };
 
-export const TREZOR_THP_APP_NAME = 'OneKey Wallet';
+/**
+ * Fixed identity for Trezor THP pairing. Must stay stable for a given build
+ * channel so devices can recognize the host app.
+ */
+export const TREZOR_THP_APP_NAME = APP_DISPLAY_NAME;
 
 export function getTrezorThpHostName(
   env: IPlatformIdentityEnv = platformEnv,

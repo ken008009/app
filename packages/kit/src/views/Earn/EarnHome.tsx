@@ -384,19 +384,16 @@ function BasicEarnHome({
   }, [defaultMode, handleModeChange, lockedMode]);
 
   const media = useMedia();
-  const earnFocusTabRoutes = useMemo(
-    () => {
-      if (!platformEnv.isNative) {
-        return [ETabRoutes.Earn];
-      }
-      // Market home embeds DeFi/Lending as primary tabs.
-      if (lockedMode) {
-        return [ETabRoutes.Market, ETabRoutes.Discovery];
-      }
-      return [ETabRoutes.Earn, ETabRoutes.Discovery];
-    },
-    [lockedMode],
-  );
+  const earnFocusTabRoutes = useMemo(() => {
+    if (!platformEnv.isNative) {
+      return [ETabRoutes.Earn];
+    }
+    // Market home embeds DeFi/Lending as primary tabs.
+    if (lockedMode) {
+      return [ETabRoutes.Market, ETabRoutes.Discovery];
+    }
+    return [ETabRoutes.Earn, ETabRoutes.Discovery];
+  }, [lockedMode]);
 
   const handleListenTabFocusState = useCallback(
     (isFocus: boolean, isHideByModal: boolean) => {
@@ -551,7 +548,7 @@ function BasicEarnHome({
       return (
         <YStack flex={1}>
           <BorrowHome
-            isActive={isBorrowMode && showContent !== false}
+            isActive={isBorrowMode ? showContent !== false : null}
             pendingTxs={borrowPendingTxs}
             onRegisterBorrowRefresh={handleRegisterBorrowRefresh}
             onBorrowNetworksChange={handleBorrowNetworksChange}

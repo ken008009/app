@@ -112,12 +112,7 @@ function MobileMarketWatchlistFlatListImpl({
   useEffect(() => {
     setWatchlistSortBy(sortByProp);
     setWatchlistSortType(sortTypeProp);
-  }, [
-    sortByProp,
-    sortTypeProp,
-    setWatchlistSortBy,
-    setWatchlistSortType,
-  ]);
+  }, [sortByProp, sortTypeProp, setWatchlistSortBy, setWatchlistSortType]);
 
   const filteredGroups = useWatchlistFilteredGroups(watchlistResult.data);
 

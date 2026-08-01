@@ -24,9 +24,11 @@ export function WalletActionSell({ onClose }: { onClose: () => void }) {
     fiatCryptoType: 'sell',
   });
 
-  const { isBotWallet, isBotWalletDeactivated } = useBotWalletDeactivatedStatus({
-    walletId: wallet?.id,
-  });
+  const { isBotWallet, isBotWalletDeactivated } = useBotWalletDeactivatedStatus(
+    {
+      walletId: wallet?.id,
+    },
+  );
   const isSellBlockedByBotWallet = isBotWallet && isBotWalletDeactivated;
 
   const isSellDisabled = useMemo(() => {

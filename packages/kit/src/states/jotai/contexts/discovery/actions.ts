@@ -30,6 +30,7 @@ import {
   settingsPersistAtom,
 } from '@onekeyhq/kit-bg/src/states/jotai/atoms';
 import { jotaiDefaultStore } from '@onekeyhq/kit-bg/src/states/jotai/utils/jotaiDefaultStore';
+import { APP_BRAND_NAME } from '@onekeyhq/shared/src/config/appBrand';
 import { OneKeyLocalError } from '@onekeyhq/shared/src/errors';
 import {
   EAppEventBusNames,
@@ -220,7 +221,7 @@ export const homeTab: IWebTab = {
   id: 'home',
   // current url in webview
   url: 'about:blank',
-  title: 'OneKey',
+  title: APP_BRAND_NAME,
   canGoBack: false,
   loading: false,
   favicon: '',

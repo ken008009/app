@@ -153,9 +153,7 @@ function HomeMDHeaderRows({ headerPx }: { headerPx: string }) {
     return (
       <XStack
         h={top || '$2'}
-        {...(top || platformEnv.isNativeAndroid
-          ? { mt: top || '$2' }
-          : {})}
+        {...(top || platformEnv.isNativeAndroid ? { mt: top || '$2' } : {})}
       />
     );
   }

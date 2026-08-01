@@ -118,7 +118,7 @@ export function initTrayManager(
     return;
   }
   tray = new Tray(icon);
-  tray.setToolTip('OneKey');
+  tray.setToolTip('MS');
 
   const handleClick = () => {
     if (!tray) return;

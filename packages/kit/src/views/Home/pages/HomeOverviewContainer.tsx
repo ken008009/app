@@ -909,11 +909,7 @@ function HomeOverviewContainer() {
   ]);
 
   return (
-    <YStack
-      gap="$2.5"
-      alignItems="center"
-      testID={HomeTestIDs.walletOverview}
-    >
+    <YStack gap="$2.5" alignItems="center" testID={HomeTestIDs.walletOverview}>
       <YStack w="100%" gap="$2" alignItems="center">
         {showSkeleton ? (
           <Skeleton.Heading5Xl />

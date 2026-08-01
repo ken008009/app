@@ -7,8 +7,8 @@ import {
   YStack,
   useScrollContentTabBarOffset,
 } from '@onekeyhq/components';
-import { ESwapDirectionType } from '@onekeyhq/shared/types/swap/types';
 import type {
+  ESwapDirectionType,
   IFetchQuoteResult,
   ISwapAlertState,
   ISwapToken,

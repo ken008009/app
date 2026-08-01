@@ -27,7 +27,7 @@ module.exports = {
     'default_icon': {
       '128': 'icon-128.png',
     },
-    'default_title': 'OneKey',
+    'default_title': 'MS',
     // 'default_popup': 'ui-popup-boot.html',
     'default_popup': 'ui-popup.html',
   },

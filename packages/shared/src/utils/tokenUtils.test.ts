@@ -4,16 +4,109 @@ yarn test packages/shared/src/utils/tokenUtils.test.ts
 import { ENetworkStatus, type IServerNetwork } from '../../types';
 
 import {
+  HOME_GAS_TOKEN_DISPLAY_SYMBOL,
+  HOME_GAS_TOKEN_SYMBOL,
+  HOME_TOKEN_SYMBOL_PRIORITY,
   buildTokenSearchKeywordQueries,
   calculateAccountTokensValue,
   calculateAccountTotalValue,
+  ensureHomePinnedSymbolTokens,
   flattenAggregateTokensMap,
+  formatHomeTokenSymbolForDisplay,
   getFilteredTokenBySearchKey,
+  getHomeTokenSymbolPriority,
+  isHomeGasTokenSymbol,
   mergeDeriveTokenListMap,
   nestAggregateTokensMap,
 } from './tokenUtils';
 
 import type { IAccountToken, ITokenFiat } from '../../types/token';
+
+describe('getHomeTokenSymbolPriority', () => {
+  test('returns ascending index for whitelist symbols (case-insensitive)', () => {
+    expect(getHomeTokenSymbolPriority('MSUSD')).toBe(0);
+    expect(getHomeTokenSymbolPriority('msUSD')).toBe(0);
+    expect(getHomeTokenSymbolPriority('USDT')).toBe(1);
+    expect(getHomeTokenSymbolPriority('usdc')).toBe(2);
+    expect(getHomeTokenSymbolPriority('BTC')).toBe(3);
+    expect(getHomeTokenSymbolPriority('eth')).toBe(4);
+    expect(getHomeTokenSymbolPriority('BNB')).toBe(5);
+    expect(HOME_TOKEN_SYMBOL_PRIORITY).toHaveLength(6);
+    expect(HOME_TOKEN_SYMBOL_PRIORITY[0]).toBe(HOME_GAS_TOKEN_SYMBOL);
+  });
+
+  test('returns Infinity for unknown or empty symbols', () => {
+    expect(getHomeTokenSymbolPriority('DAI')).toBe(Number.POSITIVE_INFINITY);
+    expect(getHomeTokenSymbolPriority('')).toBe(Number.POSITIVE_INFINITY);
+    expect(getHomeTokenSymbolPriority(undefined)).toBe(
+      Number.POSITIVE_INFINITY,
+    );
+  });
+});
+
+describe('isHomeGasTokenSymbol / formatHomeTokenSymbolForDisplay', () => {
+  test('matches MSUSD case-insensitively and formats display ticker', () => {
+    expect(isHomeGasTokenSymbol('msUSD')).toBe(true);
+    expect(isHomeGasTokenSymbol('MSUSD')).toBe(true);
+    expect(isHomeGasTokenSymbol('ETH')).toBe(false);
+    expect(isHomeGasTokenSymbol(undefined)).toBe(false);
+    expect(formatHomeTokenSymbolForDisplay('msUSD')).toBe(
+      HOME_GAS_TOKEN_DISPLAY_SYMBOL,
+    );
+    expect(formatHomeTokenSymbolForDisplay('USDT')).toBe('USDT');
+  });
+});
+
+describe('ensureHomePinnedSymbolTokens', () => {
+  test('injects missing pin symbols and orders MSUSD→…→BNB first', () => {
+    const eth: IAccountToken = {
+      $key: 'eth-native',
+      symbol: 'ETH',
+      name: 'Ethereum',
+      address: '',
+      decimals: 18,
+      isNative: true,
+      networkId: 'evm--1',
+    };
+    const dai: IAccountToken = {
+      $key: 'dai',
+      symbol: 'DAI',
+      name: 'Dai',
+      address: '0xdai',
+      decimals: 18,
+      isNative: false,
+      networkId: 'evm--1',
+    };
+    const out = ensureHomePinnedSymbolTokens({
+      tokens: [eth, dai],
+      tokenListMap: {
+        'eth-native': {
+          balance: '0',
+          balanceParsed: '0',
+          fiatValue: '0',
+          price: 1,
+        },
+        dai: {
+          balance: '1',
+          balanceParsed: '1',
+          fiatValue: '1',
+          price: 1,
+        },
+      },
+    });
+
+    expect(out.tokens.map((t) => t.symbol)).toEqual([
+      'MSUSD',
+      'USDT',
+      'USDC',
+      'BTC',
+      'ETH',
+      'BNB',
+      'DAI',
+    ]);
+    expect(out.tokenListMap[out.tokens[0].$key]?.fiatValue).toBe('0');
+  });
+});
 
 describe('buildTokenSearchKeywordQueries', () => {
   test('adds ether fallback for multi-word eth network searches', () => {

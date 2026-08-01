@@ -163,7 +163,10 @@ export async function navigateToNotificationDetailByLocalParams({
   // Market is a top-level tab on native.
   // Returns a function that performs the redirection when called
   const createNativeTabRedirection = () => {
-    let tab: ETranslations.global_browser | ETranslations.global_earn | undefined;
+    let tab:
+      | ETranslations.global_browser
+      | ETranslations.global_earn
+      | undefined;
     if (platformEnv.isNative) {
       if (navigationParams?.screen === ETabRoutes.Earn) {
         navigationParams.screen = ETabRoutes.Discovery;

@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useSyncExternalStore } from 'react';
 
+import { APP_DISPLAY_NAME } from '@onekeyhq/shared/src/config/appBrand';
 import { ONEKEY_EIP6963_RDNS } from '@onekeyhq/shared/src/config/appConfig';
 import {
   getEIP6963Providers,
@@ -48,7 +49,7 @@ export function useOneKeyWalletDetection() {
         return {
           evmInjected: {
             global: 'ethereum',
-            name: 'OneKey Wallet',
+            name: APP_DISPLAY_NAME,
           },
         };
       }
@@ -72,7 +73,7 @@ export function useOneKeyWalletDetection() {
 
     if (isOneKeyExtWalletInstalled) {
       return {
-        name: 'OneKey Wallet',
+        name: APP_DISPLAY_NAME,
         icon: '',
         rdns: 'injected',
         uuid: 'onekey-injected',

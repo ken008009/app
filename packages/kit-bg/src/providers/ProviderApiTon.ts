@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { APP_BRAND_NAME } from '@onekeyhq/shared/src/config/appBrand';
 import {
   Web3RpcError,
   web3Errors,
@@ -238,7 +239,7 @@ class ProviderApiTon extends ProviderApiBase {
   @providerApiMethod()
   public async getDeviceInfo(request: IJsBridgeMessagePayload) {
     return {
-      appName: 'OneKey',
+      appName: APP_BRAND_NAME,
       appVersion: platformEnv.version,
       maxProtocolVersion: 4,
       features: [

@@ -3,6 +3,7 @@
 import { Buffer } from 'buffer';
 
 import { BIOLOGY_AUTH_CANCEL_ERROR } from '../../../types/password';
+import { APP_BRAND_NAME, APP_DISPLAY_NAME } from '../../config/appBrand';
 import platformEnv from '../../platformEnv';
 
 // Storage keys
@@ -192,14 +193,14 @@ export async function registerPrfCredential(): Promise<
   const createOptions: CredentialCreationOptions = {
     publicKey: {
       rp: {
-        name: 'OneKey Wallet',
+        name: APP_DISPLAY_NAME,
         // for Desktop localhost?
         // id: globalThis.location?.hostname || 'onekey.so',
       },
       user: {
         id: userId,
-        name: 'OneKey',
-        displayName: 'OneKey',
+        name: APP_BRAND_NAME,
+        displayName: APP_BRAND_NAME,
       },
       pubKeyCredParams: [
         { type: 'public-key', alg: -7 }, // ES256

@@ -13,7 +13,11 @@ import {
 import { ETranslations } from '@onekeyhq/shared/src/locale';
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
 import networkUtils from '@onekeyhq/shared/src/utils/networkUtils';
-import { checkIsOnlyOneTokenHasBalance } from '@onekeyhq/shared/src/utils/tokenUtils';
+import {
+  checkIsOnlyOneTokenHasBalance,
+  formatHomeTokenSymbolForDisplay,
+  isHomeGasTokenSymbol,
+} from '@onekeyhq/shared/src/utils/tokenUtils';
 
 import { useAggregateSubTokenFiatMap } from '../../states/jotai/contexts/tokenList/cells';
 
@@ -22,6 +26,8 @@ import { useTokenListViewContext } from './TokenListViewContext';
 type IProps = {
   $key: string;
   name: string;
+  /** Token ticker; used for Home Gas icon (MSUSD). Falls back to `name`. */
+  symbol?: string;
   isNative?: boolean;
   isAggregateToken?: boolean;
   isAllNetworks?: boolean;
@@ -37,7 +43,8 @@ function TokenNameView(props: IProps) {
   const {
     $key,
     name,
-    isNative,
+    symbol,
+    isNative: _isNative,
     isAggregateToken,
     isAllNetworks,
     withNetwork,
@@ -106,10 +113,16 @@ function TokenNameView(props: IProps) {
     return networksMap?.[id] ?? networkUtils.getLocalNetworkInfo(id);
   }, [networksMap, tokenHasBalance?.networkId]);
 
+  // Only rewrite the ticker row (msUSD → MSUSD). The subtitle `name` line keeps
+  // the API full name when `showNetworkName` is set.
+  const displayName = showNetworkName
+    ? name
+    : formatHomeTokenSymbolForDisplay(symbol ?? name) || name;
+
   return (
     <XStack alignItems="center" gap="$1" {...rest}>
       <SizableText minWidth={0} numberOfLines={1} {...textProps}>
-        {name}
+        {displayName}
       </SizableText>
       {shouldShowDeFiReceiptTokenBadge ? (
         <Tooltip
@@ -153,7 +166,9 @@ function TokenNameView(props: IProps) {
           </Badge.Text>
         </Badge>
       ) : null}
-      {isNative && !isAllNetworks && !showNetworkName ? (
+      {isHomeGasTokenSymbol(symbol ?? name) &&
+      !isAllNetworks &&
+      !showNetworkName ? (
         <Tooltip
           renderContent={intl.formatMessage({
             id: ETranslations.native_token_tooltip,

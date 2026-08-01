@@ -131,7 +131,7 @@ const usePerpDeposit = (
           perpsAccount?.addressDetail?.normalizedAddress ||
           perpsAccount?.addressDetail?.address ||
           perpsAccount?.address,
-        perpsDeriveType: perpsDeriveType,
+        perpsDeriveType,
       };
     } catch {
       return {};

@@ -6,8 +6,8 @@ import { useMarketSelectedTabAtom } from '@onekeyhq/kit-bg/src/states/jotai/atom
 import { ETranslations } from '@onekeyhq/shared/src/locale';
 
 import {
-  resolveNativeMarketHomeTabs,
   type INativeMarketHomeTab,
+  resolveNativeMarketHomeTabs,
 } from '../../nativeMarketHomeTabs';
 import { EMarketHomeTab } from '../../types';
 

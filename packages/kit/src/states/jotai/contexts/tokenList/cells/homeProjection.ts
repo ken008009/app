@@ -23,6 +23,7 @@ import BigNumber from 'bignumber.js';
 
 import type { ITokenKey } from '@onekeyhq/kit-bg/src/states/jotai/contexts/tokenList/cellsPure/types';
 import { SEARCH_KEY_MIN_LENGTH } from '@onekeyhq/shared/src/consts/walletConsts';
+import { getHomeTokenSymbolPriority } from '@onekeyhq/shared/src/utils/tokenUtils';
 import { ETokenListSortType } from '@onekeyhq/shared/types/token';
 import type { IToken, ITokenFiat } from '@onekeyhq/shared/types/token';
 
@@ -140,8 +141,8 @@ function stableSort(
  *   (c) search: non-network keyword filter (index.tsx home never enables
  *       network search) — meta field match OR aggregate sub-token address match.
  *   (d) sort: applied unconditionally for home (index.tsx sorts non-selector
- *       after search), with the exact BigNumber/fallback semantics of the
- *       legacy sort helpers.
+ *       after search). Price/Name keep legacy BigNumber/fallback semantics;
+ *       Value pins HOME_TOKEN_SYMBOL_PRIORITY first, then fiatValue.
  */
 export function projectHomeDisplayIds(
   params: IProjectHomeDisplayIdsParams,
@@ -203,14 +204,21 @@ export function projectHomeDisplayIds(
   }
 
   // (d) sort — unconditional on home (matches index.tsx non-selector sort).
+  // Value sort: pin HOME_TOKEN_SYMBOL_PRIORITY first, then fiatValue desc
+  // among non-pinned (and as tie-break within the same pin rank).
   if (sortType === ETokenListSortType.Price) {
     ids = stableSort(ids, sortDirection, (a, b) =>
       priceOf(getFiat(b)).comparedTo(priceOf(getFiat(a))),
     );
   } else if (sortType === ETokenListSortType.Value) {
-    ids = stableSort(ids, sortDirection, (a, b) =>
-      fiatValueOf(getFiat(b)).comparedTo(fiatValueOf(getFiat(a))),
-    );
+    ids = stableSort(ids, sortDirection, (a, b) => {
+      const aPriority = getHomeTokenSymbolPriority(getMeta(a)?.symbol);
+      const bPriority = getHomeTokenSymbolPriority(getMeta(b)?.symbol);
+      if (aPriority !== bPriority) {
+        return aPriority < bPriority ? -1 : 1;
+      }
+      return fiatValueOf(getFiat(b)).comparedTo(fiatValueOf(getFiat(a)));
+    });
   } else if (sortType === ETokenListSortType.Name) {
     ids = stableSort(ids, sortDirection, (a, b) => {
       const aName = getMeta(a)?.name?.toLowerCase() ?? '';

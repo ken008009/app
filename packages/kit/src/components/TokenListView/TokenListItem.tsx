@@ -3,6 +3,7 @@ import { memo, useCallback } from 'react';
 import { Spinner, Stack, XStack, YStack } from '@onekeyhq/components';
 import type { IListItemProps } from '@onekeyhq/kit/src/components/ListItem';
 import { ListItem } from '@onekeyhq/kit/src/components/ListItem';
+import { getHomeTokenLocalLogoUri } from '@onekeyhq/kit/src/utils/homeTokenLocalLogos';
 import { isTokenSelectorDappToken } from '@onekeyhq/shared/src/utils/tokenSelectorFilterUtils';
 import type { IAccountToken } from '@onekeyhq/shared/types/token';
 
@@ -77,6 +78,9 @@ function BasicTokenListItem(props: ITokenListItemProps) {
     processingTokenState.token?.$key !== token.$key;
 
   const showDeFiReceiptTokenBadge = isTokenSelectorDappToken(token);
+  const tokenLogoUri =
+    getHomeTokenLocalLogoUri(token.commonSymbol ?? token.symbol) ??
+    token.logoURI;
 
   const renderFirstColumn = useCallback(() => {
     if (!tableLayout && !isTokenSelector) {
@@ -86,7 +90,7 @@ function BasicTokenListItem(props: ITokenListItemProps) {
             $key={token.$key}
             isAggregateToken={token.isAggregateToken}
             networkId={token.networkId}
-            icon={token.logoURI}
+            icon={tokenLogoUri}
             isAllNetworks={isAllNetworks}
             showNetworkIcon={showNetworkIcon}
           />
@@ -95,6 +99,11 @@ function BasicTokenListItem(props: ITokenListItemProps) {
               withAggregateBadge={withAggregateBadge}
               $key={token.$key}
               name={
+                token.isAggregateToken
+                  ? (token.commonSymbol ?? token.symbol)
+                  : token.symbol
+              }
+              symbol={
                 token.isAggregateToken
                   ? (token.commonSymbol ?? token.symbol)
                   : token.symbol
@@ -134,7 +143,7 @@ function BasicTokenListItem(props: ITokenListItemProps) {
           $key={token.$key}
           isAggregateToken={token.isAggregateToken}
           networkId={token.networkId}
-          icon={token.logoURI}
+          icon={tokenLogoUri}
           showNetworkIcon={showNetworkIcon}
           isAllNetworks={isAllNetworks}
         />
@@ -143,6 +152,11 @@ function BasicTokenListItem(props: ITokenListItemProps) {
             $key={token.$key}
             withAggregateBadge={withAggregateBadge ?? isTokenSelector}
             name={
+              token.isAggregateToken
+                ? (token.commonSymbol ?? token.symbol)
+                : token.symbol
+            }
+            symbol={
               token.isAggregateToken
                 ? (token.commonSymbol ?? token.symbol)
                 : token.symbol
@@ -162,6 +176,7 @@ function BasicTokenListItem(props: ITokenListItemProps) {
             $key={token.$key}
             name={token.name}
             // name={token.accountId || ''}
+            symbol={token.symbol}
             networkId={token.networkId}
             textProps={{
               size: '$bodyMd',
@@ -177,6 +192,7 @@ function BasicTokenListItem(props: ITokenListItemProps) {
     );
   }, [
     token,
+    tokenLogoUri,
     isAllNetworks,
     withNetwork,
     tableLayout,

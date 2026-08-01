@@ -11,6 +11,7 @@ import {
   useRouterEventsRef,
 } from '@onekeyhq/components';
 import { ETranslations } from '@onekeyhq/shared/src/locale';
+import { APP_BRAND_NAME } from '@onekeyhq/shared/src/config/appBrand';
 import { defaultLogger } from '@onekeyhq/shared/src/logger/logger';
 import { debugLandingLog } from '@onekeyhq/shared/src/performance/init';
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
@@ -241,12 +242,12 @@ export const useRouterConfig = () => {
         documentTitle: {
           formatter: (_options, _route) => {
             if (!platformEnv.isWebDappMode) {
-              return 'OneKey';
+              return APP_BRAND_NAME;
             }
 
             const state = rootNavigationRef.current?.getRootState();
             if (!state) {
-              return 'OneKey';
+              return APP_BRAND_NAME;
             }
 
             const rootState = state?.routes.find(
@@ -254,7 +255,7 @@ export const useRouterConfig = () => {
             )?.state;
 
             if (!rootState) {
-              return 'OneKey';
+              return APP_BRAND_NAME;
             }
 
             const currentTabName = rootState?.routeNames
@@ -266,7 +267,9 @@ export const useRouterConfig = () => {
               ? intl.formatMessage({ id: translationKey })
               : '';
 
-            return tabTitle ? `OneKey - ${tabTitle}` : 'OneKey';
+            return tabTitle
+              ? `${APP_BRAND_NAME} - ${tabTitle}`
+              : APP_BRAND_NAME;
           },
         },
         onStateChange: (state) => {

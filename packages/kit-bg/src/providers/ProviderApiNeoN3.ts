@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { APP_BRAND_NAME } from '@onekeyhq/shared/src/config/appBrand';
 import { tx, u, wallet } from '@cityofzion/neon-core';
 import { web3Errors } from '@onekeyfe/cross-inpage-provider-errors';
 import { IInjectedProviderNames } from '@onekeyfe/cross-inpage-provider-types';
@@ -132,7 +133,7 @@ class ProviderApiNeoN3 extends ProviderApiBase {
   @providerApiMethod()
   async getProvider() {
     return Promise.resolve({
-      name: 'OneKey',
+      name: APP_BRAND_NAME,
       website: 'https://onekey.so/',
       version: process.env.VERSION,
       compatibility: [],

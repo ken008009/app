@@ -172,4 +172,3 @@ export const isMarketStockCategoryById = (
     (category) => category.id === categoryId && isMarketStockCategory(category),
   );
 };
-

@@ -1,3 +1,4 @@
+import { applyAppBrandToLocaleMessages } from '../config/appBrand';
 import type { ILocaleJSONSymbol } from './type';
 
 type ILocaleMessageId = FormatjsIntl.Message['ids'];
@@ -5,11 +6,13 @@ type ILocaleMessages = Record<ILocaleMessageId, string>;
 
 const resolveLocaleModule = (module: unknown): ILocaleMessages => {
   const maybeModule = module as { default?: unknown };
-  return (
+  const messages = (
     maybeModule && typeof maybeModule === 'object' && 'default' in maybeModule
       ? maybeModule.default
       : module
   ) as ILocaleMessages;
+  // Secondary build: rewrite OneKey brand tokens without editing generated JSON.
+  return applyAppBrandToLocaleMessages(messages);
 };
 
 export const LOCALE_LOADERS = {

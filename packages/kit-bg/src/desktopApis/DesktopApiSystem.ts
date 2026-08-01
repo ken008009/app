@@ -1,3 +1,4 @@
+import { APP_DISPLAY_NAME } from '@onekeyhq/shared/src/config/appBrand';
 import { execFile } from 'child_process';
 import fs from 'fs/promises';
 import os from 'os';
@@ -488,7 +489,7 @@ fi
 
   async getAppName(): Promise<string> {
     return (
-      globalThis.$desktopMainAppFunctions?.getAppName?.() || 'OneKey Wallet'
+      globalThis.$desktopMainAppFunctions?.getAppName?.() || APP_DISPLAY_NAME
     );
   }
 

@@ -19,7 +19,8 @@ import { WalletActionViewInExplorer } from './WalletActionViewInExplorer';
 export function WalletActionMore({ iconOnly }: { iconOnly?: boolean } = {}) {
   const { activeAccount } = useActiveAccount({ num: 0 });
   const { sceneName, sceneUrl } = useAccountSelectorSceneInfo();
-  const { config, getMoreActionGroups, vaultSettings } = useWalletActionConfig();
+  const { config, getMoreActionGroups, vaultSettings } =
+    useWalletActionConfig();
   const isAllNetworks = Boolean(activeAccount.network?.isAllNetworks);
 
   const renderItemsAsync = useCallback(

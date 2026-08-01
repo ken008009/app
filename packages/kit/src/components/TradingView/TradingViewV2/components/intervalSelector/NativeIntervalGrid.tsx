@@ -151,10 +151,12 @@ export function IntervalGrid({
                   )}
                   section={section}
                   isActive={
-                    highlightActiveInterval && option.value === activeInterval
+                    highlightActiveInterval
+                      ? option.value === activeInterval
+                      : null
                   }
                   isSelected={isSelected}
-                  showCheckMark={showSelectedCheckMarks && isSelected}
+                  showCheckMark={showSelectedCheckMarks ? isSelected : null}
                   disabled={isDisabled}
                   onPress={() => {
                     if (!isDisabled) {

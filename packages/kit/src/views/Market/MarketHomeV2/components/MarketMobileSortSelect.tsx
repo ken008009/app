@@ -105,7 +105,9 @@ function MarketMobileSortSelectBase({
         title={intl.formatMessage({ id: ETranslations.market_sort_by })}
         value={value}
         onChange={(nextValue) => {
-          const item = selectOptions.find((option) => option.value === nextValue);
+          const item = selectOptions.find(
+            (option) => option.value === nextValue,
+          );
           onChange(
             nextValue as IMarketMobileSortValue,
             item?.options as IMarketMobileSortOption | undefined,

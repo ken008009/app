@@ -39,7 +39,12 @@ import useAppNavigation from '@onekeyhq/kit/src/hooks/useAppNavigation';
 import { useIsDeFiEnabled } from '@onekeyhq/kit/src/hooks/useIsDeFiEnabled';
 import { useManageToken } from '@onekeyhq/kit/src/hooks/useManageToken';
 import { usePromiseResult } from '@onekeyhq/kit/src/hooks/usePromiseResult';
-import { SEARCH_DEBOUNCE_INTERVAL } from '@onekeyhq/shared/src/consts/walletConsts';
+import {
+  POLLING_DEBOUNCE_INTERVAL,
+  POLLING_INTERVAL_FOR_HISTORY,
+  POLLING_INTERVAL_FOR_TOKEN,
+  SEARCH_DEBOUNCE_INTERVAL,
+} from '@onekeyhq/shared/src/consts/walletConsts';
 import { useRouteIsFocused } from '@onekeyhq/kit/src/hooks/useRouteIsFocused';
 import {
   useAccountOverviewActions,
@@ -83,11 +88,6 @@ import { isAgg } from '@onekeyhq/kit-bg/src/states/jotai/contexts/tokenList/cell
 import { getNetworkIdsMap } from '@onekeyhq/shared/src/config/networkIds';
 import { USD_CURRENCY_ID } from '@onekeyhq/shared/src/consts/currencyConsts';
 import {
-  POLLING_DEBOUNCE_INTERVAL,
-  POLLING_INTERVAL_FOR_HISTORY,
-  POLLING_INTERVAL_FOR_TOKEN,
-} from '@onekeyhq/shared/src/consts/walletConsts';
-import {
   EAppEventBusNames,
   type IAppEventBusPayload,
   appEventBus,
@@ -113,6 +113,7 @@ import {
 import {
   buildAggregateTokenListData,
   calculateAccountTokensValue,
+  ensureHomePinnedSymbolTokens,
   getEmptyTokenData,
   getMergedDeriveTokenData,
   getMergedTokenData,
@@ -126,6 +127,8 @@ import type {
   IHomeDefaultToken,
   ITokenFiat,
 } from '@onekeyhq/shared/types/token';
+
+import { applyHomeTokenLocalLogos } from '@onekeyhq/kit/src/utils/homeTokenLocalLogos';
 
 import { RichBlock } from '../RichBlock/RichBlock';
 
@@ -254,11 +257,14 @@ function TokenListBlock({
   // intersection-evict + generation guard) + the merge + the `ingestRound` feed.
   // The render-state writes (worth/overview/tokenListState) stay in this
   // component; the handlers below call the facade for the LWW work (design §2.7).
+  const allAggregateTokensRef = useRef<IAccountToken[]>([]);
+
   const pipeline = useTokenListReactivePipeline({
     ownerAccountId: account?.id,
     ownerNetworkId: network?.id,
     ownerCreateAtNetwork: account?.createAtNetwork,
     cellsIngestInputsRef,
+    allAggregateTokensRef,
     enabled: ENABLE_BG_TOKEN_VIEW_MODEL,
   });
   // Destructure the stable facade callbacks (each a useCallback in the facade) so
@@ -650,14 +656,22 @@ function TokenListBlock({
         // a ref (assigned next to the cells consts) so this call needs no extra
         // render deps.
         if (ENABLE_BG_TOKEN_VIEW_MODEL) {
-          void backgroundApiProxy.serviceTokenViewModel.ingestRound({
-            ownerKey: cellsIngestInputsRef.current.ownerKey,
-            orderedTokens: r.tokens.data,
+          const pinnedHomeTokens = ensureHomePinnedSymbolTokens({
+            tokens: r.tokens.data,
             smallBalanceTokens: r.smallBalanceTokens.data,
             tokenListMap: {
               ...r.tokens.map,
               ...r.smallBalanceTokens.map,
             },
+            catalogTokens: allAggregateTokensRef.current,
+          });
+          void backgroundApiProxy.serviceTokenViewModel.ingestRound({
+            ownerKey: cellsIngestInputsRef.current.ownerKey,
+            orderedTokens: applyHomeTokenLocalLogos(pinnedHomeTokens.tokens),
+            smallBalanceTokens: applyHomeTokenLocalLogos(
+              pinnedHomeTokens.smallBalanceTokens,
+            ),
+            tokenListMap: pinnedHomeTokens.tokenListMap,
             aggregateTokensMap: {},
             // Single-network rounds have no aggregate tokens — empty list-map.
             ownedAggregateTokenListMap: {},
@@ -863,7 +877,9 @@ function TokenListBlock({
     [],
   );
 
-  const { allAggregateTokenMap } = allAggregateTokenInfo ?? {};
+  const { allAggregateTokenMap, allAggregateTokens } =
+    allAggregateTokenInfo ?? {};
+  allAggregateTokensRef.current = allAggregateTokens ?? [];
 
   const isAllNetworkManualRefresh = useRef(false);
 
@@ -1733,7 +1749,18 @@ function TokenListBlock({
     // cancel any trailing progressive flush, bump the epoch (P1-g) so a flush
     // already past its timer aborts after its await instead of overwriting this
     // authoritative full list, and clear the view for the next run.
-    commitAuthoritativeIngest(snapshot);
+    const pinnedHomeTokens = ensureHomePinnedSymbolTokens({
+      tokens: snapshot.orderedTokens,
+      smallBalanceTokens: snapshot.smallBalanceTokens,
+      tokenListMap: snapshot.mergeTokenListMap,
+      catalogTokens: allAggregateTokensRef.current,
+    });
+    commitAuthoritativeIngest({
+      ...snapshot,
+      orderedTokens: pinnedHomeTokens.tokens,
+      smallBalanceTokens: pinnedHomeTokens.smallBalanceTokens,
+      mergeTokenListMap: pinnedHomeTokens.tokenListMap,
+    });
 
     updateTokenListState({
       initialized: true,
@@ -2564,7 +2591,7 @@ function TokenListBlock({
             })}
             variant="tertiary"
             icon="SliderHorOutline"
-            iconProps={{ color: '$iconSubdued' }}   // 弱化
+            iconProps={{ color: '$iconSubdued' }} // 弱化
             onPress={handleOnManageToken}
           />
         ) : null}

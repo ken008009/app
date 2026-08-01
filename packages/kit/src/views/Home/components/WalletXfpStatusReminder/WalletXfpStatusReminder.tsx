@@ -23,6 +23,7 @@ import {
   useHardwareWalletXfpStatusAtom,
 } from '@onekeyhq/kit-bg/src/states/jotai/atoms';
 import { ETranslations } from '@onekeyhq/shared/src/locale';
+import { APP_BRAND_NAME } from '@onekeyhq/shared/src/config/appBrand';
 import { EAccountSelectorSceneName } from '@onekeyhq/shared/types';
 
 import type { IntlShape } from 'react-intl';
@@ -89,7 +90,7 @@ export async function showUpdateHardwareWalletLegacyXfpDialog({
           id: ETranslations.global_hardware_legacy_data_update_dialog_description,
         },
         {
-          walletName: 'OneKey',
+          walletName: APP_BRAND_NAME,
         },
       ),
       dismissOnOverlayPress: false,

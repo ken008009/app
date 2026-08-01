@@ -1,3 +1,4 @@
+import { APP_DISPLAY_NAME } from '@onekeyhq/shared/src/config/appBrand';
 import { debounce } from 'lodash';
 
 import {
@@ -279,7 +280,7 @@ class ServiceSignature extends ServiceBase {
     const address = decodedTx.signer;
     const swapInfo = signedTx.swapInfo;
     const stakingInfo = signedTx.stakingInfo;
-    let title = 'OneKey Wallet';
+    let title = APP_DISPLAY_NAME;
     if (sourceInfo?.origin) {
       title = uriUtils.getHostNameFromUrl({ url: sourceInfo?.origin });
     } else if (swapInfo) {
@@ -422,7 +423,7 @@ class ServiceSignature extends ServiceBase {
     const { sourceInfo, networkId, accountId, message } = data;
     const title = sourceInfo?.origin
       ? uriUtils.getHostNameFromUrl({ url: sourceInfo?.origin })
-      : 'OneKey Wallet';
+      : APP_DISPLAY_NAME;
     const address =
       await this.backgroundApi.serviceAccount.getAccountAddressForApi({
         networkId,

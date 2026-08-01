@@ -1,7 +1,12 @@
 import type { FC } from 'react';
 import { memo } from 'react';
 
-import { NumberSizeableText, SizableText, XStack, useThemeName } from '@onekeyhq/components';
+import {
+  NumberSizeableText,
+  SizableText,
+  XStack,
+  useThemeName,
+} from '@onekeyhq/components';
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
 
 import { MarketTestIDs } from '../../../testIDs';

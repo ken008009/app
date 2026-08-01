@@ -541,3 +541,108 @@ describe('projectHomeDisplayIds — price tick does not change listStructure dep
     expect(reprojected).toEqual(['b', 'a']);
   });
 });
+
+describe('projectHomeDisplayIds — home symbol pin order (Value)', () => {
+  it('pins whitelist symbols before others, in fixed order', () => {
+    const meta: Record<string, IToken> = {
+      eth: makeToken('eth', { symbol: 'ETH', name: 'Ethereum' }),
+      usdt: makeToken('usdt', { symbol: 'USDT', name: 'Tether' }),
+      msusd: makeToken('msusd', { symbol: 'MSUSD', name: 'Metronome' }),
+      dai: makeToken('dai', { symbol: 'DAI', name: 'Dai' }),
+      btc: makeToken('btc', { symbol: 'BTC', name: 'Bitcoin' }),
+      usdc: makeToken('usdc', { symbol: 'USDC', name: 'USD Coin' }),
+      bnb: makeToken('bnb', { symbol: 'BNB', name: 'BNB' }),
+      rndr: makeToken('rndr', { symbol: 'RNDR', name: 'Render' }),
+    };
+    const fiat: Record<string, ITokenFiat> = {
+      eth: makeFiat({ fiatValue: '999' }),
+      usdt: makeFiat({ fiatValue: '0' }),
+      msusd: makeFiat({ fiatValue: '0' }),
+      dai: makeFiat({ fiatValue: '500' }),
+      btc: makeFiat({ fiatValue: '0' }),
+      usdc: makeFiat({ fiatValue: '0' }),
+      bnb: makeFiat({ fiatValue: '0' }),
+      rndr: makeFiat({ fiatValue: '100' }),
+    };
+    const orderedIds = [
+      'eth',
+      'usdt',
+      'dai',
+      'rndr',
+      'msusd',
+      'btc',
+      'usdc',
+      'bnb',
+    ];
+
+    const out = projectHomeDisplayIds({
+      orderedIds,
+      smallBalanceIds: [],
+      nonZeroIds: orderedIds,
+      searchKey: '',
+      sortType: ETokenListSortType.Value,
+      sortDirection: 'desc',
+      hideZero: false,
+      getFiat: (k) => fiat[k],
+      getMeta: (k) => meta[k],
+    });
+
+    // Pin order first (even when ETH has highest fiat); non-pinned by fiat desc.
+    expect(out).toEqual([
+      'msusd',
+      'usdt',
+      'usdc',
+      'btc',
+      'eth',
+      'bnb',
+      'dai',
+      'rndr',
+    ]);
+  });
+
+  it('sorts non-pinned tokens by fiatValue when no whitelist hits', () => {
+    expect(
+      project({
+        sortType: ETokenListSortType.Value,
+        sortDirection: 'desc',
+      }),
+    ).toEqual(['a', 'b', 'c']);
+  });
+
+  it('does not apply pin order for Name / Price sort', () => {
+    const meta: Record<string, IToken> = {
+      eth: makeToken('eth', { symbol: 'ETH', name: 'Ethereum' }),
+      usdt: makeToken('usdt', { symbol: 'USDT', name: 'Tether' }),
+    };
+    const fiat: Record<string, ITokenFiat> = {
+      eth: makeFiat({ fiatValue: '1', price: 2000 }),
+      usdt: makeFiat({ fiatValue: '100', price: 1 }),
+    };
+
+    const byPrice = projectHomeDisplayIds({
+      orderedIds: ['eth', 'usdt'],
+      smallBalanceIds: [],
+      nonZeroIds: ['eth', 'usdt'],
+      searchKey: '',
+      sortType: ETokenListSortType.Price,
+      sortDirection: 'desc',
+      hideZero: false,
+      getFiat: (k) => fiat[k],
+      getMeta: (k) => meta[k],
+    });
+    expect(byPrice).toEqual(['eth', 'usdt']);
+
+    const byName = projectHomeDisplayIds({
+      orderedIds: ['eth', 'usdt'],
+      smallBalanceIds: [],
+      nonZeroIds: ['eth', 'usdt'],
+      searchKey: '',
+      sortType: ETokenListSortType.Name,
+      sortDirection: 'asc',
+      hideZero: false,
+      getFiat: (k) => fiat[k],
+      getMeta: (k) => meta[k],
+    });
+    expect(byName).toEqual(['eth', 'usdt']);
+  });
+});

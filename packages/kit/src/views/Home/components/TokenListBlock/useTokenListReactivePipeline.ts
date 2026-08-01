@@ -32,9 +32,11 @@ import { useCallback, useRef } from 'react';
 import type { MutableRefObject } from 'react';
 
 import backgroundApiProxy from '@onekeyhq/kit/src/background/instance/backgroundApiProxy';
+import { applyHomeTokenLocalLogos } from '@onekeyhq/kit/src/utils/homeTokenLocalLogos';
 import { EJotaiContextStoreNames } from '@onekeyhq/kit-bg/src/states/jotai/atoms/jotaiContextStoreMap';
 import accountUtils from '@onekeyhq/shared/src/utils/accountUtils';
 import { LwwMaterializedView } from '@onekeyhq/shared/src/utils/lwwMaterializedView';
+import { ensureHomePinnedSymbolTokens } from '@onekeyhq/shared/src/utils/tokenUtils';
 import type {
   IAccountToken,
   ICustomTokenItem,
@@ -100,6 +102,8 @@ export interface ITokenListReactivePipelineParams {
   ownerCreateAtNetwork: string | undefined;
   /** owner key + hideZero inputs ref (written in render by the component). */
   cellsIngestInputsRef: MutableRefObject<ICellsIngestInputs>;
+  /** Aggregate catalog for Home pin stubs (BTC/BNB/… when missing). */
+  allAggregateTokensRef?: MutableRefObject<IAccountToken[]>;
   /** = ENABLE_BG_TOKEN_VIEW_MODEL — the single unified kill-switch. */
   enabled: boolean;
 }
@@ -140,6 +144,7 @@ export function useTokenListReactivePipeline(
     ownerNetworkId,
     ownerCreateAtNetwork,
     cellsIngestInputsRef,
+    allAggregateTokensRef,
     enabled,
   } = params;
 
@@ -223,11 +228,21 @@ export function useTokenListReactivePipeline(
       source: string,
       ownerToken?: IIngestOwnerToken,
     ) => {
-      void backgroundApiProxy.serviceTokenViewModel.ingestRound({
-        ownerKey: ownerToken?.ownerKey ?? cellsIngestInputsRef.current.ownerKey,
-        orderedTokens: snapshot.orderedTokens,
+      const pinnedHomeTokens = ensureHomePinnedSymbolTokens({
+        tokens: snapshot.orderedTokens,
         smallBalanceTokens: snapshot.smallBalanceTokens,
         tokenListMap: snapshot.mergeTokenListMap,
+        catalogTokens: allAggregateTokensRef?.current ?? [],
+      });
+      const orderedTokens = applyHomeTokenLocalLogos(pinnedHomeTokens.tokens);
+      const smallBalanceTokens = applyHomeTokenLocalLogos(
+        pinnedHomeTokens.smallBalanceTokens,
+      );
+      void backgroundApiProxy.serviceTokenViewModel.ingestRound({
+        ownerKey: ownerToken?.ownerKey ?? cellsIngestInputsRef.current.ownerKey,
+        orderedTokens,
+        smallBalanceTokens,
+        tokenListMap: pinnedHomeTokens.tokenListMap,
         aggregateTokensMap: snapshot.aggregateTokenMap,
         ownedAggregateTokenListMap: snapshot.aggregateTokenListMap,
         smallBalanceFiatValue: snapshot.smallBalanceFiatValue,
@@ -244,7 +259,12 @@ export function useTokenListReactivePipeline(
         source,
       });
     },
-    [cellsIngestInputsRef, ownerAccountId, ownerNetworkId],
+    [
+      allAggregateTokensRef,
+      cellsIngestInputsRef,
+      ownerAccountId,
+      ownerNetworkId,
+    ],
   );
 
   const flushProgressiveView = useCallback(

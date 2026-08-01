@@ -1,3 +1,4 @@
+import { APP_DISPLAY_NAME } from '@onekeyhq/shared/src/config/appBrand';
 import { Notification, app, ipcMain, systemPreferences } from 'electron';
 import logger from 'electron-log/main';
 import TaskBarBadgeWindows from 'electron-taskbar-badge';
@@ -292,7 +293,7 @@ class DesktopApiNotification {
   constructor({ desktopApi }: { desktopApi: IDesktopApi }) {
     this.desktopApi = desktopApi;
     this.initWin32TaskBarBadge(
-      globalThis.$desktopMainAppFunctions?.getAppName?.() || 'OneKey Wallet',
+      globalThis.$desktopMainAppFunctions?.getAppName?.() || APP_DISPLAY_NAME,
     );
   }
 

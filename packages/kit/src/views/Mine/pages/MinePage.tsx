@@ -18,9 +18,7 @@ import { ETabRoutes } from '@onekeyhq/shared/src/routes';
 import { EAccountSelectorSceneName } from '@onekeyhq/shared/types';
 
 import type { ISubSettingConfig } from '../../Setting/pages/Tab/config';
-import {
-  TabSettingsListGrid,
-} from '../../Setting/pages/Tab/ListItem';
+import { TabSettingsListGrid } from '../../Setting/pages/Tab/ListItem';
 import {
   showUnderDevelopmentToast,
   useMineMenuConfig,

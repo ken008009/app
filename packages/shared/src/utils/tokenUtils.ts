@@ -429,6 +429,216 @@ export function sortTokensByOrder({ tokens }: { tokens: IAccountToken[] }) {
   });
 }
 
+/**
+ * Home Assets pin list match key (lowercase). Display ticker for the gas token
+ * is `HOME_GAS_TOKEN_DISPLAY_SYMBOL` (`MSUSD`).
+ */
+export const HOME_GAS_TOKEN_SYMBOL = 'msusd';
+
+/** Canonical display ticker for the Home gas / pin-#1 token. */
+export const HOME_GAS_TOKEN_DISPLAY_SYMBOL = 'MSUSD';
+
+/** Home Assets token list: preferred symbol pin order (case-insensitive). */
+export const HOME_TOKEN_SYMBOL_PRIORITY = [
+  HOME_GAS_TOKEN_SYMBOL,
+  'usdt',
+  'usdc',
+  'btc',
+  'eth',
+  'bnb',
+] as const;
+
+export function isHomeGasTokenSymbol(symbol?: string): boolean {
+  return !!symbol && symbol.toLowerCase() === HOME_GAS_TOKEN_SYMBOL;
+}
+
+/** Normalize pin-list tickers for UI (msUSD / msusd → MSUSD). */
+export function formatHomeTokenSymbolForDisplay(symbol?: string): string {
+  if (!symbol) {
+    return '';
+  }
+  if (isHomeGasTokenSymbol(symbol)) {
+    return HOME_GAS_TOKEN_DISPLAY_SYMBOL;
+  }
+  return symbol;
+}
+
+export function isHomePinnedTokenSymbol(symbol?: string): boolean {
+  return getHomeTokenSymbolPriority(symbol) !== Number.POSITIVE_INFINITY;
+}
+
+const HOME_TOKEN_SYMBOL_PRIORITY_INDEX: ReadonlyMap<string, number> = new Map(
+  HOME_TOKEN_SYMBOL_PRIORITY.map((symbol, index) => [symbol, index]),
+);
+
+/**
+ * Lower index = higher pin priority. Symbols not in the whitelist return
+ * +Infinity so they sort after pinned tokens.
+ */
+export function getHomeTokenSymbolPriority(symbol?: string): number {
+  if (!symbol) {
+    return Number.POSITIVE_INFINITY;
+  }
+  const index = HOME_TOKEN_SYMBOL_PRIORITY_INDEX.get(symbol.toLowerCase());
+  return index ?? Number.POSITIVE_INFINITY;
+}
+
+const HOME_PIN_ZERO_FIAT: ITokenFiat = {
+  balance: '0',
+  balanceParsed: '0',
+  fiatValue: '0',
+  price: 0,
+};
+
+function tokenMatchesHomePinSymbol(
+  token: IAccountToken,
+  pinSymbol: string,
+): boolean {
+  const pin = pinSymbol.toLowerCase();
+  return (
+    token.symbol?.toLowerCase() === pin ||
+    token.commonSymbol?.toLowerCase() === pin
+  );
+}
+
+function displaySymbolForHomePin(pinSymbol: string): string {
+  if (pinSymbol === HOME_GAS_TOKEN_SYMBOL) {
+    return HOME_GAS_TOKEN_DISPLAY_SYMBOL;
+  }
+  return pinSymbol.toUpperCase();
+}
+
+function normalizeHomePinnedTokenDisplay(token: IAccountToken): IAccountToken {
+  if (
+    !isHomeGasTokenSymbol(token.symbol) &&
+    !isHomeGasTokenSymbol(token.commonSymbol)
+  ) {
+    return token;
+  }
+  return {
+    ...token,
+    symbol: HOME_GAS_TOKEN_DISPLAY_SYMBOL,
+    commonSymbol: token.commonSymbol
+      ? HOME_GAS_TOKEN_DISPLAY_SYMBOL
+      : token.commonSymbol,
+    name:
+      isHomeGasTokenSymbol(token.name) || !token.name
+        ? HOME_GAS_TOKEN_DISPLAY_SYMBOL
+        : token.name,
+  };
+}
+
+/**
+ * Ensure Home pin symbols (MSUSD → … → BNB) exist in the token list even when
+ * the current network response omits them (e.g. BTC/BNB on Ethereum). Missing
+ * entries are synthesized from `catalogTokens` (allAggregateTokens) or as
+ * zero-balance aggregate stubs, then placed at the front in pin order.
+ */
+export function ensureHomePinnedSymbolTokens({
+  tokens,
+  smallBalanceTokens = [],
+  tokenListMap = {},
+  catalogTokens = [],
+}: {
+  tokens: IAccountToken[];
+  smallBalanceTokens?: IAccountToken[];
+  tokenListMap?: Record<string, ITokenFiat>;
+  catalogTokens?: IAccountToken[];
+}): {
+  tokens: IAccountToken[];
+  smallBalanceTokens: IAccountToken[];
+  tokenListMap: Record<string, ITokenFiat>;
+} {
+  const catalogBySymbol = new Map<string, IAccountToken>();
+  for (const catalogToken of catalogTokens) {
+    const key = (
+      catalogToken.commonSymbol ?? catalogToken.symbol
+    )?.toLowerCase();
+    if (key && !catalogBySymbol.has(key)) {
+      catalogBySymbol.set(key, catalogToken);
+    }
+  }
+
+  const resultMap: Record<string, ITokenFiat> = { ...tokenListMap };
+  const mainTokens = tokens.map(normalizeHomePinnedTokenDisplay);
+  const smallTokens = smallBalanceTokens.map(normalizeHomePinnedTokenDisplay);
+
+  const findIn = (list: IAccountToken[], pin: string) =>
+    list.find((token) => tokenMatchesHomePinSymbol(token, pin));
+
+  for (const pin of HOME_TOKEN_SYMBOL_PRIORITY) {
+    const inMain = findIn(mainTokens, pin);
+    if (inMain) {
+      continue;
+    }
+
+    const inSmallIndex = smallTokens.findIndex((token) =>
+      tokenMatchesHomePinSymbol(token, pin),
+    );
+    if (inSmallIndex >= 0) {
+      const [promoted] = smallTokens.splice(inSmallIndex, 1);
+      mainTokens.push(normalizeHomePinnedTokenDisplay(promoted));
+      continue;
+    }
+
+    const displaySymbol = displaySymbolForHomePin(pin);
+    const catalog = catalogBySymbol.get(pin);
+    const stubKey =
+      catalog?.$key ||
+      buildAggregateTokenListMapKeyForTokenList({
+        commonSymbol: displaySymbol,
+      });
+    const stub: IAccountToken = catalog
+      ? {
+          ...catalog,
+          $key: stubKey,
+          symbol: displaySymbol,
+          commonSymbol: displaySymbol,
+          name: catalog.name || displaySymbol,
+          isAggregateToken: true,
+          isNative: false,
+          networkId: catalog.networkId || AGGREGATE_TOKEN_MOCK_NETWORK_ID,
+          address: catalog.address || stubKey,
+        }
+      : {
+          $key: `home_pin_${pin}`,
+          symbol: displaySymbol,
+          name: displaySymbol,
+          commonSymbol: displaySymbol,
+          networkId: AGGREGATE_TOKEN_MOCK_NETWORK_ID,
+          address: `home_pin_${pin}`,
+          isNative: false,
+          isAggregateToken: true,
+          decimals: 18,
+        };
+
+    mainTokens.push(stub);
+    if (!resultMap[stub.$key]) {
+      resultMap[stub.$key] = { ...HOME_PIN_ZERO_FIAT };
+    }
+  }
+
+  const pinned: IAccountToken[] = [];
+  const usedKeys = new Set<string>();
+  for (const pin of HOME_TOKEN_SYMBOL_PRIORITY) {
+    const hit = mainTokens.find(
+      (token) =>
+        !usedKeys.has(token.$key) && tokenMatchesHomePinSymbol(token, pin),
+    );
+    if (hit) {
+      pinned.push(hit);
+      usedKeys.add(hit.$key);
+    }
+  }
+  const rest = mainTokens.filter((token) => !usedKeys.has(token.$key));
+
+  return {
+    tokens: [...pinned, ...rest],
+    smallBalanceTokens: smallTokens,
+    tokenListMap: resultMap,
+  };
+}
+
 export function mergeDeriveTokenListMap({
   sourceMap,
   targetMap,
