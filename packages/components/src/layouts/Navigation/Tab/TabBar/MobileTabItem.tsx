@@ -2,9 +2,10 @@ import { Icon, SizableText, YStack } from '@onekeyhq/components/src/primitives';
 import type { IKeyOfIcons } from '@onekeyhq/components/src/primitives';
 import type { GetProps } from '@onekeyhq/components/src/shared/tamagui';
 
-import { TAB_BAR_ACTIVE_COLOR } from './tabBarActiveColor';
-
 import type { Animated, StyleProp, ViewStyle } from 'react-native';
+
+// Selected tint uses `$bgAccent` (wired from brand.ts via tamagui.config).
+const TAB_BAR_ACTIVE_TOKEN = '$bgAccent' as const;
 
 interface IMobileTabItemProps {
   icon?: IKeyOfIcons;
@@ -24,7 +25,7 @@ export function MobileTabItem(
         <Icon
           flexShrink={0}
           name={icon}
-          color={selected ? TAB_BAR_ACTIVE_COLOR : '$iconSubdued'}
+          color={selected ? TAB_BAR_ACTIVE_TOKEN : '$iconSubdued'}
           size="$7"
         />
       ) : null}
@@ -33,7 +34,7 @@ export function MobileTabItem(
           numberOfLines={1}
           mt="$0.5"
           size="$headingXxs"
-          color={selected ? TAB_BAR_ACTIVE_COLOR : '$textSubdued'}
+          color={selected ? TAB_BAR_ACTIVE_TOKEN : '$textSubdued'}
         >
           {label}
         </SizableText>

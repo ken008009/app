@@ -30,7 +30,7 @@ import { referFriendsRouters } from './ReferFriends/router';
 import { swapRouters } from './Swap/router';
 
 // Native tab icons using SVG files from @onekeyhq/components/svg
-// The native tab bar will tint icons using tabBarActiveTintColor/tabBarInactiveTintColor
+// Active tint comes from brand.ts via tabBarActiveColor / `$bgAccent`.
 const nativeTabIcons = {
   wallet: ({ focused }: { focused: boolean }): INativeTabBarIcon =>
     focused

@@ -22,7 +22,7 @@ import {
 import { createNativeBottomTabNavigator } from '../BottomTabs';
 import { makeTabScreenOptions } from '../GlobalScreenOptions';
 import { createStackNavigator } from '../StackNavigator';
-import { TAB_BAR_ACTIVE_COLOR } from '../Tab/TabBar/tabBarActiveColor';
+import { getTabBarActiveColor } from '../Tab/TabBar/tabBarActiveColor';
 
 import type { ITabNavigatorProps, ITabSubNavigatorConfig } from './types';
 
@@ -103,7 +103,11 @@ export function TabStackNavigator<RouteName extends string>({
   const theme = useTheme();
   // Subscribe to theme name so OS dark/light switch triggers re-render —
   // `theme.*.val` reads are non-reactive on native.
-  useThemeName();
+  const themeName = useThemeName();
+  const tabBarActiveTintColor = useMemo(
+    () => getTabBarActiveColor(themeName),
+    [themeName],
+  );
   const [tabBarHidden, setTabBarHidden] = useState(false);
 
   // Listen for HideTabBar events to show/hide the tab bar
@@ -231,7 +235,7 @@ export function TabStackNavigator<RouteName extends string>({
       ignoreBottomInsets
       sidebarAdaptable={false}
       tabBarHidden={hidden}
-      tabBarActiveTintColor={TAB_BAR_ACTIVE_COLOR}
+      tabBarActiveTintColor={tabBarActiveTintColor}
       tabBarInactiveTintColor={theme.iconSubdued.val}
       tabBarStyle={tabBarStyle}
       screenOptions={nativeTabScreenOptions}
