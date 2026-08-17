@@ -43,6 +43,8 @@ function buildEnvExposedToClientDangerously({ platform }) {
     'SUPABASE_PUBLIC_API_KEY',
     // Native background thread split-bundle feature flag
     'ENABLE_NATIVE_BACKGROUND_THREAD',
+    // App Store review gating (hide fiat/buy UI while submitting)
+    'ONEKEY_APP_STORE_REVIEW_MODE',
   ];
   // ***        also update Inject Environment Variables at release-ios.yml, release-android      ***
 

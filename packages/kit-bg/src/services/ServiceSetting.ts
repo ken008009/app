@@ -1,6 +1,5 @@
 import { consts } from '@onekeyfe/cross-inpage-provider-core';
 import { flatten, groupBy, isEqual, uniqBy } from 'lodash';
-import semver from 'semver';
 
 import {
   isTaprootAddress,
@@ -451,33 +450,22 @@ class ServiceSetting extends ServiceBase {
 
   @backgroundMethod()
   public async fetchReviewControl() {
+    // App Store / MAS only. Secondary builds use a local compile-time switch
+    // instead of OneKey Utility API so review gating stays under our control.
+    //
+    // ONEKEY_APP_STORE_REVIEW_MODE=true  → hide fiat/buy/sensitive UI (submit)
+    // unset / false                     → show normally (default / after approve)
     const isReviewControlEnv = platformEnv.isAppleStoreEnv || platformEnv.isMas;
-    if (isReviewControlEnv) {
-      const client = await this.getClient(EServiceEndpointEnum.Utility);
-      const key = platformEnv.isAppleStoreEnv
-        ? 'Intelligent_Diligent_Resourceful_Capable'
-        : 'Mindful_Driven_Responsible_Curious';
-      const response = await client.get<{
-        data: { value: string; key: string }[];
-      }>('/utility/v1/setting', {
-        params: {
-          key,
-        },
-      });
-      const data = response.data.data;
-      let show = true;
-      if (data.length === 1 && data[0].key === key) {
-        const reviewVersion = data[0].value;
-        const clientVersion = platformEnv.version;
-        if (reviewVersion && clientVersion) {
-          show = semver.lte(clientVersion, reviewVersion);
-        }
-      }
-      await settingsPersistAtom.set((prev) => ({
-        ...prev,
-        reviewControl: show,
-      }));
+    if (!isReviewControlEnv) {
+      return;
     }
+
+    const isReviewMode = process.env.ONEKEY_APP_STORE_REVIEW_MODE === 'true';
+    await settingsPersistAtom.set((prev) => ({
+      ...prev,
+      // reviewControl=true means SHOW gated features (legacy naming).
+      reviewControl: !isReviewMode,
+    }));
   }
 
   private async syncFiatPaySiteWhitelistToRuntime(origins: string[]) {

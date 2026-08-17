@@ -47,6 +47,18 @@
         "credentialsSource": "local"
       }
     },
+    "production-store-review": {
+      "extends": "production-store",
+      "env": {
+        "ENVIRONMENT": "production",
+        "ONEKEY_APP_STORE_REVIEW_MODE": "true"
+      },
+      "ios": {
+        "enterpriseProvisioning": "universal",
+        "buildConfiguration": "Release",
+        "credentialsSource": "local"
+      }
+    },
     "production": {
       "extends": "base",
       "distribution": "store",

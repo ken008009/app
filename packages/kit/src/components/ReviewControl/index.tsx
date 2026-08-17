@@ -6,7 +6,9 @@ import platformEnv from '@onekeyhq/shared/src/platformEnv';
 export const useReviewControl = () => {
   const [{ reviewControl }] = useSettingsPersistAtom();
   if (platformEnv.isAppleStoreEnv || platformEnv.isMas) {
-    return Boolean(reviewControl);
+    // Default SHOW until fetchReviewControl explicitly sets false (review mode).
+    // Avoids hiding Buy/Swap before bootstrap finishes or when atom is unset.
+    return reviewControl !== false;
   }
   return true;
 };
