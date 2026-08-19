@@ -6,6 +6,10 @@ import {
   backgroundMethod,
 } from '@onekeyhq/shared/src/background/backgroundDecorators';
 import { getNetworkIdsMap } from '@onekeyhq/shared/src/config/networkIds';
+import {
+  ISPAY_NETWORK_ID,
+  ISPAY_RPC_URL,
+} from '@onekeyhq/shared/src/config/presetNetworks';
 import { IMPL_EVM } from '@onekeyhq/shared/src/engine/engineConsts';
 import { OneKeyError } from '@onekeyhq/shared/src/errors';
 import {
@@ -265,9 +269,24 @@ class ServiceCustomRpc extends ServiceBase {
 
   @backgroundMethod()
   public async getCustomRpcForNetwork(networkId: string) {
-    return this.backgroundApi.simpleDb.customRpc.getCustomRpcForNetwork(
-      networkId,
-    );
+    const customRpc =
+      await this.backgroundApi.simpleDb.customRpc.getCustomRpcForNetwork(
+        networkId,
+      );
+    if (customRpc && (networkId !== ISPAY_NETWORK_ID || customRpc.enabled)) {
+      return customRpc;
+    }
+    if (networkId === ISPAY_NETWORK_ID) {
+      // This network is RPC-only; disabling a user override restores this endpoint.
+      return {
+        rpc: ISPAY_RPC_URL,
+        networkId,
+        enabled: true,
+        updatedAt: undefined,
+        isCustomNetwork: false,
+      };
+    }
+    return undefined;
   }
 
   @backgroundMethod()

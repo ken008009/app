@@ -8,6 +8,10 @@ import { ENetworkStatus } from '@onekeyhq/shared/types';
 
 import platformEnv from '../platformEnv';
 
+export const ISPAY_NETWORK_ID = 'evm--1944873742';
+export const ISPAY_RPC_URL = 'https://rpc.ispaypaly.org';
+export const ISPAY_WSS_URL = 'wss://ws.ispaypaly.org';
+
 export const dangerAggregateTokenNetworkRepresent: IServerNetwork = {
   'chainId': '0',
   'code': 'aggregate',
@@ -1235,6 +1239,38 @@ const hyperEvm: IServerNetwork = {
   'backendIndex': false,
 };
 
+const ispay: IServerNetwork = {
+  'impl': 'evm',
+  'chainId': '1944873742',
+  'id': ISPAY_NETWORK_ID,
+  'name': 'ispay',
+  'symbol': 'ISPAY',
+  'code': 'ispay',
+  'shortcode': 'ispay',
+  'shortname': 'ispay',
+  'decimals': 18,
+  'feeMeta': {
+    'decimals': 9,
+    'symbol': 'Gwei',
+    'isEIP1559FeeEnabled': true,
+    'isWithL1BaseFee': false,
+  },
+  'status': ENetworkStatus.LISTED,
+  'isTestnet': false,
+  'extensions': {
+    'position': 9999,
+    'isTokenSupported': true,
+    'isNFTEnabled': false,
+    'isRpcOnlyNetwork': true,
+    'rpcUrls': [ISPAY_RPC_URL],
+    'wssUrls': [ISPAY_WSS_URL],
+  },
+  'logoURI': '',
+  'defaultEnabled': false,
+  'backendIndex': false,
+  'explorerURL': '',
+};
+
 const hoodi: IServerNetwork = {
   'impl': 'evm',
   'chainId': '560048',
@@ -2370,6 +2406,7 @@ export const presetNetworksMap = {
   sonic,
   hsk,
   unichain,
+  ispay,
   hoodi,
 
   // cosmos
@@ -2539,6 +2576,7 @@ export const getPresetNetworks = memoFn((): IServerNetwork[] => {
     unichain,
     worldChain,
     hyperEvm,
+    ispay,
     hoodi,
 
     // cosmos

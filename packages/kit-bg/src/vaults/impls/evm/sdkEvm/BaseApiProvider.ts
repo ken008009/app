@@ -95,22 +95,30 @@ class BaseApiProvider {
       networkId: this.networkId,
       contractList: [this.nativeTokenAddress],
     });
+    const network = token
+      ? undefined
+      : await this.backgroundApi.serviceNetwork.getNetworkSafe({
+          networkId: this.networkId,
+        });
     if (!token) {
-      throw new OneKeyLocalError('getNativeToken failed');
+      if (network?.extensions?.isRpcOnlyNetwork !== true) {
+        throw new OneKeyLocalError('getNativeToken failed');
+      }
     }
-    if (!token?.info?.decimals) {
+    const decimals = token?.info?.decimals ?? network?.decimals;
+    if (!decimals) {
       throw new OneKeyLocalError('getNativeToken decimals failed');
     }
     return {
       info: {
-        name: token?.info?.name,
-        symbol: token?.info?.symbol,
+        name: token?.info?.name ?? network?.name,
+        symbol: token?.info?.symbol ?? network?.symbol,
         address: this.nativeTokenAddress,
         sendAddress: undefined,
         logoURI: '',
         totalSupply: undefined,
         isNative: true,
-        decimals: token?.info?.decimals,
+        decimals,
         riskLevel: 1,
         uniqueKey: this.nativeTokenAddress,
         networkId: this.networkId,

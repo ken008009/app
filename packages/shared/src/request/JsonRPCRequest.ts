@@ -113,7 +113,7 @@ class JsonRPCRequest {
   ): Promise<T> {
     let jsonResponses: unknown[] = [];
 
-    const useRpcBatch = !autoFallbackToRpcSingle;
+    const useRpcBatch = calls.length > 0 && !autoFallbackToRpcSingle;
 
     if (useRpcBatch) {
       const payload = calls.map(([method, params], index) =>

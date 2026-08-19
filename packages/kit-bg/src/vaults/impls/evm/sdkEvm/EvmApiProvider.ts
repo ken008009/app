@@ -246,9 +246,11 @@ class EvmApiProvider extends BaseApiProvider {
       ]),
     );
 
-    const infos = await this.client.batchChunkCall<string>(
-      payloads as Array<Array<[string, IJsonRpcParams]>>,
-    );
+    const infos: string[][] = payloads.length
+      ? await this.client.batchChunkCall<string>(
+          payloads as Array<Array<[string, IJsonRpcParams]>>,
+        )
+      : [];
     const tokens = infos.map((item, idx) => {
       const address = this.normalizeAddress(filteredContractList[idx]);
       const [name = '', symbol = '', decimals] = item.map((result, i) => {

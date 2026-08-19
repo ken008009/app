@@ -1530,7 +1530,9 @@ class ServiceNetwork extends ServiceBase {
     const network = await this.backgroundApi.serviceNetwork.getNetwork({
       networkId,
     });
-    return !!network.isCustomNetwork;
+    return (
+      !!network.isCustomNetwork || network.extensions?.isRpcOnlyNetwork === true
+    );
   }
 
   @backgroundMethod()
