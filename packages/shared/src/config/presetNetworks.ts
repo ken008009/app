@@ -1239,7 +1239,7 @@ const hyperEvm: IServerNetwork = {
   'backendIndex': false,
 };
 
-const ispay: IServerNetwork = {
+const ms: IServerNetwork = {
   'impl': 'evm',
   'chainId': '1944873742',
   'id': MS_NETWORK_ID,
@@ -2408,7 +2408,7 @@ export const presetNetworksMap = {
   sonic,
   hsk,
   unichain,
-  ispay,
+  ms,
   hoodi,
 
   // cosmos
@@ -2578,7 +2578,7 @@ export const getPresetNetworks = memoFn((): IServerNetwork[] => {
     unichain,
     worldChain,
     hyperEvm,
-    ispay,
+    ms,
     hoodi,
 
     // cosmos

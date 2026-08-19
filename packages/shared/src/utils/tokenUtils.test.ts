@@ -45,17 +45,18 @@ describe('getHomeTokenSymbolPriority', () => {
 });
 
 describe('isHomeGasTokenSymbol / formatHomeTokenSymbolForDisplay', () => {
-  test('matches MSUSD and ispay native aliases as the same gas token', () => {
+  test('matches MSUSD and ms native aliases as the same gas token', () => {
     expect(isHomeGasTokenSymbol('msUSD')).toBe(true);
     expect(isHomeGasTokenSymbol('MSUSD')).toBe(true);
-    expect(isHomeGasTokenSymbol('ISPAY')).toBe(true);
-    expect(isHomeGasTokenSymbol('ispay')).toBe(true);
+    expect(isHomeGasTokenSymbol('MS')).toBe(true);
+    expect(isHomeGasTokenSymbol('ms')).toBe(true);
+    expect(isHomeGasTokenSymbol('ispay')).toBe(false);
     expect(isHomeGasTokenSymbol('ETH')).toBe(false);
     expect(isHomeGasTokenSymbol(undefined)).toBe(false);
     expect(formatHomeTokenSymbolForDisplay('msUSD')).toBe(
       HOME_GAS_TOKEN_DISPLAY_SYMBOL,
     );
-    expect(formatHomeTokenSymbolForDisplay('ISPAY')).toBe(
+    expect(formatHomeTokenSymbolForDisplay('ms')).toBe(
       HOME_GAS_TOKEN_DISPLAY_SYMBOL,
     );
     expect(formatHomeTokenSymbolForDisplay('USDT')).toBe('USDT');
@@ -117,8 +118,8 @@ describe('ensureHomePinnedSymbolTokens', () => {
   test('binds MSUSD pin to MS chain native and ignores catalog Metronome', () => {
     const native: IAccountToken = {
       $key: 'ms-native',
-      symbol: 'ISPAY',
-      name: 'ispay',
+      symbol: 'MS',
+      name: 'ms',
       address: '',
       decimals: 18,
       isNative: true,
@@ -149,8 +150,8 @@ describe('ensureHomePinnedSymbolTokens', () => {
     const gasRows = out.tokens.filter(
       (token) =>
         token.symbol === 'MSUSD' ||
-        token.symbol === 'ISPAY' ||
-        token.symbol === 'ispay',
+        token.symbol === 'MS' ||
+        token.symbol === 'ms',
     );
     expect(gasRows).toHaveLength(1);
     expect(gasRows[0]?.symbol).toBe('MSUSD');

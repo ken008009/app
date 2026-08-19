@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { forEach, isEmpty, isNil, isUndefined, uniqBy } from 'lodash';
 
-// cspell:ignore ISPAY MSUSD msusd
+// cspell:ignore MSUSD msusd
 
 import { wrappedTokens } from '../../types/swap/SwapProvider.constants';
 import { getNetworkIdsMap } from '../config/networkIds';
@@ -442,12 +442,13 @@ export const HOME_GAS_TOKEN_SYMBOL = 'msusd';
 export const HOME_GAS_TOKEN_DISPLAY_SYMBOL = 'MSUSD';
 
 /**
- * On-chain aliases of the Home gas token. MS chain native used to be labeled
- * ISPAY; UI must never show that ticker.
+ * On-chain aliases of the Home gas token (compared lowercase).
+ *   msusd — canonical pin key / display ticker MSUSD
+ *   ms    — current chain / native name
  */
 const HOME_GAS_TOKEN_SYMBOL_ALIASES: ReadonlySet<string> = new Set([
   HOME_GAS_TOKEN_SYMBOL,
-  'ispay',
+  'ms',
 ]);
 
 /** Home Assets token list: preferred symbol pin order (case-insensitive). */
