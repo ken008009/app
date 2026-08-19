@@ -22,7 +22,11 @@ import {
 import { createNativeBottomTabNavigator } from '../BottomTabs';
 import { makeTabScreenOptions } from '../GlobalScreenOptions';
 import { createStackNavigator } from '../StackNavigator';
-import { getTabBarActiveColor } from '../Tab/TabBar/tabBarActiveColor';
+import {
+  getTabBarActiveColor,
+  getTabBarActiveIndicatorColor,
+  getTabBarRippleColor,
+} from '../Tab/TabBar/tabBarActiveColor';
 
 import type { ITabNavigatorProps, ITabSubNavigatorConfig } from './types';
 
@@ -83,18 +87,6 @@ const extraScreenOptions = {
   tabBarItemHidden: true,
 };
 
-const nativeTabScreenOptions = {
-  // iOS: disable freezeOnBlur to prevent react-freeze from suspending tab
-  // content when a modal is on top. When frozen, Jotai/React state updates
-  // (e.g. network switch) don't commit until the tab regains focus — but
-  // the unfreeze path on iOS can fail to flush pending commits, leaving
-  // the UI visually stale until a touch forces re-layout.
-  // Android keeps freeze enabled (no observed issue).
-  freezeOnBlur: !platformEnv.isNativeIOS,
-  preventsDefault: false,
-  lazy: true,
-};
-
 export function TabStackNavigator<RouteName extends string>({
   config,
   extraConfig,
@@ -107,6 +99,34 @@ export function TabStackNavigator<RouteName extends string>({
   const tabBarActiveTintColor = useMemo(
     () => getTabBarActiveColor(themeName),
     [themeName],
+  );
+  const tabBarActiveIndicatorColor = useMemo(
+    () => getTabBarActiveIndicatorColor(themeName),
+    [themeName],
+  );
+  const tabBarRippleColor = useMemo(
+    () => getTabBarRippleColor(themeName),
+    [themeName],
+  );
+  const tabBarInactiveTintColor = theme.iconSubdued.val;
+  const nativeTabScreenOptions = useMemo(
+    () => ({
+      // iOS: disable freezeOnBlur to prevent react-freeze from suspending tab
+      // content when a modal is on top. When frozen, Jotai/React state updates
+      // (e.g. network switch) don't commit until the tab regains focus — but
+      // the unfreeze path on iOS can fail to flush pending commits, leaving
+      // the UI visually stale until a touch forces re-layout.
+      // Android keeps freeze enabled (no observed issue).
+      freezeOnBlur: !platformEnv.isNativeIOS,
+      preventsDefault: false,
+      lazy: true,
+      // Native Android BottomNavigation tints from per-item activeTintColor
+      // first. Screen options must carry the brand gold or it falls back to
+      // Material's default teal/green.
+      tabBarActiveTintColor,
+      tabBarInactiveTintColor,
+    }),
+    [tabBarActiveTintColor, tabBarInactiveTintColor],
   );
   const [tabBarHidden, setTabBarHidden] = useState(false);
 
@@ -152,6 +172,8 @@ export function TabStackNavigator<RouteName extends string>({
           // while react-native-bottom-tabs expects SFSymbol type from sf-symbols-typescript
           tabBarIcon: nativeTabBarIcon as any,
           tabBarLabel: intl.formatMessage({ id: translationId }),
+          tabBarActiveTintColor,
+          tabBarInactiveTintColor,
         };
 
         // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
@@ -195,7 +217,14 @@ export function TabStackNavigator<RouteName extends string>({
     }
 
     return screens;
-  }, [config, extraConfig, intl, handleTabPress]);
+  }, [
+    config,
+    extraConfig,
+    intl,
+    handleTabPress,
+    tabBarActiveTintColor,
+    tabBarInactiveTintColor,
+  ]);
 
   const splitViewType = useSplitViewType();
   const isLandscape = useIsSplitView();
@@ -236,7 +265,9 @@ export function TabStackNavigator<RouteName extends string>({
       sidebarAdaptable={false}
       tabBarHidden={hidden}
       tabBarActiveTintColor={tabBarActiveTintColor}
-      tabBarInactiveTintColor={theme.iconSubdued.val}
+      tabBarInactiveTintColor={tabBarInactiveTintColor}
+      activeIndicatorColor={tabBarActiveIndicatorColor}
+      rippleColor={tabBarRippleColor}
       tabBarStyle={tabBarStyle}
       screenOptions={nativeTabScreenOptions}
     >

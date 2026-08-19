@@ -119,9 +119,12 @@ export function NavigationContainer(props: IBasicNavigationContainerProps) {
         background: theme.bgApp.val,
         card: theme.bgApp.val,
         border: theme.bgApp.val,
+        // Native Android tabs fall back to React Navigation `primary`
+        // when per-item tint is missing — keep it on brand gold.
+        primary: theme.bgAccent.val,
       },
     };
-  }, [theme.bgApp.val, themeName]);
+  }, [theme.bgApp.val, theme.bgAccent.val, themeName]);
 
   useNativeDevTools({
     ref: rootNavigationRef as RefObject<NavigationContainerRef<any>>,

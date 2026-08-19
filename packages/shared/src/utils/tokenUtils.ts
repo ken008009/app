@@ -5,7 +5,7 @@ import { forEach, isEmpty, isNil, isUndefined, uniqBy } from 'lodash';
 
 import { wrappedTokens } from '../../types/swap/SwapProvider.constants';
 import { getNetworkIdsMap } from '../config/networkIds';
-import { ISPAY_NETWORK_ID } from '../config/presetNetworks';
+import { MS_NETWORK_ID } from '../config/presetNetworks';
 import { AGGREGATE_TOKEN_MOCK_NETWORK_ID } from '../consts/networkConsts';
 import { SEARCH_KEY_MIN_LENGTH } from '../consts/walletConsts';
 import { OneKeyInternalError } from '../errors';
@@ -465,7 +465,7 @@ export function isHomeGasTokenSymbol(symbol?: string): boolean {
 }
 
 export function isMsChainNativeToken(token: IAccountToken): boolean {
-  return !!token.isNative && token.networkId === ISPAY_NETWORK_ID;
+  return !!token.isNative && token.networkId === MS_NETWORK_ID;
 }
 
 /** Normalize pin-list tickers for UI (msUSD / msusd → MSUSD). */
@@ -518,7 +518,7 @@ function tokenMatchesHomePinSymbol(
       return true;
     }
     return (
-      token.networkId === ISPAY_NETWORK_ID &&
+      token.networkId === MS_NETWORK_ID &&
       (isHomeGasTokenSymbol(token.symbol) ||
         isHomeGasTokenSymbol(token.commonSymbol))
     );
@@ -620,7 +620,7 @@ export function ensureHomePinnedSymbolTokens({
         // MSUSD). That row is always the MS chain native coin.
         const catalog =
           pin === HOME_GAS_TOKEN_SYMBOL &&
-          catalogCandidate?.networkId !== ISPAY_NETWORK_ID
+          catalogCandidate?.networkId !== MS_NETWORK_ID
             ? undefined
             : catalogCandidate;
         const isMsGasPin = pin === HOME_GAS_TOKEN_SYMBOL;
@@ -649,7 +649,7 @@ export function ensureHomePinnedSymbolTokens({
             symbol: displaySymbol,
             name: displaySymbol,
             commonSymbol: displaySymbol,
-            networkId: ISPAY_NETWORK_ID,
+            networkId: MS_NETWORK_ID,
             address: '',
             isNative: true,
             decimals: 18,

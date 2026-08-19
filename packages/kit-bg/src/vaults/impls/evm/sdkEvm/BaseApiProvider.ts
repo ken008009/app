@@ -5,7 +5,7 @@ import { md5 } from 'js-md5';
 import { forEach, isEmpty, isNaN, keyBy, omit, orderBy, uniqBy } from 'lodash';
 
 import type { IBackgroundApi } from '@onekeyhq/kit-bg/src/apis/IBackgroundApi';
-import { ISPAY_NETWORK_ID } from '@onekeyhq/shared/src/config/presetNetworks';
+import { MS_NETWORK_ID } from '@onekeyhq/shared/src/config/presetNetworks';
 import {
   NotImplemented,
   OneKeyError,
@@ -97,7 +97,7 @@ class BaseApiProvider {
       contractList: [this.nativeTokenAddress],
     });
     const network =
-      token && this.networkId !== ISPAY_NETWORK_ID
+      token && this.networkId !== MS_NETWORK_ID
         ? undefined
         : await this.backgroundApi.serviceNetwork.getNetworkSafe({
             networkId: this.networkId,
@@ -111,7 +111,7 @@ class BaseApiProvider {
     if (!decimals) {
       throw new OneKeyLocalError('getNativeToken decimals failed');
     }
-    const isMsNetwork = this.networkId === ISPAY_NETWORK_ID;
+    const isMsNetwork = this.networkId === MS_NETWORK_ID;
     return {
       info: {
         name: isMsNetwork

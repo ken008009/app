@@ -2,7 +2,7 @@ import { Image } from 'react-native';
 
 // cspell:ignore MSUSD
 
-import { ISPAY_NETWORK_ID } from '@onekeyhq/shared/src/config/presetNetworks';
+import { MS_NETWORK_ID } from '@onekeyhq/shared/src/config/presetNetworks';
 import {
   HOME_GAS_TOKEN_SYMBOL,
   isHomeGasTokenSymbol,
@@ -44,7 +44,7 @@ export function getDisplayNetworkLogoURI(
   networkId?: string,
   logoURI?: string,
 ): string | undefined {
-  if (networkId === ISPAY_NETWORK_ID) {
+  if (networkId === MS_NETWORK_ID) {
     return MSUSD_LOGO_URI;
   }
   return logoURI || undefined;
@@ -52,7 +52,7 @@ export function getDisplayNetworkLogoURI(
 
 export function applyHomeTokenLocalLogo(token: IAccountToken): IAccountToken {
   const localLogoUri =
-    token.networkId === ISPAY_NETWORK_ID && token.isNative
+    token.networkId === MS_NETWORK_ID && token.isNative
       ? MSUSD_LOGO_URI
       : getHomeTokenLocalLogoUri(token.commonSymbol ?? token.symbol);
   if (!localLogoUri || token.logoURI === localLogoUri) {

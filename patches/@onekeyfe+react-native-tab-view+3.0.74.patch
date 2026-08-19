@@ -1,0 +1,25 @@
+diff --git a/node_modules/@onekeyfe/react-native-tab-view/android/src/main/java/com/rcttabview/RCTTabView.kt b/node_modules/@onekeyfe/react-native-tab-view/android/src/main/java/com/rcttabview/RCTTabView.kt
+index a99d39e..36b0133 100644
+--- a/node_modules/@onekeyfe/react-native-tab-view/android/src/main/java/com/rcttabview/RCTTabView.kt
++++ b/node_modules/@onekeyfe/react-native-tab-view/android/src/main/java/com/rcttabview/RCTTabView.kt
+@@ -39,7 +39,19 @@ import com.google.android.material.navigation.NavigationBarView.LABEL_VISIBILITY
+ import com.google.android.material.transition.platform.MaterialFadeThrough
+ 
+ private fun getMaterialContext(context: Context): Context {
+-  return ContextThemeWrapper(context, com.google.android.material.R.style.Theme_MaterialComponents_DayNight)
++  // OneKey patch: wrap BottomNavigation with the host gold theme instead of
++  // MaterialComponents DayNight (default secondary is teal/green).
++  val styleId = context.resources.getIdentifier(
++    "Theme.App.BottomNavigation",
++    "style",
++    context.packageName
++  )
++  val themeRes = if (styleId != 0) {
++    styleId
++  } else {
++    com.google.android.material.R.style.Theme_MaterialComponents_DayNight
++  }
++  return ContextThemeWrapper(context, themeRes)
+ }
+ 
+ class ExtendedBottomNavigationView(context: Context) : BottomNavigationView(getMaterialContext(context)) {

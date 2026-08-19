@@ -12,7 +12,7 @@
     <!-- Green squircle background (superellipse shape) -->
     <path
         android:pathData="M216,144C216,193.71 193.71,216 144,216C94.29,216 72,193.71 72,144C72,94.29 94.29,72 144,72C193.71,72 216,94.29 216,144Z"
-        android:fillColor="#44D62C"/>
+        android:fillColor="#D5AC4C"/>
     <!-- Number "1" -->
     <path
         android:pathData="M150.51,102.53H130.48L126.96,113.16H138.09V135.54H150.51V102.53Z"

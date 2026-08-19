@@ -42,6 +42,16 @@
   <style name="Theme.App.SplashScreen" parent="AppTheme">
     <item name="android:windowBackground">@drawable/splashscreen</item>
   </style>
+  <!-- Used by @onekeyfe/react-native-tab-view BottomNavigationView so Material
+       colorPrimary / colorSecondary fallbacks are brand gold, not teal. -->
+  <style name="Theme.App.BottomNavigation" parent="Theme.MaterialComponents.DayNight">
+    <item name="colorPrimary">@color/colorPrimary</item>
+    <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+    <item name="colorAccent">@color/colorPrimary</item>
+    <item name="colorSecondary">@color/colorPrimary</item>
+    <item name="colorSecondaryContainer">@color/tabBarActiveIndicator</item>
+    <item name="colorOnSecondaryContainer">@color/colorPrimary</item>
+  </style>
   <style name="Theme.Recovery" parent="Theme.AppCompat.NoActionBar">
     <item name="android:windowBackground">#FF0F0F0F</item>
     <item name="android:statusBarColor" tools:targetApi="21">#FF0F0F0F</item>

@@ -99,6 +99,11 @@ export type NativeBottomTabNavigationOptions = {
   tabBarActiveTintColor?: string;
 
   /**
+   * Inactive tab color.
+   */
+  tabBarInactiveTintColor?: string;
+
+  /**
    * TestID for the tab.
    */
   tabBarButtonTestID?: string;

@@ -26,6 +26,7 @@ export function NativeBottomTabView({
   navigation,
   descriptors,
   tabBar,
+  tabBarActiveTintColor,
   ...rest
 }: Props) {
   const renderScene = useCallback(
@@ -34,8 +35,9 @@ export function NativeBottomTabView({
   );
   const getActiveTintColor = useCallback(
     ({ route }: { route: Route<string> }) =>
-      descriptors[route.key]?.options.tabBarActiveTintColor,
-    [descriptors],
+      descriptors[route.key]?.options.tabBarActiveTintColor ??
+      tabBarActiveTintColor,
+    [descriptors, tabBarActiveTintColor],
   );
   const getLabelText = useCallback(
     ({ route }: { route: Route<string> }) => {
@@ -173,6 +175,7 @@ export function NativeBottomTabView({
   return (
     <TabView
       {...rest}
+      tabBarActiveTintColor={tabBarActiveTintColor}
       navigationState={state}
       renderScene={renderScene}
       getActiveTintColor={getActiveTintColor}
