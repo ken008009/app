@@ -1243,11 +1243,13 @@ const ispay: IServerNetwork = {
   'impl': 'evm',
   'chainId': '1944873742',
   'id': ISPAY_NETWORK_ID,
-  'name': 'ispay',
-  'symbol': 'ISPAY',
+  // User-facing chain name. RPC identity stays `evm--1944873742`.
+  'name': 'MS',
+  // Native gas ticker shown in TokenListBlock (MSUSD).
+  'symbol': 'MSUSD',
   'code': 'ispay',
   'shortcode': 'ispay',
-  'shortname': 'ispay',
+  'shortname': 'MS',
   'decimals': 18,
   'feeMeta': {
     'decimals': 9,

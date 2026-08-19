@@ -292,6 +292,7 @@ function SingleWalletAddressListItem({ network }: { network: IServerNetwork }) {
     () => (
       <NetworkAvatarBase
         logoURI={network.logoURI}
+        networkId={network.id}
         isCustomNetwork={network.isCustomNetwork}
         isAllNetworks={network.isAllNetworks}
         networkName={network.name}
@@ -299,6 +300,7 @@ function SingleWalletAddressListItem({ network }: { network: IServerNetwork }) {
       />
     ),
     [
+      network.id,
       network.isAllNetworks,
       network.isCustomNetwork,
       network.logoURI,

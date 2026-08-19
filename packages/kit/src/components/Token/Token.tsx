@@ -168,7 +168,11 @@ export function Token({
           bg={showNetworkIconBorder ? '$bgApp' : '$transparent'}
           borderRadius="$full"
         >
-          <NetworkAvatarBase size={chainImageSize} logoURI={networkImageUri} />
+          <NetworkAvatarBase
+            size={chainImageSize}
+            logoURI={networkImageUri}
+            networkId={networkId}
+          />
         </Stack>
       </Stack>
     );

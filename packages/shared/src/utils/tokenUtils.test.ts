@@ -45,12 +45,17 @@ describe('getHomeTokenSymbolPriority', () => {
 });
 
 describe('isHomeGasTokenSymbol / formatHomeTokenSymbolForDisplay', () => {
-  test('matches MSUSD case-insensitively and formats display ticker', () => {
+  test('matches MSUSD and ispay native aliases as the same gas token', () => {
     expect(isHomeGasTokenSymbol('msUSD')).toBe(true);
     expect(isHomeGasTokenSymbol('MSUSD')).toBe(true);
+    expect(isHomeGasTokenSymbol('ISPAY')).toBe(true);
+    expect(isHomeGasTokenSymbol('ispay')).toBe(true);
     expect(isHomeGasTokenSymbol('ETH')).toBe(false);
     expect(isHomeGasTokenSymbol(undefined)).toBe(false);
     expect(formatHomeTokenSymbolForDisplay('msUSD')).toBe(
+      HOME_GAS_TOKEN_DISPLAY_SYMBOL,
+    );
+    expect(formatHomeTokenSymbolForDisplay('ISPAY')).toBe(
       HOME_GAS_TOKEN_DISPLAY_SYMBOL,
     );
     expect(formatHomeTokenSymbolForDisplay('USDT')).toBe('USDT');
@@ -104,7 +109,56 @@ describe('ensureHomePinnedSymbolTokens', () => {
       'BNB',
       'DAI',
     ]);
+    expect(out.tokens[0]?.networkId).toBe('evm--1944873742');
+    expect(out.tokens[0]?.isNative).toBe(true);
     expect(out.tokenListMap[out.tokens[0].$key]?.fiatValue).toBe('0');
+  });
+
+  test('binds MSUSD pin to MS chain native and ignores catalog Metronome', () => {
+    const native: IAccountToken = {
+      $key: 'ms-native',
+      symbol: 'ISPAY',
+      name: 'ispay',
+      address: '',
+      decimals: 18,
+      isNative: true,
+      networkId: 'evm--1944873742',
+    };
+    const metronome: IAccountToken = {
+      $key: 'metronome-msusd',
+      symbol: 'MSUSD',
+      name: 'Metronome',
+      address: '0xmetronome',
+      decimals: 18,
+      isNative: false,
+      networkId: 'evm--1',
+    };
+    const out = ensureHomePinnedSymbolTokens({
+      tokens: [native],
+      tokenListMap: {
+        'ms-native': {
+          balance: '90000000000000000000',
+          balanceParsed: '90',
+          fiatValue: '0',
+          price: 0,
+        },
+      },
+      catalogTokens: [metronome],
+    });
+
+    const gasRows = out.tokens.filter(
+      (token) =>
+        token.symbol === 'MSUSD' ||
+        token.symbol === 'ISPAY' ||
+        token.symbol === 'ispay',
+    );
+    expect(gasRows).toHaveLength(1);
+    expect(gasRows[0]?.symbol).toBe('MSUSD');
+    expect(gasRows[0]?.name).toBe('MSUSD');
+    expect(gasRows[0]?.isNative).toBe(true);
+    expect(gasRows[0]?.networkId).toBe('evm--1944873742');
+    expect(gasRows[0]?.$key).toBe('ms-native');
+    expect(out.tokenListMap['ms-native']?.balanceParsed).toBe('90');
   });
 });
 

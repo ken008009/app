@@ -5,6 +5,7 @@ import { md5 } from 'js-md5';
 import { forEach, isEmpty, isNaN, keyBy, omit, orderBy, uniqBy } from 'lodash';
 
 import type { IBackgroundApi } from '@onekeyhq/kit-bg/src/apis/IBackgroundApi';
+import { ISPAY_NETWORK_ID } from '@onekeyhq/shared/src/config/presetNetworks';
 import {
   NotImplemented,
   OneKeyError,
@@ -95,11 +96,12 @@ class BaseApiProvider {
       networkId: this.networkId,
       contractList: [this.nativeTokenAddress],
     });
-    const network = token
-      ? undefined
-      : await this.backgroundApi.serviceNetwork.getNetworkSafe({
-          networkId: this.networkId,
-        });
+    const network =
+      token && this.networkId !== ISPAY_NETWORK_ID
+        ? undefined
+        : await this.backgroundApi.serviceNetwork.getNetworkSafe({
+            networkId: this.networkId,
+          });
     if (!token) {
       if (network?.extensions?.isRpcOnlyNetwork !== true) {
         throw new OneKeyLocalError('getNativeToken failed');
@@ -109,10 +111,15 @@ class BaseApiProvider {
     if (!decimals) {
       throw new OneKeyLocalError('getNativeToken decimals failed');
     }
+    const isMsNetwork = this.networkId === ISPAY_NETWORK_ID;
     return {
       info: {
-        name: token?.info?.name ?? network?.name,
-        symbol: token?.info?.symbol ?? network?.symbol,
+        name: isMsNetwork
+          ? (network?.name ?? 'MS')
+          : (token?.info?.name ?? network?.name),
+        symbol: isMsNetwork
+          ? (network?.symbol ?? 'MSUSD')
+          : (token?.info?.symbol ?? network?.symbol),
         address: this.nativeTokenAddress,
         sendAddress: undefined,
         logoURI: '',

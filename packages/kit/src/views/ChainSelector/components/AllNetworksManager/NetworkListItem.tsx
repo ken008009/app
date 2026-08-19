@@ -64,6 +64,7 @@ function NetworkListItem({ network }: { network: IServerNetworkMatch }) {
       renderAvatar={
         <NetworkAvatarBase
           logoURI={network.logoURI}
+          networkId={network.id}
           isCustomNetwork={network.isCustomNetwork}
           networkName={network.name}
           isAllNetworks={network.isAllNetworks}

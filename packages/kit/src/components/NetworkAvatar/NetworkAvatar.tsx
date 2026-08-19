@@ -12,6 +12,7 @@ import type { IServerNetwork } from '@onekeyhq/shared/types';
 
 import backgroundApiProxy from '../../background/instance/backgroundApiProxy';
 import { usePromiseResult } from '../../hooks/usePromiseResult';
+import { getDisplayNetworkLogoURI } from '../../utils/homeTokenLocalLogos';
 import { LetterAvatar } from '../LetterAvatar';
 import { useTokenListViewContext } from '../TokenListView/TokenListViewContext';
 
@@ -22,6 +23,7 @@ export const NetworkAvatarBase = ({
   size,
   isCustomNetwork,
   networkName,
+  networkId,
   isAllNetworks,
   allNetworksIconProps,
   isAggregateToken,
@@ -30,10 +32,13 @@ export const NetworkAvatarBase = ({
   size?: IImageProps['size'];
   isCustomNetwork?: boolean;
   networkName?: string;
+  networkId?: string;
   isAllNetworks?: boolean;
   allNetworksIconProps?: ComponentProps<typeof Icon>;
   isAggregateToken?: boolean;
 }) => {
+  const resolvedLogoURI =
+    getDisplayNetworkLogoURI(networkId, logoURI) ?? logoURI;
   if (isCustomNetwork) {
     return <LetterAvatar letter={networkName?.[0]} size={size} />;
   }
@@ -59,10 +64,10 @@ export const NetworkAvatarBase = ({
   return (
     <Image
       size={size}
-      src={logoURI}
+      src={resolvedLogoURI}
       bg="$bgApp"
       borderRadius="$full"
-      source={{ uri: logoURI }}
+      source={{ uri: resolvedLogoURI }}
       fallback={
         <Icon
           size={size as FontSizeTokens}
@@ -126,10 +131,12 @@ export function NetworkAvatar({
     );
   }
 
-  return logoURI ? (
+  const resolvedLogoURI = getDisplayNetworkLogoURI(networkId, logoURI);
+  return resolvedLogoURI ? (
     <NetworkAvatarBase
       size={size}
-      logoURI={logoURI}
+      networkId={networkId}
+      logoURI={resolvedLogoURI}
       isAllNetworks={isAllNetworks}
       allNetworksIconProps={allNetworksIconProps}
     />

@@ -40,3 +40,10 @@ Cases are appended by AI after each bug fix. Do NOT reorder or delete entries â€
 **Root Cause**: Wallet avatar rendering only read `keylessProvider`, while the refreshed avatar-specific provider was not persisted or prioritized.
 **Fix**: Stored `avatarProvider` in `keylessDetails` during avatar repair and updated avatar rendering to prefer `avatarProvider` before falling back to `keylessProvider`.
 **Catchable by**: Section 4: Type definitions changed -> all consumers updated
+
+## Case: MSUSD pin bound to catalog token instead of MS native
+**Date**: 2026-08-19 | **Platforms**: Android, iOS, Web, Desktop, Extension
+**Symptom**: Selecting the MS chain still showed a wrong MSUSD balance in TokenListBlock.
+**Root Cause**: Home pin list matched ticker `MSUSD` against catalog Metronome MSUSD, while this chain's native coin was still labeled ISPAY. The pin row was a zero stub, not `eth_getBalance` on `evm--1944873742`.
+**Fix**: Treat ISPAY as an MSUSD alias, bind the MSUSD pin to the MS chain native token, skip other-chain catalog MSUSD, and show the MSUSD icon for the MS chain.
+**Catchable by**: Section 4: Shared hook/utility modified â†’ checked all consumers

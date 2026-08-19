@@ -1,6 +1,12 @@
 import { Image } from 'react-native';
 
-import { HOME_GAS_TOKEN_SYMBOL } from '@onekeyhq/shared/src/utils/tokenUtils';
+// cspell:ignore MSUSD
+
+import { ISPAY_NETWORK_ID } from '@onekeyhq/shared/src/config/presetNetworks';
+import {
+  HOME_GAS_TOKEN_SYMBOL,
+  isHomeGasTokenSymbol,
+} from '@onekeyhq/shared/src/utils/tokenUtils';
 import type { IAccountToken } from '@onekeyhq/shared/types/token';
 
 // Webpack returns a URL string; Metro returns a numeric asset id.
@@ -28,13 +34,27 @@ export function getHomeTokenLocalLogoUri(symbol?: string): string | undefined {
   if (!symbol) {
     return undefined;
   }
+  if (isHomeGasTokenSymbol(symbol)) {
+    return MSUSD_LOGO_URI;
+  }
   return HOME_TOKEN_LOCAL_LOGO_BY_SYMBOL[symbol.toLowerCase()];
 }
 
+export function getDisplayNetworkLogoURI(
+  networkId?: string,
+  logoURI?: string,
+): string | undefined {
+  if (networkId === ISPAY_NETWORK_ID) {
+    return MSUSD_LOGO_URI;
+  }
+  return logoURI || undefined;
+}
+
 export function applyHomeTokenLocalLogo(token: IAccountToken): IAccountToken {
-  const localLogoUri = getHomeTokenLocalLogoUri(
-    token.commonSymbol ?? token.symbol,
-  );
+  const localLogoUri =
+    token.networkId === ISPAY_NETWORK_ID && token.isNative
+      ? MSUSD_LOGO_URI
+      : getHomeTokenLocalLogoUri(token.commonSymbol ?? token.symbol);
   if (!localLogoUri || token.logoURI === localLogoUri) {
     return token;
   }

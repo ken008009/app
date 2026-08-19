@@ -1,8 +1,11 @@
 import BigNumber from 'bignumber.js';
 import { forEach, isEmpty, isNil, isUndefined, uniqBy } from 'lodash';
 
+// cspell:ignore ISPAY MSUSD msusd
+
 import { wrappedTokens } from '../../types/swap/SwapProvider.constants';
 import { getNetworkIdsMap } from '../config/networkIds';
+import { ISPAY_NETWORK_ID } from '../config/presetNetworks';
 import { AGGREGATE_TOKEN_MOCK_NETWORK_ID } from '../consts/networkConsts';
 import { SEARCH_KEY_MIN_LENGTH } from '../consts/walletConsts';
 import { OneKeyInternalError } from '../errors';
@@ -438,6 +441,15 @@ export const HOME_GAS_TOKEN_SYMBOL = 'msusd';
 /** Canonical display ticker for the Home gas / pin-#1 token. */
 export const HOME_GAS_TOKEN_DISPLAY_SYMBOL = 'MSUSD';
 
+/**
+ * On-chain aliases of the Home gas token. MS chain native used to be labeled
+ * ISPAY; UI must never show that ticker.
+ */
+const HOME_GAS_TOKEN_SYMBOL_ALIASES: ReadonlySet<string> = new Set([
+  HOME_GAS_TOKEN_SYMBOL,
+  'ispay',
+]);
+
 /** Home Assets token list: preferred symbol pin order (case-insensitive). */
 export const HOME_TOKEN_SYMBOL_PRIORITY = [
   HOME_GAS_TOKEN_SYMBOL,
@@ -449,7 +461,11 @@ export const HOME_TOKEN_SYMBOL_PRIORITY = [
 ] as const;
 
 export function isHomeGasTokenSymbol(symbol?: string): boolean {
-  return !!symbol && symbol.toLowerCase() === HOME_GAS_TOKEN_SYMBOL;
+  return !!symbol && HOME_GAS_TOKEN_SYMBOL_ALIASES.has(symbol.toLowerCase());
+}
+
+export function isMsChainNativeToken(token: IAccountToken): boolean {
+  return !!token.isNative && token.networkId === ISPAY_NETWORK_ID;
 }
 
 /** Normalize pin-list tickers for UI (msUSD / msusd → MSUSD). */
@@ -495,6 +511,18 @@ function tokenMatchesHomePinSymbol(
   pinSymbol: string,
 ): boolean {
   const pin = pinSymbol.toLowerCase();
+  if (pin === HOME_GAS_TOKEN_SYMBOL) {
+    // MSUSD pin is the MS chain native coin (chainId 1944873742), not
+    // catalog Metronome MSUSD on other networks.
+    if (isMsChainNativeToken(token)) {
+      return true;
+    }
+    return (
+      token.networkId === ISPAY_NETWORK_ID &&
+      (isHomeGasTokenSymbol(token.symbol) ||
+        isHomeGasTokenSymbol(token.commonSymbol))
+    );
+  }
   return (
     token.symbol?.toLowerCase() === pin ||
     token.commonSymbol?.toLowerCase() === pin
@@ -532,7 +560,8 @@ function normalizeHomePinnedTokenDisplay(token: IAccountToken): IAccountToken {
  * Ensure Home pin symbols (MSUSD → … → BNB) exist in the token list even when
  * the current network response omits them (e.g. BTC/BNB on Ethereum). Missing
  * entries are synthesized from `catalogTokens` (allAggregateTokens) or as
- * zero-balance aggregate stubs, then placed at the front in pin order.
+ * zero-balance stubs, then placed at the front in pin order.
+ * The MSUSD pin is always the MS chain native coin (`evm--1944873742`).
  */
 export function ensureHomePinnedSymbolTokens({
   tokens,
@@ -563,67 +592,96 @@ export function ensureHomePinnedSymbolTokens({
   const mainTokens = tokens.map(normalizeHomePinnedTokenDisplay);
   const smallTokens = smallBalanceTokens.map(normalizeHomePinnedTokenDisplay);
 
-  const findIn = (list: IAccountToken[], pin: string) =>
-    list.find((token) => tokenMatchesHomePinSymbol(token, pin));
+  const findIn = (list: IAccountToken[], pin: string) => {
+    if (pin === HOME_GAS_TOKEN_SYMBOL) {
+      const native = list.find((token) => isMsChainNativeToken(token));
+      if (native) {
+        return native;
+      }
+    }
+    return list.find((token) => tokenMatchesHomePinSymbol(token, pin));
+  };
 
   for (const pin of HOME_TOKEN_SYMBOL_PRIORITY) {
     const inMain = findIn(mainTokens, pin);
-    if (inMain) {
-      continue;
-    }
-
-    const inSmallIndex = smallTokens.findIndex((token) =>
-      tokenMatchesHomePinSymbol(token, pin),
-    );
-    if (inSmallIndex >= 0) {
-      const [promoted] = smallTokens.splice(inSmallIndex, 1);
-      mainTokens.push(normalizeHomePinnedTokenDisplay(promoted));
-      continue;
-    }
-
-    const displaySymbol = displaySymbolForHomePin(pin);
-    const catalog = catalogBySymbol.get(pin);
-    const stubKey =
-      catalog?.$key ||
-      buildAggregateTokenListMapKeyForTokenList({
-        commonSymbol: displaySymbol,
-      });
-    const stub: IAccountToken = catalog
-      ? {
-          ...catalog,
-          $key: stubKey,
-          symbol: displaySymbol,
-          commonSymbol: displaySymbol,
-          name: catalog.name || displaySymbol,
-          isAggregateToken: true,
-          isNative: false,
-          networkId: catalog.networkId || AGGREGATE_TOKEN_MOCK_NETWORK_ID,
-          address: catalog.address || stubKey,
+    if (!inMain) {
+      const inSmallIndex = smallTokens.findIndex((token) =>
+        pin === HOME_GAS_TOKEN_SYMBOL
+          ? isMsChainNativeToken(token) || tokenMatchesHomePinSymbol(token, pin)
+          : tokenMatchesHomePinSymbol(token, pin),
+      );
+      if (inSmallIndex >= 0) {
+        const [promoted] = smallTokens.splice(inSmallIndex, 1);
+        mainTokens.push(normalizeHomePinnedTokenDisplay(promoted));
+      } else {
+        const displaySymbol = displaySymbolForHomePin(pin);
+        const catalogCandidate = catalogBySymbol.get(pin);
+        // Never bind the MSUSD pin to catalog Metronome (or any other-chain
+        // MSUSD). That row is always the MS chain native coin.
+        const catalog =
+          pin === HOME_GAS_TOKEN_SYMBOL &&
+          catalogCandidate?.networkId !== ISPAY_NETWORK_ID
+            ? undefined
+            : catalogCandidate;
+        const isMsGasPin = pin === HOME_GAS_TOKEN_SYMBOL;
+        const stubKey = isMsGasPin
+          ? `home_pin_${pin}`
+          : catalog?.$key ||
+            buildAggregateTokenListMapKeyForTokenList({
+              commonSymbol: displaySymbol,
+            });
+        let stub: IAccountToken;
+        if (catalog) {
+          stub = {
+            ...catalog,
+            $key: stubKey,
+            symbol: displaySymbol,
+            commonSymbol: displaySymbol,
+            name: catalog.name || displaySymbol,
+            isAggregateToken: true,
+            isNative: false,
+            networkId: catalog.networkId || AGGREGATE_TOKEN_MOCK_NETWORK_ID,
+            address: catalog.address || stubKey,
+          };
+        } else if (isMsGasPin) {
+          stub = {
+            $key: stubKey,
+            symbol: displaySymbol,
+            name: displaySymbol,
+            commonSymbol: displaySymbol,
+            networkId: ISPAY_NETWORK_ID,
+            address: '',
+            isNative: true,
+            decimals: 18,
+          };
+        } else {
+          stub = {
+            $key: `home_pin_${pin}`,
+            symbol: displaySymbol,
+            name: displaySymbol,
+            commonSymbol: displaySymbol,
+            networkId: AGGREGATE_TOKEN_MOCK_NETWORK_ID,
+            address: `home_pin_${pin}`,
+            isNative: false,
+            isAggregateToken: true,
+            decimals: 18,
+          };
         }
-      : {
-          $key: `home_pin_${pin}`,
-          symbol: displaySymbol,
-          name: displaySymbol,
-          commonSymbol: displaySymbol,
-          networkId: AGGREGATE_TOKEN_MOCK_NETWORK_ID,
-          address: `home_pin_${pin}`,
-          isNative: false,
-          isAggregateToken: true,
-          decimals: 18,
-        };
 
-    mainTokens.push(stub);
-    if (!resultMap[stub.$key]) {
-      resultMap[stub.$key] = { ...HOME_PIN_ZERO_FIAT };
+        mainTokens.push(stub);
+        if (!resultMap[stub.$key]) {
+          resultMap[stub.$key] = { ...HOME_PIN_ZERO_FIAT };
+        }
+      }
     }
   }
 
   const pinned: IAccountToken[] = [];
   const usedKeys = new Set<string>();
   for (const pin of HOME_TOKEN_SYMBOL_PRIORITY) {
-    const hit = mainTokens.find(
-      (token) =>
-        !usedKeys.has(token.$key) && tokenMatchesHomePinSymbol(token, pin),
+    const hit = findIn(
+      mainTokens.filter((token) => !usedKeys.has(token.$key)),
+      pin,
     );
     if (hit) {
       pinned.push(hit);

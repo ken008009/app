@@ -135,6 +135,7 @@ const ChainSelectorSectionListContent = ({
             renderAvatar={
               <NetworkAvatarBase
                 logoURI={item.logoURI}
+                networkId={item.id}
                 isCustomNetwork={item.isCustomNetwork}
                 isAllNetworks={item.isAllNetworks}
                 networkName={item.name}

@@ -121,6 +121,7 @@ const ChainSelectorListViewContent = ({
             renderAvatar={
               <NetworkAvatarBase
                 logoURI={item.logoURI}
+                networkId={item.id}
                 isCustomNetwork={item.isCustomNetwork}
                 networkName={item.name}
                 isAllNetworks={item.isAllNetworks}
