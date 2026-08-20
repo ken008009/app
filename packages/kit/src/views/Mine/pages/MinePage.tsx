@@ -1,86 +1,45 @@
-import { Fragment, useMemo } from 'react';
-
-import { useIntl } from 'react-intl';
-
 import {
-  Divider,
   Page,
   ScrollView,
-  SizableText,
-  XStack,
   YStack,
+  useSafeAreaInsets,
   useScrollContentTabBarOffset,
 } from '@onekeyhq/components';
-import { TabPageHeader } from '@onekeyhq/kit/src/components/TabPageHeader';
-import { ETranslations } from '@onekeyhq/shared/src/locale';
-import platformEnv from '@onekeyhq/shared/src/platformEnv';
-import { ETabRoutes } from '@onekeyhq/shared/src/routes';
-import { EAccountSelectorSceneName } from '@onekeyhq/shared/types';
 
-import { TabSettingsListGrid } from '../../Setting/pages/Tab/ListItem';
-import {
-  showUnderDevelopmentToast,
-  useMineMenuConfig,
-} from '../hooks/useMineMenuConfig';
-import type { ISubSettingConfig } from '../../Setting/pages/Tab/config';
-
-function MineMenuListGrid({ item }: { item: ISubSettingConfig }) {
-  const resolvedItem = useMemo(() => {
-    if (item.renderElement || item.onPress) {
-      return item;
-    }
-    return {
-      ...item,
-      onPress: () => {
-        showUnderDevelopmentToast();
-      },
-    };
-  }, [item]);
-
-  return <TabSettingsListGrid item={resolvedItem} />;
-}
+import { MineMenuItemView } from '../components/MineMenuItemView';
+import { MineProfileHeader } from '../components/MineProfileHeader';
+import { MineSettingsSection } from '../components/MineSettingsRow';
+import { useMineMenuConfig } from '../hooks/useMineMenuConfig';
 
 export function MinePage() {
-  const intl = useIntl();
-  const menuItems = useMineMenuConfig();
+  const sections = useMineMenuConfig();
   const tabBarOffset = useScrollContentTabBarOffset();
+  const { top } = useSafeAreaInsets();
 
   return (
     <Page>
-      {platformEnv.isNative ? (
-        <TabPageHeader
-          sceneName={EAccountSelectorSceneName.home}
-          tabRoute={ETabRoutes.Mine}
-          customHeaderLeftItems={
-            <SizableText size="$headingXl">
-              {intl.formatMessage({ id: ETranslations.global_mine })}
-            </SizableText>
-          }
-        />
-      ) : (
-        <Page.Header
-          title={intl.formatMessage({ id: ETranslations.global_mine })}
-        />
-      )}
+      <Page.Header headerShown={false} />
       <Page.Body>
         <ScrollView
-          contentInsetAdjustmentBehavior="automatic"
+          contentInsetAdjustmentBehavior="never"
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{
-            pb: tabBarOffset,
-            pt: '$2',
+            pb: tabBarOffset + 16,
+            pt: top + 8,
           }}
         >
-          <YStack>
-            {menuItems.map((item, itemIdx) => (
-              <Fragment key={`${item.title}-${itemIdx}`}>
-                <MineMenuListGrid item={item} />
-                {itemIdx !== menuItems.length - 1 ? (
-                  <XStack mx="$5">
-                    <Divider borderColor="$neutral3" />
-                  </XStack>
-                ) : null}
-              </Fragment>
+          <YStack px="$5">
+            <MineProfileHeader />
+            {sections.map((section) => (
+              <MineSettingsSection key={section.key} title={section.title}>
+                {section.items.map((item, itemIdx) => (
+                  <MineMenuItemView
+                    key={`${section.key}-${item.title}`}
+                    item={item}
+                    showDivider={itemIdx !== section.items.length - 1}
+                  />
+                ))}
+              </MineSettingsSection>
             ))}
           </YStack>
         </ScrollView>
