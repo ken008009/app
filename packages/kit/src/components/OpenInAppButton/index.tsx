@@ -11,7 +11,7 @@ import {
   Stack,
   XStack,
 } from '@onekeyhq/components';
-import Logo from '@onekeyhq/kit/assets/logo_round_decorated.png';
+import { BRAND_QRCODE_LOGO } from '@onekeyhq/kit/src/utils/brandAssets';
 import { DOWNLOAD_MOBILE_APP_URL } from '@onekeyhq/shared/src/config/appConfig';
 import { ETranslations } from '@onekeyhq/shared/src/locale';
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
@@ -67,7 +67,7 @@ export function OpenInAppButton({
               borderWidth={StyleSheet.hairlineWidth}
               borderColor="$borderSubdued"
             >
-              <QRCode value={text} logo={Logo} logoSize={40} size={224} />
+              <QRCode value={text} logo={BRAND_QRCODE_LOGO} logoSize={40} size={224} />
             </Stack>
           </Stack>
           <XStack

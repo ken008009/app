@@ -18,7 +18,7 @@ function resolveLocalAssetUri(asset: number | string): string {
 }
 
 const MSUSD_LOGO_URI = resolveLocalAssetUri(
-  require('@onekeyhq/kit/assets/tokens/mused-icon.png') as number | string,
+  require('@onekeyhq/kit/assets/tokens/ms-icon.png') as number | string,
 );
 
 const BTC_LOGO_URI = resolveLocalAssetUri(

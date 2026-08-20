@@ -23,6 +23,7 @@ import timerUtils from '@onekeyhq/shared/src/utils/timerUtils';
 
 import backgroundApiProxy from '../../../background/instance/backgroundApiProxy';
 import { useAccountData } from '../../../hooks/useAccountData';
+import { BRAND_QRCODE_LOGO_ALT } from '../../../utils/brandAssets';
 import useAppNavigation from '../../../hooks/useAppNavigation';
 import { ReceiveTestIDs } from '../testIDs';
 
@@ -102,9 +103,7 @@ function ReceiveInvoice() {
         >
           <QRCode
             value={paymentRequest}
-            logo={{
-              uri: network.logoURI,
-            }}
+            logo={BRAND_QRCODE_LOGO_ALT}
             logoSize={40}
             size={240}
           />

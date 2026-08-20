@@ -19,6 +19,7 @@ import { EAccountSelectorSceneName } from '@onekeyhq/shared/types';
 
 import { useShortcutsOnRouteFocused } from '../../../hooks/useShortcutsOnRouteFocused';
 import { useAccountSelectorSceneInfo } from '../../../states/jotai/contexts/accountSelector';
+import { BRAND_ACCOUNT_AVATAR } from '../../../utils/brandAssets';
 import { AccountAvatar } from '../../AccountAvatar';
 import { SpotlightView } from '../../Spotlight';
 import { useAccountSelectorTrigger } from '../hooks/useAccountSelectorTrigger';
@@ -47,7 +48,7 @@ export function AccountSelectorTriggerBase({
 } & IAccountSelectorRouteParamsExtraConfig) {
   const { sceneName } = useAccountSelectorSceneInfo();
   const {
-    activeAccount: { account, dbAccount, indexedAccount, accountName, wallet },
+    activeAccount: { account, accountName, wallet },
     showAccountSelector,
   } = useAccountSelectorTrigger({
     num,
@@ -135,11 +136,8 @@ export function AccountSelectorTriggerBase({
       >
         <AccountAvatar
           size="small"
-          borderRadius="$1"
-          indexedAccount={indexedAccount}
-          account={account}
-          dbAccount={dbAccount}
-          wallet={showWalletAvatar ? wallet : undefined}
+          borderRadius="$full"
+          source={BRAND_ACCOUNT_AVATAR}
         />
         <Stack
           flexDirection={horizontalLayout ? 'row' : 'column'}
@@ -203,11 +201,9 @@ export function AccountSelectorTriggerBase({
   }, [
     account,
     autoWidthForHome,
-    dbAccount,
     displayLabel,
     handleAccountSelectorPress,
     horizontalLayout,
-    indexedAccount,
     isWebDappModeWithNoWallet,
     isTriggerDisabled,
     showWalletAvatar,

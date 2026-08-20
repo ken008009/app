@@ -5,6 +5,7 @@ import networkUtils from '@onekeyhq/shared/src/utils/networkUtils';
 import { checkIsOnlyOneTokenHasBalance } from '@onekeyhq/shared/src/utils/tokenUtils';
 
 import { useAggregateSubTokenFiatMap } from '../../states/jotai/contexts/tokenList/cells';
+import { getDisplayNetworkLogoURI } from '../../utils/homeTokenLocalLogos';
 import { Token } from '../Token';
 
 import { useTokenListViewContext } from './TokenListViewContext';
@@ -101,7 +102,10 @@ function TokenIconView(props: IProps) {
       <Token
         size={tokenSize}
         tokenImageUri={icon}
-        networkImageUri={network?.logoURI}
+        networkImageUri={getDisplayNetworkLogoURI(
+          selectedNetworkId,
+          network?.logoURI,
+        )}
         networkId={selectedNetworkId}
         showNetworkIcon
       />

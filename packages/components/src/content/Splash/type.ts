@@ -1,10 +1,11 @@
 import type { PropsWithChildren } from 'react';
 
-import type { LayoutChangeEvent } from 'react-native';
+import type { ImageSourcePropType, LayoutChangeEvent } from 'react-native';
 
 export interface ISplashViewProps {
   canDismissSplash: boolean;
   onExit?: () => void;
+  source?: ImageSourcePropType;
 }
 
 export type ISplashViewChildrenContentProps = PropsWithChildren<{

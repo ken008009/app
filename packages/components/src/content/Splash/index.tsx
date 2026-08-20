@@ -8,8 +8,11 @@ import { Stack } from '../../primitives/Stack';
 
 import { SplashView } from './SplashView';
 
+import type { ISplashViewProps } from './type';
+
 export type ISplashProps = PropsWithChildren<{
   canDismissSplash?: boolean;
+  source?: ISplashViewProps['source'];
 }>;
 
 const jsEntryStart: number =
@@ -28,6 +31,7 @@ function logSplash(message: string) {
 export function Splash({
   children,
   canDismissSplash: externalCanDismissSplash = true,
+  source,
 }: ISplashProps) {
   logSplash(`render externalCanDismissSplash=${externalCanDismissSplash}`);
   const handleExitComplete = useCallback(() => {
@@ -60,6 +64,7 @@ export function Splash({
       <SplashView
         canDismissSplash={externalCanDismissSplash}
         onExit={handleExitComplete}
+        source={source}
       />
     </Stack>
   );

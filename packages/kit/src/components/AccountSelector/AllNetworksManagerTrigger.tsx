@@ -169,6 +169,7 @@ function AllNetworksManagerTrigger({
             >
               <NetworkAvatarBase
                 logoURI={item?.logoURI}
+                networkId={item?.id}
                 size={avatarSize}
                 networkName={item?.name}
                 isCustomNetwork={item?.isCustomNetwork}

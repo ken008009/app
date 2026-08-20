@@ -58,12 +58,13 @@ import {
   HyperlinkText,
 } from '../../../components/HyperlinkText';
 import { NetworkAvatar } from '../../../components/NetworkAvatar';
-import { Token } from '../../../components/Token';
 import { useAccountData } from '../../../hooks/useAccountData';
 import useAppNavigation from '../../../hooks/useAppNavigation';
 import { useCopyAddressWithDeriveType } from '../../../hooks/useCopyAccountAddress';
 import { usePromiseResult } from '../../../hooks/usePromiseResult';
 import { useWalletBanner } from '../../../hooks/useWalletBanner';
+import { BRAND_QRCODE_LOGO } from '../../../utils/brandAssets';
+import { getDisplayNetworkLogoURI } from '../../../utils/homeTokenLocalLogos';
 import { ReceiveTestIDs } from '../testIDs';
 import { EAddressState } from '../types';
 
@@ -100,13 +101,6 @@ function ReceiveToken() {
       networkId,
       walletId,
     });
-
-  const { result: nativeToken } = usePromiseResult(async () => {
-    return backgroundApiProxy.serviceToken.getNativeToken({
-      accountId,
-      networkId,
-    });
-  }, [accountId, networkId]);
 
   const { handleBannerOnPress } = useWalletBanner({
     account,
@@ -212,7 +206,7 @@ function ReceiveToken() {
   }, [addressState, isHardwareWallet]);
 
   useEffect(() => {
-    const url = network?.logoURI;
+    const url = getDisplayNetworkLogoURI(network?.id, network?.logoURI);
 
     if (!url) return;
 
@@ -230,7 +224,7 @@ function ReceiveToken() {
       .catch((error) => {
         console.error('Failed to get colors from network logo:', error);
       });
-  }, [network?.logoURI]);
+  }, [network?.id, network?.logoURI]);
 
   const handleCopyAddress = useCallback(() => {
     if (!displayAddress) return;
@@ -827,26 +821,12 @@ function ReceiveToken() {
         >
           {shouldShowQRCode ? (
             <YStack testID={ReceiveTestIDs.QRCode}>
-              <QRCode value={displayAddress} size={224} />
-              {network.isCustomNetwork ? null : (
-                <YStack
-                  position="absolute"
-                  left="50%"
-                  top="50%"
-                  transform={[{ translateX: '-50%' }, { translateY: '-50%' }]}
-                  borderWidth={4}
-                  borderColor="white"
-                  borderRadius="$full"
-                  bg="white"
-                >
-                  <Token
-                    size="lg"
-                    tokenImageUri={token?.logoURI ?? nativeToken?.logoURI}
-                    networkImageUri={network.logoURI}
-                    networkId={networkId}
-                  />
-                </YStack>
-              )}
+              <QRCode
+                value={displayAddress}
+                size={224}
+                logo={BRAND_QRCODE_LOGO}
+                logoSize={48}
+              />
             </YStack>
           ) : null}
 
@@ -877,10 +857,7 @@ function ReceiveToken() {
     wallet,
     shouldShowQRCode,
     handleVerifyOnDevicePress,
-    token?.logoURI,
-    networkId,
     intl,
-    nativeToken?.logoURI,
   ]);
 
   const isPressable = useMemo(() => {

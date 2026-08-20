@@ -16,7 +16,11 @@ const removePreloadElements = () => {
   img?.remove();
 };
 
-export function SplashView({ onExit, canDismissSplash }: ISplashViewProps) {
+export function SplashView({
+  onExit,
+  canDismissSplash,
+  source,
+}: ISplashViewProps) {
   const [showLoading, changeLoadingVisibility] = useState(true);
   const hideSplash = useCallback(() => {
     removePreloadElements();
@@ -30,12 +34,13 @@ export function SplashView({ onExit, canDismissSplash }: ISplashViewProps) {
     hideSplash();
   }, [canDismissSplash, hideSplash]);
 
-  const splashSource = useMemo(
-    () => ({
-      uri: require('../../../assets/splash.svg'),
-    }),
-    [],
-  );
+  const splashSource = useMemo(() => {
+    const asset = source ?? require('../../../assets/splash.svg');
+    if (typeof asset === 'string') {
+      return { uri: asset };
+    }
+    return asset;
+  }, [source]);
 
   return (
     <AnimatePresence onExitComplete={onExit}>

@@ -8,8 +8,12 @@ import { presetNetworksMap } from '@onekeyhq/shared/src/config/presetNetworks';
 import { EOAuthSocialLoginProvider } from '@onekeyhq/shared/src/consts/authConsts';
 import accountUtils from '@onekeyhq/shared/src/utils/accountUtils';
 import type { IAllWalletAvatarImageNames } from '@onekeyhq/shared/src/utils/avatarUtils';
-import { AllWalletAvatarImages } from '@onekeyhq/shared/src/utils/avatarUtils';
+import {
+  AllWalletAvatarImages,
+  HdWalletAvatarImages,
+} from '@onekeyhq/shared/src/utils/avatarUtils';
 
+import { BRAND_ACCOUNT_AVATAR } from '../../utils/brandAssets';
 import { NetworkAvatar } from '../NetworkAvatar';
 
 import { getWalletAvatarProvider } from './getWalletAvatarProvider';
@@ -47,10 +51,16 @@ export function WalletAvatarBase({
     return <Icon size={size || '$10'} name="LockSolid" />;
   }
 
+  const isHdAnimalAvatar = theImg in HdWalletAvatarImages;
+  const source =
+    isHdAnimalAvatar && wallet
+      ? BRAND_ACCOUNT_AVATAR
+      : AllWalletAvatarImages[theImg] ?? AllWalletAvatarImages.bear;
+
   return (
     <Image
       size={size}
-      source={AllWalletAvatarImages[theImg] ?? AllWalletAvatarImages.bear}
+      source={source}
       fallback={
         <Image.Fallback
           w={size}

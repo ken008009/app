@@ -43,12 +43,12 @@ const QRCodeGallery = () => (
         element: (
           <YStack justifyContent="center" flex={1} gap="$4">
             <QRCode
-              logo={require('@onekeyhq/kit/assets/logo.png')}
+              logo={require('@onekeyhq/kit/assets/qrcode_logo.png')}
               value="https://onekey.so/"
               size={200}
             />
             <QRCode
-              logo={require('@onekeyhq/kit/assets/logo.png')}
+              logo={require('@onekeyhq/kit/assets/qrcode_logo.png')}
               logoBackgroundColor="bgStrongActive"
               value="https://onekey.so/"
               size={200}

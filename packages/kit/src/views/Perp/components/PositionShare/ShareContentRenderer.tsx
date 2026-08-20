@@ -15,6 +15,7 @@ import { ETranslations } from '@onekeyhq/shared/src/locale';
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
 import { getHyperliquidTokenImageUrl } from '@onekeyhq/shared/src/utils/perpsUtils';
 
+import { BRAND_QRCODE_LOGO_ALT } from '../../../../utils/brandAssets';
 import {
   BACKGROUNDS,
   CANVAS_CONFIG,
@@ -346,6 +347,8 @@ export function ShareContentRenderer({
                 value={referralQrCodeUrl ?? ''}
                 size={layout.qrCodeSize * scale - 5}
                 padding={8}
+                logo={BRAND_QRCODE_LOGO_ALT}
+                logoSize={28}
                 logoBackgroundColor="white"
               />
             </XStack>
