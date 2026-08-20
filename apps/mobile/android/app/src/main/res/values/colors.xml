@@ -1,6 +1,6 @@
 <resources>
   <color name="splashscreen_background">#ffffff</color>
-  <color name="iconBackground">#ffffff</color>
+  <color name="iconBackground">#0f0f0f</color>
   <color name="notification_icon_color">#D5AC4C</color>
   <color name="colorPrimary">#D5AC4C</color>
   <color name="tabBarActiveIndicator">#38D5AC4C</color>
