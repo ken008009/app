@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 
 import {
   HeaderScrollGestureWrapper,
@@ -23,17 +23,25 @@ import { HomeTestIDs } from '../testIDs';
 
 import { HomeOverviewContainer } from './HomeOverviewContainer';
 
+import type { LayoutChangeEvent } from 'react-native';
+
 const WALLET_CARD_SOURCE = require('@onekeyhq/kit/assets/home/wallet-card.png');
 
 // Cropped from wallet.png so left/right and top/bottom transparent
 // margins are equal (original canvas was L24/R44 and T68/B17).
 const WALLET_CARD_ASPECT_RATIO = 1467 / 1007;
 
-// Wallet card (full-width ~256pt) + action row (~90pt) + padding. Banner adds ~130pt.
-export const HOME_HEADER_NATIVE_HEIGHT = 432;
+// Wallet card (full-width, aspect-ratio) + action row + tight padding.
+// Native Tabs.Container still needs an initial headerHeight; actual height is
+// measured in onLayout so leftover space under WalletActions does not appear.
+export const HOME_HEADER_NATIVE_HEIGHT = 400;
 // export const HOME_HEADER_NATIVE_HEIGHT_WITH_BANNER = 562;
 
-function BaseHomeHeaderContainer() {
+function BaseHomeHeaderContainer({
+  onNativeLayoutHeight,
+}: {
+  onNativeLayoutHeight?: (height: number) => void;
+}) {
   const {
     activeAccount: { wallet },
   } = useActiveAccount({
@@ -68,13 +76,18 @@ function BaseHomeHeaderContainer() {
   //   hasWalletBannerContent &&
   //   homeBalanceState === 'positive';
 
-  let nativeMinHeight: number | undefined;
-  if (platformEnv.isNative) {
-    nativeMinHeight = HOME_HEADER_NATIVE_HEIGHT;
-    // nativeMinHeight = shouldShowBanner
-    //   ? HOME_HEADER_NATIVE_HEIGHT_WITH_BANNER
-    //   : HOME_HEADER_NATIVE_HEIGHT;
-  }
+  const handleNativeLayout = useCallback(
+    (event: LayoutChangeEvent) => {
+      if (!platformEnv.isNative) {
+        return;
+      }
+      const height = Math.round(event.nativeEvent.layout.height);
+      if (height > 0) {
+        onNativeLayoutHeight?.(height);
+      }
+    },
+    [onNativeLayoutHeight],
+  );
 
   // Funnel denominator for backup / receive completion rates: log once per
   // (walletId, state) tuple seen this session. Skip `unknown` so we don't
@@ -102,9 +115,9 @@ function BaseHomeHeaderContainer() {
 
   return (
     <YStack
-      pb="$5"
+      pb="$2"
       gap="$4"
-      minHeight={nativeMinHeight}
+      onLayout={handleNativeLayout}
       $gtMd={{ gap: '$8' }}
       bg="$bgApp"
       pointerEvents="box-none"
@@ -177,9 +190,15 @@ function BaseHomeHeaderContainer() {
 // written to the separate urlAccountHomeTokenList store, not this mirror's
 // homeTokenList store — the hook's owner-stamp guard absorbs the mismatch and
 // the holdings override simply stays inactive there (worth-only behavior).
-export const HomeHeaderContainer = memo(() => (
-  <HomeTokenListProviderMirror>
-    <BaseHomeHeaderContainer />
-  </HomeTokenListProviderMirror>
-));
+export const HomeHeaderContainer = memo(function HomeHeaderContainer({
+  onNativeLayoutHeight,
+}: {
+  onNativeLayoutHeight?: (height: number) => void;
+}) {
+  return (
+    <HomeTokenListProviderMirror>
+      <BaseHomeHeaderContainer onNativeLayoutHeight={onNativeLayoutHeight} />
+    </HomeTokenListProviderMirror>
+  );
+});
 HomeHeaderContainer.displayName = 'HomeHeaderContainer';

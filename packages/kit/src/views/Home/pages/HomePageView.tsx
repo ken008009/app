@@ -19,9 +19,9 @@ import {
   YStack,
   useFocusedTab,
   useScrollContentTabBarOffset,
+  useTheme,
 } from '@onekeyhq/components';
 import type { ITabBarItemProps } from '@onekeyhq/components/src/composite/Tabs/TabBar';
-import { TabBarItem } from '@onekeyhq/components/src/composite/Tabs/TabBar';
 import { useTabContainerWidth } from '@onekeyhq/kit/src/hooks/useTabContainerWidth';
 import { getNetworksSupportBulkRevokeApproval } from '@onekeyhq/shared/src/config/presetNetworks';
 import {
@@ -64,6 +64,7 @@ import {
 } from '../../../states/jotai/contexts/accountSelector';
 import { deferHeavyWorkUntilUIIdle } from '../../../utils/deferHeavyWork';
 import { NetworkUnsupportedWarning } from '../../Staking/components/ProtocolDetails/NetworkUnsupportedWarning';
+import { HomeInnerTabBarItem } from '../components/HomeInnerTabBar';
 import { HomeStickyHeaderContext } from '../components/HomeStickyHeaderContext';
 import { HomeSupportedWallet } from '../components/HomeSupportedWallet';
 import { NotBackedUpEmpty } from '../components/NotBakcedUp';
@@ -87,6 +88,16 @@ import type { LayoutChangeEvent } from 'react-native';
 
 const networksSupportBulkRevokeApproval =
   getNetworksSupportBulkRevokeApproval();
+
+const HOME_TAB_BAR_CONTAINER_STYLE = {
+  borderTopWidth: 0,
+  borderBottomWidth: 0,
+} as const;
+
+const HOME_TAB_BAR_WEB_CONTAINER_STYLE = {
+  ...HOME_TAB_BAR_CONTAINER_STYLE,
+  position: 'relative' as const,
+};
 
 interface IAndroidScrollContainerProps {
   children: React.ReactNode;
@@ -197,6 +208,18 @@ export function HomePageView({
   const tabBarHeight = useScrollContentTabBarOffset();
   const tabContainerWidth = useTabContainerWidth();
   const intl = useIntl();
+  const theme = useTheme();
+  const homeHeaderContainerStyle = useMemo(
+    () => ({
+      backgroundColor: theme.bgApp.val,
+      shadowColor: 'transparent',
+      shadowOpacity: 0,
+      elevation: 0,
+      borderBottomWidth: 0,
+      borderTopWidth: 0,
+    }),
+    [theme.bgApp.val],
+  );
   const navigation = useAppNavigation();
   const {
     activeAccount: {
@@ -422,6 +445,13 @@ export function HomePageView({
     [accountName, deriveInfo?.label, deriveInfo?.labelKey, intl, network?.name],
   );
 
+  const [nativeHeaderHeight, setNativeHeaderHeight] = useState(
+    HOME_HEADER_NATIVE_HEIGHT,
+  );
+  const handleNativeHeaderHeight = useCallback((height: number) => {
+    setNativeHeaderHeight((prev) => (prev === height ? prev : height));
+  }, []);
+
   // Alerts sit outside Tabs.Container (rendered next to TabPageHeader below).
   // Keeping them inside renderHeader made them scroll through the sticky
   // TabBar area — a partially-scrolled alert would leave a visible band
@@ -429,10 +459,10 @@ export function HomePageView({
   const renderHeader = useCallback(() => {
     return (
       <Stack {...homePageContentMaxWidthSx}>
-        <HomeHeaderContainer />
+        <HomeHeaderContainer onNativeLayoutHeight={handleNativeHeaderHeight} />
       </Stack>
     );
-  }, []);
+  }, [handleNativeHeaderHeight]);
 
   // Rendered on web only. On native the equivalent lives inside the history
   // list's ListHeaderComponent so its height stays inside the list's measurer.
@@ -520,11 +550,18 @@ export function HomePageView({
         }
         props.onPress(name);
       };
-      return <TabBarItem {...props} testID={testID} onPress={handlePress} />;
+      return (
+        <HomeInnerTabBarItem
+          {...props}
+          testID={testID}
+          onPress={handlePress}
+        />
+      );
     },
     [perpTabShowWeb, switchToPerpsWebTab, tabConfigs, tabTestIDMap],
   );
 
+  const [tokenSearchVisible, setTokenSearchVisible] = useState(false);
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
   const portalRefCallback = useCallback((el: HTMLDivElement | null) => {
     setPortalTarget((prev) => (prev === el ? prev : el));
@@ -591,6 +628,9 @@ export function HomePageView({
       next.add(activeTabId);
       return next;
     });
+    if (activeTabId !== EHomeWalletTab.Portfolio) {
+      setTokenSearchVisible(false);
+    }
   }, [activeTabId]);
 
   const renderToolbar = useCallback(
@@ -622,11 +662,13 @@ export function HomePageView({
           <Tabs.TabBar
             {...tabBarProps}
             tabNames={tabBarTabNames}
-            indexDecimal={perpTabShowWeb ? undefined : tabBarProps.indexDecimal}
+            indexDecimal={undefined}
             onTabPress={handleTabPress}
             variant="pill"
+            divider={false}
             renderItem={handleRenderItem}
             renderToolbar={renderToolbar}
+            containerStyle={HOME_TAB_BAR_CONTAINER_STYLE}
           />
         );
       }
@@ -647,14 +689,13 @@ export function HomePageView({
             <Tabs.TabBar
               {...tabBarProps}
               tabNames={tabBarTabNames}
-              indexDecimal={
-                perpTabShowWeb ? undefined : tabBarProps.indexDecimal
-              }
+              indexDecimal={undefined}
               onTabPress={handleTabPress}
               variant="pill"
+              divider={false}
               renderItem={handleRenderItem}
               renderToolbar={renderToolbar}
-              containerStyle={{ position: 'relative' as any }}
+              containerStyle={HOME_TAB_BAR_WEB_CONTAINER_STYLE}
             />
             <div
               ref={portalRefCallback}
@@ -744,8 +785,16 @@ export function HomePageView({
       stickyHost,
       activeTabName,
       activeTabId,
+      tokenSearchVisible,
+      setTokenSearchVisible,
     }),
-    [portalTarget, stickyHost, activeTabName, activeTabId],
+    [
+      portalTarget,
+      stickyHost,
+      activeTabName,
+      activeTabId,
+      tokenSearchVisible,
+    ],
   );
 
   const tabs = useMemo(() => {
@@ -794,10 +843,9 @@ export function HomePageView({
         key={key}
         allowHeaderOverscroll
         headerHeight={
-          platformEnv.isNative
-            ? HOME_HEADER_NATIVE_HEIGHT
-            : undefined
+          platformEnv.isNative ? nativeHeaderHeight : undefined
         }
+        headerContainerStyle={homeHeaderContainerStyle}
         useNativeHeaderAnimation={platformEnv.isNativeAndroid}
         width={platformEnv.isNative ? (tabContainerWidth as number) : undefined}
         renderHeader={renderHeader}
@@ -834,6 +882,8 @@ export function HomePageView({
     pagerTabConfigs,
     activeTabId,
     mountedHomeTabIds,
+    nativeHeaderHeight,
+    homeHeaderContainerStyle,
   ]);
 
   const handleSwitchWalletHomeTab = useCallback(

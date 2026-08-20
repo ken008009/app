@@ -1,14 +1,15 @@
-import { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useContext, useMemo } from 'react';
 
 import { useIntl } from 'react-intl';
 
 import {
+  ActionList,
   ESwitchSize,
-  IconButton,
   Popover,
   Stack,
   Switch,
   XStack,
+  useMedia,
 } from '@onekeyhq/components';
 import { useSettingsPersistAtom } from '@onekeyhq/kit-bg/src/states/jotai/atoms';
 import { getNetworksSupportFilterScamHistory } from '@onekeyhq/shared/src/config/presetNetworks';
@@ -17,15 +18,117 @@ import {
   appEventBus,
 } from '@onekeyhq/shared/src/eventBus/appEventBus';
 import { ETranslations } from '@onekeyhq/shared/src/locale';
+import accountUtils from '@onekeyhq/shared/src/utils/accountUtils';
+import { ETokenListSortType } from '@onekeyhq/shared/types/token';
 
 import { ListItem } from '../../../components/ListItem';
+import { useManageToken } from '../../../hooks/useManageToken';
 import { useActiveAccount } from '../../../states/jotai/contexts/accountSelector';
+import {
+  useTokenListActions,
+  useTokenListSortAtom,
+} from '../../../states/jotai/contexts/tokenList';
+import { HomeCircleIconButton } from '../components/HomeInnerTabBar';
+import { HomeTokenListProviderMirrorWrapper } from '../components/HomeTokenListProvider';
+import { HomeStickyHeaderContext } from '../components/HomeStickyHeaderContext';
 
 function TokenListSettings() {
-  // Manage-token entry lives next to the home token search bar on mobile
-  // (`TokenListBlock` search row) and in RichBlock headerActions on desktop.
-  return null;
+  const intl = useIntl();
+  const { gtMd } = useMedia();
+  const stickyHeaderCtx = useContext(HomeStickyHeaderContext);
+  const {
+    activeAccount: {
+      account,
+      network,
+      wallet,
+      indexedAccount,
+      isOthersWallet,
+      deriveType,
+    },
+  } = useActiveAccount({ num: 0 });
+  const { handleOnManageToken, manageTokenEnabled } = useManageToken({
+    accountId: account?.id ?? '',
+    networkId: network?.id ?? '',
+    walletId: wallet?.id ?? '',
+    deriveType,
+    indexedAccountId: indexedAccount?.id,
+    isOthersWallet:
+      isOthersWallet ??
+      accountUtils.isOthersWallet({ walletId: wallet?.id ?? '' }),
+  });
+  const [{ sortType, sortDirection }] = useTokenListSortAtom();
+  const { updateTokenListSort } = useTokenListActions().current;
+
+  const handleToggleSearch = useCallback(() => {
+    stickyHeaderCtx?.setTokenSearchVisible(!stickyHeaderCtx.tokenSearchVisible);
+  }, [stickyHeaderCtx]);
+
+  const handleSortBy = useCallback(
+    (type: ETokenListSortType) => {
+      const nextDirection =
+        sortType === type && sortDirection === 'desc' ? 'asc' : 'desc';
+      updateTokenListSort({
+        sortType: type,
+        sortDirection: nextDirection,
+      });
+    },
+    [sortDirection, sortType, updateTokenListSort],
+  );
+
+  if (gtMd) {
+    return null;
+  }
+
+  return (
+    <XStack alignItems="center" gap="$2.5">
+      <HomeCircleIconButton
+        testID="home-tab-search-btn"
+        icon="SearchOutline"
+        onPress={handleToggleSearch}
+      />
+      {manageTokenEnabled ? (
+        <HomeCircleIconButton
+          testID="home-tab-add-token-btn"
+          icon="PlusLargeOutline"
+          onPress={handleOnManageToken}
+        />
+      ) : null}
+      <ActionList
+        title={intl.formatMessage({ id: ETranslations.market_sort_by })}
+        renderTrigger={
+          <HomeCircleIconButton
+            testID="home-tab-sort-btn"
+            icon="SliderHorOutline"
+          />
+        }
+        items={[
+          {
+            label: intl.formatMessage({ id: ETranslations.global_balance }),
+            onPress: (close) => {
+              handleSortBy(ETokenListSortType.Value);
+              close();
+            },
+          },
+          {
+            label: intl.formatMessage({ id: ETranslations.global_price }),
+            onPress: (close) => {
+              handleSortBy(ETokenListSortType.Price);
+              close();
+            },
+          },
+          {
+            label: intl.formatMessage({ id: ETranslations.global_name }),
+            onPress: (close) => {
+              handleSortBy(ETokenListSortType.Name);
+              close();
+            },
+          },
+        ]}
+      />
+    </XStack>
+  );
 }
+
 const filterScamHistorySupportedNetworks =
   getNetworksSupportFilterScamHistory();
 const filterScamHistorySupportedNetworkIds = new Set(
@@ -74,12 +177,8 @@ function TxHistorySettings() {
       <Popover
         title={intl.formatMessage({ id: ETranslations.global_filter })}
         renderTrigger={
-          <IconButton
+          <HomeCircleIconButton
             testID="home-filter-scam-history-supported-icon-btn"
-            title={intl.formatMessage({
-              id: ETranslations.global_filter,
-            })}
-            variant="tertiary"
             icon="Filter1Outline"
           />
         }
@@ -142,6 +241,9 @@ function TxHistorySettings() {
 
 function BasicTabHeaderSettings({ focusedTab }: { focusedTab: string }) {
   const intl = useIntl();
+  const {
+    activeAccount: { account },
+  } = useActiveAccount({ num: 0 });
   const historyName = useMemo(
     () =>
       intl.formatMessage({
@@ -160,14 +262,22 @@ function BasicTabHeaderSettings({ focusedTab }: { focusedTab: string }) {
   const content = useMemo(() => {
     switch (focusedTab) {
       case portfolioName:
-        return <TokenListSettings />;
+        return (
+          <HomeTokenListProviderMirrorWrapper accountId={account?.id ?? ''}>
+            <TokenListSettings />
+          </HomeTokenListProviderMirrorWrapper>
+        );
       case historyName:
         return <TxHistorySettings />;
       default:
         return null;
     }
-  }, [portfolioName, focusedTab, historyName]);
-  return <XStack pr="$pagePadding">{content}</XStack>;
+  }, [account?.id, portfolioName, focusedTab, historyName]);
+  return (
+    <XStack pr="$pagePadding" alignItems="center">
+      {content}
+    </XStack>
+  );
 }
 
 export const TabHeaderSettings = memo(BasicTabHeaderSettings);

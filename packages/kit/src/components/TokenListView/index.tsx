@@ -88,6 +88,7 @@ import type {
 // fresh `{}` to `useMemo` deps every render (would defeat memoization).
 const EMPTY_FIAT_MAP: Record<string, ITokenFiat> = {};
 const EMPTY_AGGREGATE_MAP: Record<string, { tokens: IAccountToken[] }> = {};
+const HOME_CARD_LIST_PAD = { pt: '$2' } as const;
 
 type IProps = {
   accountId: string;
@@ -107,6 +108,7 @@ type IProps = {
   withSmallBalanceTokens?: boolean;
   withSwapAction?: boolean;
   inTabList?: boolean;
+  homeCardStyle?: boolean;
   onManageToken?: () => void;
   manageTokenEnabled?: boolean;
   isAllNetworks?: boolean;
@@ -237,6 +239,7 @@ function TokenListViewCmp(props: IProps) {
     inTabList = false,
     withNetwork,
     withSwapAction,
+    homeCardStyle,
     onManageToken,
     manageTokenEnabled,
     isAllNetworks,
@@ -1093,7 +1096,7 @@ function TokenListViewCmp(props: IProps) {
     }
 
     return (
-      <YStack testID={testID}>
+      <YStack testID={testID} {...(homeCardStyle ? HOME_CARD_LIST_PAD : undefined)}>
         {withHeader ? (
           <TokenListHeader
             onManageToken={onManageToken}
@@ -1120,12 +1123,15 @@ function TokenListViewCmp(props: IProps) {
             withAggregateBadge={withAggregateBadge}
             showProcessingState={!!exchangeFilter}
             testIDPrefix={tokenItemTestIDPrefix}
+            homeCardStyle={homeCardStyle}
             {...(tableLayout
               ? undefined
-              : {
-                  mx: '$2',
-                  px: '$3',
-                })}
+              : homeCardStyle
+                ? undefined
+                : {
+                    mx: '$2',
+                    px: '$3',
+                  })}
           />
         ))}
         {renderPlainModeFooter()}
@@ -1178,6 +1184,7 @@ function TokenListViewCmp(props: IProps) {
             withAggregateBadge={withAggregateBadge}
             showProcessingState={!!exchangeFilter}
             testIDPrefix={tokenItemTestIDPrefix}
+            homeCardStyle={homeCardStyle}
           />
           {isTokenSelector &&
           tokenSelectorSearchTokenState.isSearching &&

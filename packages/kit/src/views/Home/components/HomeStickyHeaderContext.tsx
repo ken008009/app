@@ -7,6 +7,8 @@ export interface IHomeStickyHeaderContext {
   stickyHost: HTMLElement | null;
   activeTabName: string;
   activeTabId: EHomeWalletTab | undefined;
+  tokenSearchVisible: boolean;
+  setTokenSearchVisible: (visible: boolean) => void;
 }
 
 export const HomeStickyHeaderContext =

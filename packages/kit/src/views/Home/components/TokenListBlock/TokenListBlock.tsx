@@ -1,5 +1,6 @@
 import {
   useCallback,
+  useContext,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -130,6 +131,7 @@ import type {
 import { applyHomeTokenLocalLogos } from '@onekeyhq/kit/src/utils/homeTokenLocalLogos';
 
 import { RichBlock } from '../RichBlock/RichBlock';
+import { HomeStickyHeaderContext } from '../HomeStickyHeaderContext';
 
 import {
   WALLET_ASSET_STATUS_BASIS,
@@ -2561,8 +2563,22 @@ function TokenListBlock({
     [handleSearchTextChange],
   );
 
+  const stickyHeaderCtx = useContext(HomeStickyHeaderContext);
+
+  useEffect(() => {
+    if (stickyHeaderCtx?.tokenSearchVisible) {
+      return;
+    }
+    updateSearchKey('');
+    handleSearchTextChange.cancel();
+  }, [
+    stickyHeaderCtx?.tokenSearchVisible,
+    updateSearchKey,
+    handleSearchTextChange,
+  ]);
+
   const renderMobileSearchRow = useCallback(() => {
-    if (tableLayout) {
+    if (tableLayout || !stickyHeaderCtx?.tokenSearchVisible) {
       return null;
     }
 
@@ -2572,7 +2588,6 @@ function TokenListBlock({
         pb="$2"
         pt="$1"
         alignItems="center"
-        gap="$3"
         testID="home-token-list-search-row"
       >
         <SearchBar
@@ -2581,27 +2596,15 @@ function TokenListBlock({
           })}
           containerProps={{ flex: 1 }}
           onChangeText={handleSearchTextChange}
+          autoFocus
         />
-        {manageTokenEnabled ? (
-          <IconButton
-            testID="home-token-list-manage-token-btn"
-            title={intl.formatMessage({
-              id: ETranslations.manage_token_title,
-            })}
-            variant="tertiary"
-            icon="SliderHorOutline"
-            iconProps={{ color: '$iconSubdued' }} // 弱化
-            onPress={handleOnManageToken}
-          />
-        ) : null}
       </XStack>
     );
   }, [
     tableLayout,
+    stickyHeaderCtx?.tokenSearchVisible,
     intl,
     handleSearchTextChange,
-    manageTokenEnabled,
-    handleOnManageToken,
   ]);
 
   const renderContent = useCallback(() => {
@@ -2615,6 +2618,7 @@ function TokenListBlock({
         inTabList
         hideValue
         withSwapAction
+        homeCardStyle={!tableLayout}
         // cells render binding (spec §5): TokenListBlock mounts the cells producer
         // (`useTokenListCellsProducer`), so its global home list may bind leaves
         // to per-key cells. The flag is further gated inside TokenListView so

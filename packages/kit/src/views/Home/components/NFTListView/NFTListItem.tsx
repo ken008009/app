@@ -16,6 +16,8 @@ import { useAccountData } from '@onekeyhq/kit/src/hooks/useAccountData';
 import { SHOW_NFT_AMOUNT_MAX } from '@onekeyhq/shared/src/consts/walletConsts';
 import { ENFTType, type IAccountNFT } from '@onekeyhq/shared/types/nft';
 
+import { HOME_GOLD_BORDER, HOME_TOKEN_CARD_BG } from '../../homeTheme';
+
 type IProps = {
   nft: IAccountNFT;
   onPress?: (token: IAccountNFT) => void;
@@ -41,6 +43,11 @@ function BasicNFTListItem(props: IProps) {
         outlineOffset: -2,
       }}
       p="$2.5"
+      mx="$1"
+      mb="$2"
+      bg={HOME_TOKEN_CARD_BG}
+      borderWidth={1}
+      borderColor={HOME_GOLD_BORDER}
       borderRadius="$4"
       onPress={() => {
         onPress?.(nft);

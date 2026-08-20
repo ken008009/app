@@ -8,6 +8,11 @@ import { isTokenSelectorDappToken } from '@onekeyhq/shared/src/utils/tokenSelect
 import type { IAccountToken } from '@onekeyhq/shared/types/token';
 
 import { useProcessingTokenStateAtom } from '../../states/jotai/contexts/tokenList';
+import {
+  HOME_GOLD,
+  HOME_GOLD_BORDER,
+  HOME_TOKEN_CARD_BG,
+} from '../../views/Home/homeTheme';
 
 import CreateAccountView from './CreateAccountView';
 import TokenActionsView from './TokenActionsView';
@@ -17,6 +22,24 @@ import TokenNameView from './TokenNameView';
 import TokenPriceChangeView from './TokenPriceChangeView';
 import TokenPriceView from './TokenPriceView';
 import TokenValueView from './TokenValueView';
+
+const HOME_TOKEN_CARD_ITEM_PROPS = {
+  mx: '$4',
+  px: '$3.5',
+  py: '$3.5',
+  mb: '$2.5',
+  bg: HOME_TOKEN_CARD_BG,
+  borderWidth: 1,
+  borderColor: HOME_GOLD_BORDER,
+  borderRadius: '$4',
+} as const;
+
+const HOME_TOKEN_ICON_RING_PROPS = {
+  borderWidth: 1.5,
+  borderColor: HOME_GOLD,
+  borderRadius: '$full',
+  p: '$0.5',
+} as const;
 
 export type ITokenListItemProps = {
   token: IAccountToken;
@@ -36,6 +59,7 @@ export type ITokenListItemProps = {
   // selectors per scene (Home, AssetList, TokenSelector, ...) instead of
   // always emitting `home-token-item-*` regardless of context.
   testIDPrefix?: string;
+  homeCardStyle?: boolean;
 } & Omit<IListItemProps, 'onPress'>;
 
 function BasicTokenListItem(props: ITokenListItemProps) {
@@ -54,6 +78,7 @@ function BasicTokenListItem(props: ITokenListItemProps) {
     withAggregateBadge,
     showProcessingState,
     testIDPrefix,
+    homeCardStyle,
     ...rest
   } = props;
 
@@ -86,14 +111,16 @@ function BasicTokenListItem(props: ITokenListItemProps) {
     if (!tableLayout && !isTokenSelector) {
       return (
         <XStack alignItems="center" gap="$3" flex={1}>
-          <TokenIconView
-            $key={token.$key}
-            isAggregateToken={token.isAggregateToken}
-            networkId={token.networkId}
-            icon={tokenLogoUri}
-            isAllNetworks={isAllNetworks}
-            showNetworkIcon={showNetworkIcon}
-          />
+          <Stack {...(homeCardStyle ? HOME_TOKEN_ICON_RING_PROPS : undefined)}>
+            <TokenIconView
+              $key={token.$key}
+              isAggregateToken={token.isAggregateToken}
+              networkId={token.networkId}
+              icon={tokenLogoUri}
+              isAllNetworks={isAllNetworks}
+              showNetworkIcon={showNetworkIcon}
+            />
+          </Stack>
           <YStack flex={1}>
             <TokenNameView
               withAggregateBadge={withAggregateBadge}
@@ -119,7 +146,7 @@ function BasicTokenListItem(props: ITokenListItemProps) {
                 flexShrink: 0,
               }}
             />
-            <XStack alignItems="center" gap="$1">
+            <XStack alignItems="center" gap="$1.5">
               <TokenPriceView
                 $key={token.$key ?? ''}
                 size="$bodyMd"
@@ -130,6 +157,7 @@ function BasicTokenListItem(props: ITokenListItemProps) {
                 $key={token.$key ?? ''}
                 size="$bodyMd"
                 numberOfLines={1}
+                badge={homeCardStyle}
               />
             </XStack>
           </YStack>
@@ -200,6 +228,7 @@ function BasicTokenListItem(props: ITokenListItemProps) {
     showNetworkIcon,
     withAggregateBadge,
     showDeFiReceiptTokenBadge,
+    homeCardStyle,
   ]);
 
   const renderSecondColumn = useCallback(() => {
@@ -248,7 +277,7 @@ function BasicTokenListItem(props: ITokenListItemProps) {
         <TokenBalanceView
           hideValue={hideValue}
           numberOfLines={1}
-          size="$bodyLgMedium"
+          size={homeCardStyle ? '$headingMd' : '$bodyLgMedium'}
           $key={token.$key ?? ''}
           symbol=""
         />
@@ -258,6 +287,7 @@ function BasicTokenListItem(props: ITokenListItemProps) {
           size="$bodyMd"
           color="$textSubdued"
           $key={token.$key ?? ''}
+          showApproxPrefix={homeCardStyle}
         />
       </YStack>
     );
@@ -267,6 +297,7 @@ function BasicTokenListItem(props: ITokenListItemProps) {
     tableLayout,
     token.$key,
     isTokenSelector,
+    homeCardStyle,
   ]);
 
   const renderThirdColumn = useCallback(() => {
@@ -318,6 +349,7 @@ function BasicTokenListItem(props: ITokenListItemProps) {
       gap={tableLayout ? '$3' : '$1'}
       disabled={isOtherTokenProcessing}
       opacity={isOtherTokenProcessing ? 0.5 : 1}
+      {...(homeCardStyle ? HOME_TOKEN_CARD_ITEM_PROPS : undefined)}
       {...rest}
     >
       {renderFirstColumn()}
