@@ -55,7 +55,7 @@ export function WalletAvatarBase({
   const source =
     isHdAnimalAvatar && wallet
       ? BRAND_ACCOUNT_AVATAR
-      : AllWalletAvatarImages[theImg] ?? AllWalletAvatarImages.bear;
+      : (AllWalletAvatarImages[theImg] ?? AllWalletAvatarImages.bear);
 
   return (
     <Image

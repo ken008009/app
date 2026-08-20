@@ -1096,7 +1096,10 @@ function TokenListViewCmp(props: IProps) {
     }
 
     return (
-      <YStack testID={testID} {...(homeCardStyle ? HOME_CARD_LIST_PAD : undefined)}>
+      <YStack
+        testID={testID}
+        {...(homeCardStyle ? HOME_CARD_LIST_PAD : undefined)}
+      >
         {withHeader ? (
           <TokenListHeader
             onManageToken={onManageToken}

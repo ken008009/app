@@ -169,43 +169,44 @@ export function TabStackNavigator<RouteName extends string>({
           tabBarLabel,
           trackId,
         }) => {
-        // eslint-disable-next-line react/no-unstable-nested-components
-        const ScreenComponent = () => (
-          <TabSubStackNavigator config={children} />
-        );
+          // eslint-disable-next-line react/no-unstable-nested-components
+          const ScreenComponent = () => (
+            <TabSubStackNavigator config={children} />
+          );
 
-        // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
-        const options = {
-          // Type assertion needed because our INativeTabBarIcon uses string for sfSymbol
-          // while react-native-bottom-tabs expects SFSymbol type from sf-symbols-typescript
-          tabBarIcon: nativeTabBarIcon as any,
-          tabBarLabel:
-            tabBarLabel ?? intl.formatMessage({ id: translationId }),
-          tabBarActiveTintColor,
-          tabBarInactiveTintColor,
-        };
+          // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
+          const options = {
+            // Type assertion needed because our INativeTabBarIcon uses string for sfSymbol
+            // while react-native-bottom-tabs expects SFSymbol type from sf-symbols-typescript
+            tabBarIcon: nativeTabBarIcon as any,
+            tabBarLabel:
+              tabBarLabel ?? intl.formatMessage({ id: translationId }),
+            tabBarActiveTintColor,
+            tabBarInactiveTintColor,
+          };
 
-        // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
-        const listeners = {
-          tabPress: () => {
-            handleTabPress(name);
-            if (trackId) {
-              defaultLogger.app.page.tabBarClick(trackId);
-            }
-          },
-        };
+          // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
+          const listeners = {
+            tabPress: () => {
+              handleTabPress(name);
+              if (trackId) {
+                defaultLogger.app.page.tabBarClick(trackId);
+              }
+            },
+          };
 
-        return (
-          <NativeTab.Screen
-            key={name}
-            name={name}
-            options={options}
-            listeners={listeners}
-          >
-            {ScreenComponent}
-          </NativeTab.Screen>
-        );
-      });
+          return (
+            <NativeTab.Screen
+              key={name}
+              name={name}
+              options={options}
+              listeners={listeners}
+            >
+              {ScreenComponent}
+            </NativeTab.Screen>
+          );
+        },
+      );
 
     // Add extra config screen if exists (but hidden from tab bar)
     if (extraConfig) {

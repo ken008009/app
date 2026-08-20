@@ -64,8 +64,7 @@ function HomeAccountSelectorTrigger() {
   return (
     <AccountSelectorTriggerHome
       num={0}
-      horizontalLayout={false}
-      showWalletName
+      avatarSize="medium"
       spotlightProps={{
         visible: spotlightVisible,
         content: (

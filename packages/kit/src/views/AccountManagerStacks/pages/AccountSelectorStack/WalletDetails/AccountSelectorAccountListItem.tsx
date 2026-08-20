@@ -6,6 +6,7 @@ import {
   SizableText,
   Stack,
   XStack,
+  YStack,
   resetAccountManagerStacksModal,
 } from '@onekeyhq/components';
 import { AccountAvatar } from '@onekeyhq/kit/src/components/AccountAvatar';
@@ -38,6 +39,14 @@ import { AccountEditButton } from '../../../components/AccountEdit';
 import { useAccountSelectorAvatarNetwork } from '../../../hooks/useAccountSelectorAvatarNetwork';
 import { AccountManagerTestIDs } from '../../../testIDs';
 
+import {
+  AS_ACCOUNT_AVATAR_RING_PROPS,
+  AS_ACCOUNT_CARD_ITEM_PROPS,
+  AS_GOLD,
+  AS_GOLD_BORDER,
+  AS_PRESS_BG,
+  AS_SELECTED_BG,
+} from '../accountSelectorTheme';
 import { AccountAddress } from './AccountAddress';
 import { AccountValueWithSpotlight } from './AccountValue';
 
@@ -52,6 +61,7 @@ function PlusButton({ onPress, loading }: IButtonProps) {
       loading={loading}
       onPress={onPress}
       icon="PlusSmallOutline"
+      iconProps={{ color: AS_GOLD }}
     />
   );
 }
@@ -297,23 +307,22 @@ export function AccountSelectorAccountListItem({
       return null;
 
     return (
-      <Stack flexShrink={1}>
-        <AccountValueWithSpotlight
-          walletId={focusedWalletInfo?.wallet?.id ?? ''}
-          enabledNetworksCompatibleWithWalletId={
-            enabledNetworksCompatibleWithWalletId
-          }
-          networkInfoMap={networkInfoMap}
-          isOthersUniversal={isOthersUniversal}
-          index={index}
-          accountValue={accountValue}
-          accountDeFiOverview={accountDeFiOverview}
-          indexedAccountId={indexedAccount?.id}
-          linkedAccountId={indexedAccount?.associateAccount?.id ?? item.id}
-          linkedNetworkId={avatarNetworkId ?? network?.id}
-          mergeDeriveAssetsEnabled={mergeDeriveAssetsEnabled}
-        />
-      </Stack>
+      <AccountValueWithSpotlight
+        walletId={focusedWalletInfo?.wallet?.id ?? ''}
+        enabledNetworksCompatibleWithWalletId={
+          enabledNetworksCompatibleWithWalletId
+        }
+        networkInfoMap={networkInfoMap}
+        isOthersUniversal={isOthersUniversal}
+        index={index}
+        accountValue={accountValue}
+        accountDeFiOverview={accountDeFiOverview}
+        indexedAccountId={indexedAccount?.id}
+        linkedAccountId={indexedAccount?.associateAccount?.id ?? item.id}
+        linkedNetworkId={avatarNetworkId ?? network?.id}
+        mergeDeriveAssetsEnabled={mergeDeriveAssetsEnabled}
+        size="$headingMd"
+      />
     );
   }, [
     linkNetwork,
@@ -345,7 +354,7 @@ export function AccountSelectorAccountListItem({
         })}
         isEmptyAddress={subTitleInfo.isEmptyAddress}
         hideAddress={subTitleInfo.hideAddress}
-        showSplitter={!(platformEnv.isWebDappMode || platformEnv.isE2E)}
+        showSplitter={false}
       />
     );
   }, [
@@ -361,47 +370,9 @@ export function AccountSelectorAccountListItem({
       <ListItem
         testID={AccountManagerTestIDs.accountItem(index)}
         key={item.id}
-        renderAvatar={
-          <AccountAvatar
-            loading={<AccountAvatar.Loading w="$8" h="$8" />}
-            size="medium"
-            indexedAccount={indexedAccount}
-            account={account as any}
-            networkId={avatarNetworkId}
-          />
-        }
-        renderItemText={(textProps) => (
-          <ListItem.Text
-            {...textProps}
-            flex={1}
-            // Without minWidth={0} the flex column keeps Yoga's default
-            // `min-width: auto`, so it can't shrink below the intrinsic width of
-            // its widest line (the value + address subtitle). On Android that
-            // forces the column to overflow and the name's numberOfLines={1}
-            // gets truncated against that inflated width — even short "Account #XX"
-            // names get cut off (OK-56318). iOS lays this out without the issue.
-            // Mirrors the working WebAccountPanelListItem pattern.
-            minWidth={0}
-            overflow="hidden"
-            pr="$8"
-            primary={
-              <SizableText size="$bodyLg" numberOfLines={1}>
-                {item.name}
-              </SizableText>
-            }
-            secondary={
-              <XStack
-                key={`${focusedWalletInfo?.wallet?.id || ''}-${item.id}-${
-                  subTitleInfo.address
-                }`}
-                alignItems="center"
-              >
-                {renderAccountValue()}
-                {renderAccountAddress()}
-              </XStack>
-            }
-          />
-        )}
+        gap="$3"
+        {...AS_ACCOUNT_CARD_ITEM_PROPS}
+        borderColor={isSelected ? AS_GOLD : AS_GOLD_BORDER}
         {...(canConfirmAccountSelectPress && {
           onPress: async () => {
             // show CreateAddress Button here, disabled confirmAccountSelect()
@@ -438,13 +409,54 @@ export function AccountSelectorAccountListItem({
           isLoading: isCreatingAddress,
           userSelect: 'none',
         })}
-        {...(isSelected && {
-          bg: '$bgActive',
-        })}
-      />
+        hoverStyle={{
+          bg: AS_PRESS_BG,
+        }}
+        pressStyle={{
+          bg: AS_SELECTED_BG,
+        }}
+      >
+        <XStack alignItems="center" gap="$3" flex={1} minWidth={0}>
+          <Stack {...AS_ACCOUNT_AVATAR_RING_PROPS}>
+            <AccountAvatar
+              loading={<AccountAvatar.Loading w="$8" h="$8" />}
+              size="medium"
+              indexedAccount={indexedAccount}
+              account={account as any}
+              networkId={avatarNetworkId}
+            />
+          </Stack>
+          <YStack flex={1} minWidth={0} overflow="hidden" pr="$8">
+            <SizableText
+              size="$bodyLgMedium"
+              numberOfLines={1}
+              color={isSelected ? AS_GOLD : '#FFFFFF'}
+            >
+              {item.name}
+            </SizableText>
+            <XStack
+              key={`${focusedWalletInfo?.wallet?.id || ''}-${item.id}-${
+                subTitleInfo.address
+              }`}
+              alignItems="center"
+            >
+              {renderAccountAddress()}
+            </XStack>
+          </YStack>
+        </XStack>
+        <YStack alignItems="flex-end" flexShrink={0} pr="$6">
+          {renderAccountValue()}
+        </YStack>
+      </ListItem>
       {isCreatingAddress ? null : (
-        /* The value of top should be change if the height of the item is changed, since we can not use percentage value in translateY for keeping the Icon central aligned in React Native */
-        <Stack position="absolute" right="$5" top={18}>
+        <Stack
+          position="absolute"
+          right="$5"
+          top={0}
+          bottom="$2.5"
+          justifyContent="center"
+          pointerEvents="box-none"
+        >
           {actionButton}
         </Stack>
       )}

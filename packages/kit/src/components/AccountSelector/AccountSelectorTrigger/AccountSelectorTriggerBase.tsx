@@ -36,6 +36,7 @@ export function AccountSelectorTriggerBase({
   linkNetworkId,
   linkNetwork,
   autoWidthForHome,
+  avatarSize = 'small',
   ...others
 }: {
   num: number;
@@ -45,6 +46,7 @@ export function AccountSelectorTriggerBase({
   showWalletAvatar?: boolean;
   showWalletName?: boolean;
   showConnectWalletModalInDappMode?: boolean;
+  avatarSize?: 'small' | 'medium' | 'default';
 } & IAccountSelectorRouteParamsExtraConfig) {
   const { sceneName } = useAccountSelectorSceneInfo();
   const {
@@ -135,7 +137,7 @@ export function AccountSelectorTriggerBase({
         userSelect="none"
       >
         <AccountAvatar
-          size="small"
+          size={avatarSize}
           borderRadius="$full"
           source={BRAND_ACCOUNT_AVATAR}
         />
@@ -201,6 +203,7 @@ export function AccountSelectorTriggerBase({
   }, [
     account,
     autoWidthForHome,
+    avatarSize,
     displayLabel,
     handleAccountSelectorPress,
     horizontalLayout,

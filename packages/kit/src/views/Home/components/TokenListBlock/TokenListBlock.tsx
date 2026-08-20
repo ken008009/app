@@ -42,17 +42,17 @@ import { useManageToken } from '@onekeyhq/kit/src/hooks/useManageToken';
 import { usePromiseResult } from '@onekeyhq/kit/src/hooks/usePromiseResult';
 import { useRouteIsFocused } from '@onekeyhq/kit/src/hooks/useRouteIsFocused';
 import {
-  POLLING_DEBOUNCE_INTERVAL,
-  POLLING_INTERVAL_FOR_HISTORY,
-  POLLING_INTERVAL_FOR_TOKEN,
-  SEARCH_DEBOUNCE_INTERVAL,
-} from '@onekeyhq/shared/src/consts/walletConsts';
-import {
   useAccountOverviewActions,
   useAccountWorthAtom,
   useAllNetworksStateStateAtom,
   useOverviewTokenCacheStateAtom,
 } from '@onekeyhq/kit/src/states/jotai/contexts/accountOverview';
+import {
+  POLLING_DEBOUNCE_INTERVAL,
+  POLLING_INTERVAL_FOR_HISTORY,
+  POLLING_INTERVAL_FOR_TOKEN,
+  SEARCH_DEBOUNCE_INTERVAL,
+} from '@onekeyhq/shared/src/consts/walletConsts';
 import { buildOverviewOwnerKey } from '@onekeyhq/kit/src/states/jotai/contexts/accountOverview/atoms';
 import { useActiveAccount } from '@onekeyhq/kit/src/states/jotai/contexts/accountSelector';
 import {
@@ -130,8 +130,8 @@ import type {
 } from '@onekeyhq/shared/types/token';
 import { applyHomeTokenLocalLogos } from '@onekeyhq/kit/src/utils/homeTokenLocalLogos';
 
-import { RichBlock } from '../RichBlock/RichBlock';
 import { HomeStickyHeaderContext } from '../HomeStickyHeaderContext';
+import { RichBlock } from '../RichBlock/RichBlock';
 
 import {
   WALLET_ASSET_STATUS_BASIS,

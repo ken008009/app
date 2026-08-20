@@ -16,6 +16,7 @@ import platformEnv from '@onekeyhq/shared/src/platformEnv';
 import { getHyperliquidTokenImageUrl } from '@onekeyhq/shared/src/utils/perpsUtils';
 
 import { BRAND_QRCODE_LOGO_ALT } from '../../../../utils/brandAssets';
+
 import {
   BACKGROUNDS,
   CANVAS_CONFIG,

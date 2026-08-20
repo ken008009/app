@@ -53,6 +53,7 @@ import { HiddenWalletRememberSwitch } from '../../../components/WalletEdit/Hidde
 import { useAccountSelectorRoute } from '../../../router/useAccountSelectorRoute';
 import { AccountManagerTestIDs } from '../../../testIDs';
 
+import { AS_ACCOUNT_LIST_ITEM_HEIGHT, AS_PAGE_BG } from '../accountSelectorTheme';
 import { AccountSelectorAccountListItem } from './AccountSelectorAccountListItem';
 import { AccountSelectorAddAccountButton } from './AccountSelectorAddAccountButton';
 import { EmptyNoAccountsView, EmptyView } from './EmptyView';
@@ -363,10 +364,14 @@ function WalletDetailsView({ num }: IWalletDetailsProps) {
           layouts.push({ offset, length: 0, index: layouts.length });
           offset += 0;
           section.data.forEach(() => {
-            layouts.push({ offset, length: 60, index: layouts.length });
-            offset += 60;
+            layouts.push({
+              offset,
+              length: AS_ACCOUNT_LIST_ITEM_HEIGHT,
+              index: layouts.length,
+            });
+            offset += AS_ACCOUNT_LIST_ITEM_HEIGHT;
           });
-          const footerHeight = 60;
+          const footerHeight = AS_ACCOUNT_LIST_ITEM_HEIGHT;
           layouts.push({ offset, length: footerHeight, index: layouts.length });
           offset += footerHeight;
         });
@@ -452,7 +457,7 @@ function WalletDetailsView({ num }: IWalletDetailsProps) {
       );
       if (
         listViewLayout.height > 0 &&
-        itemIndex * 60 <= listViewLayout.height
+        itemIndex * AS_ACCOUNT_LIST_ITEM_HEIGHT <= listViewLayout.height
       ) {
         return undefined;
       }
@@ -618,7 +623,7 @@ function WalletDetailsView({ num }: IWalletDetailsProps) {
             e?.persist?.();
             handleLayoutCacheSet('list', () => handleLayoutForSectionList(e));
           }}
-          estimatedItemSize={60}
+          estimatedItemSize={AS_ACCOUNT_LIST_ITEM_HEIGHT}
           initialScrollIndex={initialScrollIndex}
           getItemLayout={getItemLayout}
           keyExtractor={(item) =>
@@ -813,6 +818,7 @@ function WalletDetailsView({ num }: IWalletDetailsProps) {
       flex={1}
       pt={platformEnv.isNativeAndroid ? top : undefined}
       pb={Math.max(bottom, 8)}
+      bg={AS_PAGE_BG}
       testID={AccountManagerTestIDs.accountList}
     >
       <WalletDetailsHeader

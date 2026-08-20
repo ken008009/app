@@ -13,6 +13,7 @@ import platformEnv from '@onekeyhq/shared/src/platformEnv';
 import type { IRookieShareData } from '@onekeyhq/shared/types/rookieGuide';
 
 import { BRAND_QRCODE_LOGO } from '../../../../utils/brandAssets';
+
 import {
   BACKGROUND_GRADIENT_COLORS,
   CANVAS_CONFIG,

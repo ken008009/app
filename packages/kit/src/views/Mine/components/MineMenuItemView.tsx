@@ -1,10 +1,10 @@
+import { MineSettingsRow } from './MineSettingsRow';
 import {
   MineLanguageRow,
   MinePasswordRow,
   MineThemeRow,
   MineVersionRow,
 } from './MineSpecialRows';
-import { MineSettingsRow } from './MineSettingsRow';
 
 import type { IMineMenuItem } from '../hooks/useMineMenuConfig';
 

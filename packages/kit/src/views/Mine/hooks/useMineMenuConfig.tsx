@@ -121,9 +121,7 @@ export function useMineMenuConfig(): IMineMenuSection[] {
             }),
             subtitle: autoLockLabel || '设置自动锁定时间',
             onPress: () => {
-              navigateSettingRoute(
-                EModalSettingRoutes.SettingAppAutoLockModal,
-              );
+              navigateSettingRoute(EModalSettingRoutes.SettingAppAutoLockModal);
             },
           }
         : null,

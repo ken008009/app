@@ -10,6 +10,8 @@ import networkUtils from '@onekeyhq/shared/src/utils/networkUtils';
 import { calculateAccountTotalValue } from '@onekeyhq/shared/src/utils/tokenUtils';
 import type { IServerNetwork } from '@onekeyhq/shared/types';
 
+type IAccountValueTextSize = '$bodyMd' | '$bodyLgMedium' | '$headingMd';
+
 function AccountValue(accountValue: {
   walletId: string;
   accountId: string;
@@ -34,6 +36,7 @@ function AccountValue(accountValue: {
   isSingleAddress?: boolean;
   enabledNetworksCompatibleWithWalletId: IServerNetwork[];
   networkInfoMap: Record<string, INetworkDeriveInfo>;
+  size?: IAccountValueTextSize;
 }) {
   const [activeAccountValue] = useActiveAccountValueAtom();
   const isActiveAccount =
@@ -48,6 +51,7 @@ function AccountValue(accountValue: {
     enabledNetworksCompatibleWithWalletId,
     networkInfoMap,
     accountDeFiOverview,
+    size = '$bodyMd',
   } = accountValue;
 
   const { currency, value } = useMemo(() => {
@@ -124,8 +128,8 @@ function AccountValue(accountValue: {
       hideValue
       numberOfLines={1}
       flexShrink={1}
-      size="$bodyMd"
-      color="$textSubdued"
+      size={size}
+      color={size === '$headingMd' ? '$text' : '$textSubdued'}
       sourceCurrency={currency}
     >
       {accountValueString}
@@ -134,7 +138,7 @@ function AccountValue(accountValue: {
     <NumberSizeableTextWrapper
       formatter="value"
       hideValue
-      size="$bodyMd"
+      size={size}
       color="$textDisabled"
     >
       --
@@ -153,6 +157,7 @@ function AccountValueWithSpotlight({
   enabledNetworksCompatibleWithWalletId,
   networkInfoMap,
   accountDeFiOverview,
+  size = '$bodyMd',
 }: {
   accountValue:
     | {
@@ -183,6 +188,7 @@ function AccountValueWithSpotlight({
       }
     >;
   };
+  size?: IAccountValueTextSize;
 }) {
   return accountValue && accountValue.currency ? (
     <AccountValue
@@ -200,12 +206,13 @@ function AccountValueWithSpotlight({
       }
       networkInfoMap={networkInfoMap}
       accountDeFiOverview={accountDeFiOverview}
+      size={size}
     />
   ) : (
     <NumberSizeableTextWrapper
       formatter="value"
       hideValue
-      size="$bodyMd"
+      size={size}
       color="$textDisabled"
     >
       --

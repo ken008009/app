@@ -2,7 +2,7 @@ import { type ComponentProps, useEffect } from 'react';
 
 import { noop } from 'lodash';
 import { useIntl } from 'react-intl';
-import { Pressable } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 
 import type { IStackProps } from '@onekeyhq/components';
 import {
@@ -28,6 +28,13 @@ import { ETranslations } from '@onekeyhq/shared/src/locale';
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
 import accountUtils from '@onekeyhq/shared/src/utils/accountUtils';
 
+import {
+  AS_CARD_BG,
+  AS_GOLD,
+  AS_GOLD_BORDER,
+  AS_PRESS_BG,
+  AS_SELECTED_BG,
+} from '../accountSelectorTheme';
 import { useAddHiddenWallet } from '../WalletDetails/hooks/useAddHiddenWallet';
 
 import type { IAccountSelectorWalletInfo } from '../../../type';
@@ -75,16 +82,18 @@ function WalletListItemBaseView({
       }}
       borderCurve="continuous"
       userSelect="none"
+      borderWidth={StyleSheet.hairlineWidth}
+      borderColor={selected ? AS_GOLD : 'transparent'}
       {...(selected
         ? {
-            bg: '$bgActive',
+            bg: AS_SELECTED_BG,
           }
         : {
             hoverStyle: {
-              bg: '$bgHover',
+              bg: AS_PRESS_BG,
             },
             pressStyle: {
-              bg: '$bgActive',
+              bg: AS_SELECTED_BG,
             },
           })}
       focusable
@@ -108,7 +117,7 @@ function WalletListItemBaseView({
         numberOfLines={1}
         mt="$1"
         size="$bodySm"
-        color={selected ? '$text' : '$textSubdued'}
+        color={selected ? AS_GOLD : '$textSubdued'}
         textAlign="center"
       >
         {name}
@@ -174,11 +183,11 @@ function HiddenWalletAddButton({
           justifyContent="center"
           alignItems="center"
           borderWidth={1}
-          borderColor="$borderSubdued"
+          borderColor={AS_GOLD_BORDER}
           borderRadius="$full"
           borderStyle="dashed"
         >
-          <Icon name="PlusSmallOutline" color="$iconSubdued" />
+          <Icon name="PlusSmallOutline" color={AS_GOLD} />
         </Stack>
       }
       selected={false}
@@ -342,11 +351,11 @@ export function WalletListItem({
         $platform-ios={{
           borderRadius: '$5',
         }}
-        borderWidth={shouldShowBorder ? 1 : 0}
-        borderColor="$borderSubdued"
+        borderWidth={shouldShowBorder ? StyleSheet.hairlineWidth : 0}
+        borderColor={AS_GOLD_BORDER}
         gap="$3"
         borderCurve="continuous"
-        bg="$bgSubdued"
+        bg={AS_CARD_BG}
       >
         {content}
         {childWallets.map((childWallet, index) => (

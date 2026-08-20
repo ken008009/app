@@ -115,9 +115,7 @@ class BaseApiProvider {
     return {
       info: {
         // Always show MSUSD to users. Ignore stale DB network.symbol (ISPAY).
-        name: isMsNetwork
-          ? 'MSUSD'
-          : (token?.info?.name ?? network?.name),
+        name: isMsNetwork ? 'MSUSD' : (token?.info?.name ?? network?.name),
         symbol: isMsNetwork
           ? 'MSUSD'
           : (token?.info?.symbol ?? network?.symbol),

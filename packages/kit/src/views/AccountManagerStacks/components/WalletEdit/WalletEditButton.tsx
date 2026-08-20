@@ -396,6 +396,7 @@ function WalletEditButtonView({
         <ListItem.IconButton
           testID={AccountManagerTestIDs.walletEditButton(wallet?.name || '')}
           icon="DotHorOutline"
+          iconProps={{ color: '#D5AC4C' }}
         />
       }
       renderItemsAsync={renderItems}

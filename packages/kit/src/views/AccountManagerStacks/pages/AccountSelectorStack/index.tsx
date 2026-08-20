@@ -8,6 +8,7 @@ import type {
   IAccountManagerStacksParamList,
 } from '@onekeyhq/shared/src/routes';
 
+import { AS_PAGE_BG } from './accountSelectorTheme';
 import { useWebDappWalletSelector } from './useWebDappWalletSelector';
 import { WalletDetails } from './WalletDetails';
 import { AccountSelectorWalletListSideBar } from './WalletList';
@@ -27,8 +28,8 @@ export function AccountSelectorStack({
 
   return (
     <Page lazyLoad safeAreaEnabled={false}>
-      <Page.Body>
-        <XStack flex={1}>
+      <Page.Body bg={AS_PAGE_BG}>
+        <XStack flex={1} bg={AS_PAGE_BG}>
           {/* <AccountSelectorWalletListSideBarPerfTest num={num} /> */}
           {shouldHideWalletList ? null : (
             <AccountSelectorWalletListSideBar

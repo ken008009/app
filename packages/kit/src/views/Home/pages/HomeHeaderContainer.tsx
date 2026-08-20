@@ -190,15 +190,17 @@ function BaseHomeHeaderContainer({
 // written to the separate urlAccountHomeTokenList store, not this mirror's
 // homeTokenList store — the hook's owner-stamp guard absorbs the mismatch and
 // the holdings override simply stays inactive there (worth-only behavior).
-export const HomeHeaderContainer = memo(function HomeHeaderContainer({
-  onNativeLayoutHeight,
-}: {
-  onNativeLayoutHeight?: (height: number) => void;
-}) {
-  return (
-    <HomeTokenListProviderMirror>
-      <BaseHomeHeaderContainer onNativeLayoutHeight={onNativeLayoutHeight} />
-    </HomeTokenListProviderMirror>
-  );
-});
+export const HomeHeaderContainer = memo(
+  ({
+    onNativeLayoutHeight,
+  }: {
+    onNativeLayoutHeight?: (height: number) => void;
+  }) => {
+    return (
+      <HomeTokenListProviderMirror>
+        <BaseHomeHeaderContainer onNativeLayoutHeight={onNativeLayoutHeight} />
+      </HomeTokenListProviderMirror>
+    );
+  },
+);
 HomeHeaderContainer.displayName = 'HomeHeaderContainer';

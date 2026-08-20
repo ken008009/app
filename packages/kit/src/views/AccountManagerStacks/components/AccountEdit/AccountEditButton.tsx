@@ -333,6 +333,7 @@ function AccountEditButtonView({
         <ListItem.IconButton
           testID={AccountManagerTestIDs.accountEditButton(name)}
           icon="DotHorOutline"
+          iconProps={{ color: '#D5AC4C' }}
         />
       }
       renderItemsAsync={renderItems}

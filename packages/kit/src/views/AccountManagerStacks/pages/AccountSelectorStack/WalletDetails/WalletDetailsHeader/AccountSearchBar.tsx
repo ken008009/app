@@ -19,6 +19,12 @@ import type {
 import { ETranslations } from '@onekeyhq/shared/src/locale';
 import accountUtils from '@onekeyhq/shared/src/utils/accountUtils';
 
+import {
+  AS_CARD_BG,
+  AS_DIVIDER,
+  AS_GOLD,
+  AS_GOLD_BORDER,
+} from '../../accountSelectorTheme';
 import { useAddAccount } from '../hooks/useAddAccount';
 import { AccountManagerTestIDs } from '../testIDs';
 
@@ -81,7 +87,7 @@ export function AccountSearchBar({
       px="$5"
       py="$2"
       borderBottomWidth={StyleSheet.hairlineWidth}
-      borderBottomColor="$neutral3"
+      borderBottomColor={AS_DIVIDER}
       alignItems="center"
       gap="$2"
     >
@@ -95,8 +101,8 @@ export function AccountSearchBar({
         containerProps={{
           flex: 1,
           borderRadius: '$full',
-          bg: '$bgStrong',
-          borderColor: '$transparent',
+          bg: AS_CARD_BG,
+          borderColor: AS_GOLD_BORDER,
         }}
         defaultValue={searchText}
         onChangeText={handleSearch}
@@ -110,6 +116,7 @@ export function AccountSearchBar({
               testID={AccountManagerTestIDs.searchBarAddButton}
               icon="PlusSmallOutline"
               size="small"
+              iconProps={{ color: AS_GOLD }}
             />
           }
           renderItems={({ handleActionListClose }) => (

@@ -1,4 +1,5 @@
 import { useIntl } from 'react-intl';
+import { StyleSheet } from 'react-native';
 
 import { Icon, Stack } from '@onekeyhq/components';
 import { ListItem } from '@onekeyhq/kit/src/components/ListItem';
@@ -11,6 +12,7 @@ import platformEnv from '@onekeyhq/shared/src/platformEnv';
 
 import { AccountManagerTestIDs } from '../../../testIDs';
 
+import { AS_GOLD, AS_GOLD_BORDER, AS_ICON_BG } from '../accountSelectorTheme';
 import { useAddAccount } from './hooks/useAddAccount';
 
 export function AccountSelectorAddAccountButton({
@@ -38,9 +40,23 @@ export function AccountSelectorAddAccountButton({
     <ListItem
       testID={AccountManagerTestIDs.accountAddAccount}
       onPress={handleAddAccount}
+      mx="$4"
+      px="$3.5"
+      py="$3.5"
+      mb="$2.5"
+      borderRadius="$4"
     >
-      <Stack bg="$bgStrong" borderRadius="$2" p="$1" borderCurve="continuous">
-        <Icon name="PlusSmallOutline" />
+      <Stack
+        bg={AS_ICON_BG}
+        borderRadius="$full"
+        w={40}
+        h={40}
+        alignItems="center"
+        justifyContent="center"
+        borderWidth={StyleSheet.hairlineWidth}
+        borderColor={AS_GOLD_BORDER}
+      >
+        <Icon name="PlusSmallOutline" color={AS_GOLD} size="$6" />
       </Stack>
       {/* Add account */}
       <ListItem.Text
@@ -51,7 +67,7 @@ export function AccountSelectorAddAccountButton({
             : ETranslations.global_add_account,
         })}
         primaryTextProps={{
-          color: '$textSubdued',
+          color: AS_GOLD,
         }}
       />
     </ListItem>

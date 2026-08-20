@@ -67,7 +67,12 @@ export function OpenInAppButton({
               borderWidth={StyleSheet.hairlineWidth}
               borderColor="$borderSubdued"
             >
-              <QRCode value={text} logo={BRAND_QRCODE_LOGO} logoSize={40} size={224} />
+              <QRCode
+                value={text}
+                logo={BRAND_QRCODE_LOGO}
+                logoSize={40}
+                size={224}
+              />
             </Stack>
           </Stack>
           <XStack

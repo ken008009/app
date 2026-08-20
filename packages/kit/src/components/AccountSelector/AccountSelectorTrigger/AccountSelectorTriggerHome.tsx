@@ -18,6 +18,7 @@ export function AccountSelectorTriggerHome({
   hideAddress,
   horizontalLayout = true,
   showWalletName = false,
+  avatarSize,
 }: {
   num: number;
   spotlightProps?: ISpotlightViewProps;
@@ -25,6 +26,7 @@ export function AccountSelectorTriggerHome({
   hideAddress?: boolean;
   horizontalLayout?: boolean;
   showWalletName?: boolean;
+  avatarSize?: 'small' | 'medium' | 'default';
 }) {
   const {
     activeAccount: { network, vaultSettings, wallet, account },
@@ -52,6 +54,7 @@ export function AccountSelectorTriggerHome({
       autoWidthForHome
       showWalletAvatar={!platformEnv.isWebDappMode}
       showWalletName={showWalletName}
+      avatarSize={avatarSize}
       num={num}
       linkNetwork={!network?.isAllNetworks}
       hideAddress={hideAddress ?? vaultSettings?.mergeDeriveAssetsEnabled}

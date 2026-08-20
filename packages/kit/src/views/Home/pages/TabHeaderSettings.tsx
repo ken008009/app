@@ -29,8 +29,8 @@ import {
   useTokenListSortAtom,
 } from '../../../states/jotai/contexts/tokenList';
 import { HomeCircleIconButton } from '../components/HomeInnerTabBar';
-import { HomeTokenListProviderMirrorWrapper } from '../components/HomeTokenListProvider';
 import { HomeStickyHeaderContext } from '../components/HomeStickyHeaderContext';
+import { HomeTokenListProviderMirrorWrapper } from '../components/HomeTokenListProvider';
 
 function TokenListSettings() {
   const intl = useIntl();

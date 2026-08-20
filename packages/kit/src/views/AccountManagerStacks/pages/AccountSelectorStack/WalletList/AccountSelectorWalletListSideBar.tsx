@@ -40,6 +40,12 @@ import { shouldShowCreateHiddenWalletSidebarButtonForWallet } from '../../../com
 import { useAccountSelectorRoute } from '../../../router/useAccountSelectorRoute';
 import { AccountManagerTestIDs } from '../../../testIDs';
 
+import {
+  AS_DIVIDER,
+  AS_GOLD,
+  AS_PAGE_BG,
+  AS_SELECTED_BG,
+} from '../accountSelectorTheme';
 import { AccountSelectorCreateWalletButton } from './AccountSelectorCreateWalletButton';
 import { WalletListItem } from './WalletListItem';
 import {
@@ -412,9 +418,9 @@ export function AccountSelectorWalletListSideBar({
         w: '$32',
       }}
       pt={platformEnv.isNativeAndroid ? top : undefined}
-      bg="$bgSubdued"
+      bg={AS_PAGE_BG}
       borderRightWidth={StyleSheet.hairlineWidth}
-      borderRightColor="$neutral3"
+      borderRightColor={AS_DIVIDER}
     >
       {/* Close action */}
       {isShowCloseButton ? (
@@ -422,10 +428,13 @@ export function AccountSelectorWalletListSideBar({
           py="$4"
           justifyContent="center"
           borderBottomWidth={StyleSheet.hairlineWidth}
-          borderBottomColor="$neutral3"
+          borderBottomColor={AS_DIVIDER}
         >
           <Page.Close>
-            <HeaderIconButton icon="CrossedLargeOutline" />
+            <HeaderIconButton
+              icon="CrossedLargeOutline"
+              iconProps={{ color: AS_GOLD }}
+            />
           </Page.Close>
         </XStack>
       ) : null}
@@ -446,7 +455,7 @@ export function AccountSelectorWalletListSideBar({
               );
             })()}
             mx="$2"
-            bg="$bgActive"
+            bg={AS_SELECTED_BG}
             p="$1"
             borderRadius="$3"
             borderCurve="continuous"
@@ -494,7 +503,7 @@ export function AccountSelectorWalletListSideBar({
         <Stack
           p="$2"
           borderTopWidth={StyleSheet.hairlineWidth}
-          borderTopColor="$borderSubdued"
+          borderTopColor={AS_DIVIDER}
           mb={Math.max(bottom, 8)}
         >
           <AccountSelectorCreateWalletButton />

@@ -2,13 +2,7 @@ import type { ReactNode } from 'react';
 
 import { StyleSheet } from 'react-native';
 
-import {
-  Icon,
-  SizableText,
-  Stack,
-  XStack,
-  YStack,
-} from '@onekeyhq/components';
+import { Icon, SizableText, Stack, XStack, YStack } from '@onekeyhq/components';
 import type { IKeyOfIcons } from '@onekeyhq/components';
 
 import {
@@ -65,12 +59,7 @@ export function MineSettingsRow({
         <Icon name="ChevronRightSmallOutline" size="$5" color={MINE_GOLD} />
       </XStack>
       {showDivider ? (
-        <Stack
-          h={StyleSheet.hairlineWidth}
-          bg={MINE_DIVIDER}
-          ml={70}
-          mr="$4"
-        />
+        <Stack h={StyleSheet.hairlineWidth} bg={MINE_DIVIDER} ml={70} mr="$4" />
       ) : null}
     </>
   );

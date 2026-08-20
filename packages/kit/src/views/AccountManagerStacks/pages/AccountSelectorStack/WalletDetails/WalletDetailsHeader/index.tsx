@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 
 import { isNil } from 'lodash';
 import { useIntl } from 'react-intl';
+import { StyleSheet } from 'react-native';
 
 import type { IYStackProps } from '@onekeyhq/components';
 import {
@@ -29,6 +30,7 @@ import platformEnv from '@onekeyhq/shared/src/platformEnv';
 import accountUtils from '@onekeyhq/shared/src/utils/accountUtils';
 import { EAccountSelectorSceneName } from '@onekeyhq/shared/types';
 
+import { AS_DIVIDER, AS_GOLD, AS_PAGE_BG } from '../../accountSelectorTheme';
 import { AccountManagerTestIDs } from '../testIDs';
 
 import type { IWalletDetailsProps } from '..';
@@ -79,6 +81,9 @@ export function WalletDetailsHeader({
     <YStack
       testID={AccountManagerTestIDs.accountSelectorHeader}
       py="$1"
+      bg={AS_PAGE_BG}
+      borderBottomWidth={StyleSheet.hairlineWidth}
+      borderBottomColor={AS_DIVIDER}
       {...(rest as IYStackProps)}
     >
       <ListItem gap="$1.5">
@@ -128,7 +133,13 @@ export function WalletDetailsHeader({
             </SizableText>
           ) : null}
           {!platformEnv.isWebDappMode && wallet ? (
-            <WalletRenameButton wallet={wallet} editable={editable} mr="$1.5" />
+            <WalletRenameButton
+              wallet={wallet}
+              editable={editable}
+              textColor="#FFFFFF"
+              iconColor={AS_GOLD}
+              mr="$1.5"
+            />
           ) : null}
         </XStack>
 

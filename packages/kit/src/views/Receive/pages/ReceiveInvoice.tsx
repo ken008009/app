@@ -23,8 +23,8 @@ import timerUtils from '@onekeyhq/shared/src/utils/timerUtils';
 
 import backgroundApiProxy from '../../../background/instance/backgroundApiProxy';
 import { useAccountData } from '../../../hooks/useAccountData';
-import { BRAND_QRCODE_LOGO_ALT } from '../../../utils/brandAssets';
 import useAppNavigation from '../../../hooks/useAppNavigation';
+import { BRAND_QRCODE_LOGO_ALT } from '../../../utils/brandAssets';
 import { ReceiveTestIDs } from '../testIDs';
 
 import type { RouteProp } from '@react-navigation/core';

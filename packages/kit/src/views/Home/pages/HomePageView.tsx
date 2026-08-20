@@ -551,11 +551,7 @@ export function HomePageView({
         props.onPress(name);
       };
       return (
-        <HomeInnerTabBarItem
-          {...props}
-          testID={testID}
-          onPress={handlePress}
-        />
+        <HomeInnerTabBarItem {...props} testID={testID} onPress={handlePress} />
       );
     },
     [perpTabShowWeb, switchToPerpsWebTab, tabConfigs, tabTestIDMap],
@@ -788,13 +784,7 @@ export function HomePageView({
       tokenSearchVisible,
       setTokenSearchVisible,
     }),
-    [
-      portalTarget,
-      stickyHost,
-      activeTabName,
-      activeTabId,
-      tokenSearchVisible,
-    ],
+    [portalTarget, stickyHost, activeTabName, activeTabId, tokenSearchVisible],
   );
 
   const tabs = useMemo(() => {
@@ -842,9 +832,7 @@ export function HomePageView({
         ref={tabsRef as any}
         key={key}
         allowHeaderOverscroll
-        headerHeight={
-          platformEnv.isNative ? nativeHeaderHeight : undefined
-        }
+        headerHeight={platformEnv.isNative ? nativeHeaderHeight : undefined}
         headerContainerStyle={homeHeaderContainerStyle}
         useNativeHeaderAnimation={platformEnv.isNativeAndroid}
         width={platformEnv.isNative ? (tabContainerWidth as number) : undefined}

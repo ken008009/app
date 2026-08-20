@@ -24,11 +24,15 @@ export function WalletRenameButton({
   wallet,
   editable,
   textSize = '$bodyLgMedium',
+  textColor,
+  iconColor = '$iconSubdued',
   ...rest
 }: ComponentProps<typeof XStack> & {
   wallet: IDBWallet;
   editable: boolean | undefined;
   textSize?: '$bodyLgMedium' | '$heading2xl' | '$headingXl' | '$headingLg';
+  textColor?: string;
+  iconColor?: string;
 }) {
   const { serviceAccount } = backgroundApiProxy;
   const intl = useIntl();
@@ -139,16 +143,16 @@ export function WalletRenameButton({
         })}
         {...rest}
       >
-        <SizableText size={textSize} pr="$1.5" numberOfLines={1}>
+        <SizableText
+          size={textSize}
+          color={textColor}
+          pr="$1.5"
+          numberOfLines={1}
+        >
           {wallet?.name}
         </SizableText>
         {canRename ? (
-          <Icon
-            flexShrink={0}
-            name="PencilSolid"
-            size="$4"
-            color="$iconSubdued"
-          />
+          <Icon flexShrink={0} name="PencilSolid" size="$4" color={iconColor} />
         ) : null}
       </XStack>
       {wallet.type === WALLET_TYPE_HD && !wallet.backuped ? (
