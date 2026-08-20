@@ -1,10 +1,10 @@
-import { APP_DISPLAY_NAME } from '@onekeyhq/shared/src/config/appBrand';
 import { debounce } from 'lodash';
 
 import {
   backgroundClass,
   backgroundMethod,
 } from '@onekeyhq/shared/src/background/backgroundDecorators';
+import { APP_DISPLAY_NAME } from '@onekeyhq/shared/src/config/appBrand';
 import { getNetworkIdsMap } from '@onekeyhq/shared/src/config/networkIds';
 import { defaultLogger } from '@onekeyhq/shared/src/logger/logger';
 import uriUtils from '@onekeyhq/shared/src/utils/uriUtils';

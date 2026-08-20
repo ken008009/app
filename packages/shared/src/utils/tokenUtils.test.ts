@@ -14,10 +14,13 @@ import {
   flattenAggregateTokensMap,
   formatHomeTokenSymbolForDisplay,
   getFilteredTokenBySearchKey,
+  getHomeTokenListPinPriority,
   getHomeTokenSymbolPriority,
+  isHomeGasTokenDisplayAlias,
   isHomeGasTokenSymbol,
   mergeDeriveTokenListMap,
   nestAggregateTokensMap,
+  sortTokensByHomeValue,
 } from './tokenUtils';
 
 import type { IAccountToken, ITokenFiat } from '../../types/token';
@@ -31,6 +34,9 @@ describe('getHomeTokenSymbolPriority', () => {
     expect(getHomeTokenSymbolPriority('BTC')).toBe(3);
     expect(getHomeTokenSymbolPriority('eth')).toBe(4);
     expect(getHomeTokenSymbolPriority('BNB')).toBe(5);
+    expect(getHomeTokenSymbolPriority('ISPAY')).toBe(0);
+    expect(getHomeTokenSymbolPriority('ispay')).toBe(0);
+    expect(getHomeTokenSymbolPriority('MS')).toBe(0);
     expect(HOME_TOKEN_SYMBOL_PRIORITY).toHaveLength(6);
     expect(HOME_TOKEN_SYMBOL_PRIORITY[0]).toBe(HOME_GAS_TOKEN_SYMBOL);
   });
@@ -41,6 +47,59 @@ describe('getHomeTokenSymbolPriority', () => {
     expect(getHomeTokenSymbolPriority(undefined)).toBe(
       Number.POSITIVE_INFINITY,
     );
+  });
+
+  test('MS chain native ISPAY ranks as pin #1 even before symbol rewrite', () => {
+    expect(
+      getHomeTokenListPinPriority({
+        symbol: 'ISPAY',
+        isNative: true,
+        networkId: 'evm--1944873742',
+      }),
+    ).toBe(0);
+    expect(getHomeTokenListPinPriority({ symbol: 'USDT' })).toBe(1);
+  });
+});
+
+describe('sortTokensByHomeValue', () => {
+  test('places ISPAY native before other pin symbols', () => {
+    const usdt: IAccountToken = {
+      $key: 'usdt',
+      symbol: 'USDT',
+      name: 'Tether',
+      address: '0xusdt',
+      decimals: 6,
+      isNative: false,
+      isAggregateToken: true,
+      networkId: 'aggregate--0',
+    };
+    const ispay: IAccountToken = {
+      $key: 'ispay-native',
+      symbol: 'ISPAY',
+      name: 'ISPAY',
+      address: '',
+      decimals: 18,
+      isNative: true,
+      networkId: 'evm--1944873742',
+    };
+    const out = sortTokensByHomeValue({
+      tokens: [usdt, ispay],
+      map: {
+        usdt: {
+          balance: '0',
+          balanceParsed: '0',
+          fiatValue: '0',
+          price: 1,
+        },
+        'ispay-native': {
+          balance: '500000',
+          balanceParsed: '500000',
+          fiatValue: '0',
+          price: 0,
+        },
+      },
+    });
+    expect(out.map((t) => t.$key)).toEqual(['ispay-native', 'usdt']);
   });
 });
 
@@ -53,10 +112,18 @@ describe('isHomeGasTokenSymbol / formatHomeTokenSymbolForDisplay', () => {
     expect(isHomeGasTokenSymbol('ispay')).toBe(false);
     expect(isHomeGasTokenSymbol('ETH')).toBe(false);
     expect(isHomeGasTokenSymbol(undefined)).toBe(false);
+    expect(isHomeGasTokenDisplayAlias('ispay')).toBe(true);
+    expect(isHomeGasTokenDisplayAlias('ISPAY')).toBe(true);
     expect(formatHomeTokenSymbolForDisplay('msUSD')).toBe(
       HOME_GAS_TOKEN_DISPLAY_SYMBOL,
     );
     expect(formatHomeTokenSymbolForDisplay('ms')).toBe(
+      HOME_GAS_TOKEN_DISPLAY_SYMBOL,
+    );
+    expect(formatHomeTokenSymbolForDisplay('ispay')).toBe(
+      HOME_GAS_TOKEN_DISPLAY_SYMBOL,
+    );
+    expect(formatHomeTokenSymbolForDisplay('ISPAY')).toBe(
       HOME_GAS_TOKEN_DISPLAY_SYMBOL,
     );
     expect(formatHomeTokenSymbolForDisplay('USDT')).toBe('USDT');
@@ -160,6 +227,42 @@ describe('ensureHomePinnedSymbolTokens', () => {
     expect(gasRows[0]?.networkId).toBe('evm--1944873742');
     expect(gasRows[0]?.$key).toBe('ms-native');
     expect(out.tokenListMap['ms-native']?.balanceParsed).toBe('90');
+  });
+
+  test('rewrites MS chain native ISPAY ticker to MSUSD and pins it first', () => {
+    const native: IAccountToken = {
+      $key: 'ispay-native',
+      symbol: 'ISPAY',
+      name: 'ISPAY',
+      address: '',
+      decimals: 18,
+      isNative: true,
+      networkId: 'evm--1944873742',
+    };
+    const out = ensureHomePinnedSymbolTokens({
+      tokens: [native],
+      tokenListMap: {
+        'ispay-native': {
+          balance: '500000000000000000000000',
+          balanceParsed: '500000',
+          fiatValue: '0',
+          price: 0,
+        },
+      },
+    });
+
+    expect(out.tokens.map((t) => t.symbol).slice(0, 6)).toEqual([
+      'MSUSD',
+      'USDT',
+      'USDC',
+      'BTC',
+      'ETH',
+      'BNB',
+    ]);
+    expect(out.tokens[0]?.$key).toBe('ispay-native');
+    expect(out.tokens[0]?.name).toBe('MSUSD');
+    expect(out.tokens[0]?.isNative).toBe(true);
+    expect(out.tokenListMap['ispay-native']?.balanceParsed).toBe('500000');
   });
 });
 

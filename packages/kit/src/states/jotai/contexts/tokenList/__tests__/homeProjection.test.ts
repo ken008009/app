@@ -600,6 +600,39 @@ describe('projectHomeDisplayIds — home symbol pin order (Value)', () => {
     ]);
   });
 
+  it('pins ISPAY (MS native RPC ticker) as the first Home gas row', () => {
+    const meta: Record<string, IToken> = {
+      usdt: makeToken('usdt', { symbol: 'USDT', name: 'Tether' }),
+      ispay: makeToken('ispay', {
+        symbol: 'ISPAY',
+        name: 'ISPAY',
+        isNative: true,
+        networkId: 'evm--1944873742',
+      }),
+      btc: makeToken('btc', { symbol: 'BTC', name: 'Bitcoin' }),
+    };
+    const fiat: Record<string, ITokenFiat> = {
+      usdt: makeFiat({ fiatValue: '0' }),
+      ispay: makeFiat({ fiatValue: '0' }),
+      btc: makeFiat({ fiatValue: '0' }),
+    };
+    const orderedIds = ['usdt', 'btc', 'ispay'];
+
+    const out = projectHomeDisplayIds({
+      orderedIds,
+      smallBalanceIds: [],
+      nonZeroIds: orderedIds,
+      searchKey: '',
+      sortType: ETokenListSortType.Value,
+      sortDirection: 'desc',
+      hideZero: false,
+      getFiat: (k) => fiat[k],
+      getMeta: (k) => meta[k],
+    });
+
+    expect(out).toEqual(['ispay', 'usdt', 'btc']);
+  });
+
   it('sorts non-pinned tokens by fiatValue when no whitelist hits', () => {
     expect(
       project({

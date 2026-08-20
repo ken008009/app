@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Children } from 'react';
+import { Children, createContext, useContext } from 'react';
 
 import { useIntl } from 'react-intl';
 
@@ -21,6 +21,11 @@ import {
   XStack,
 } from '@onekeyhq/components';
 import { ETranslations } from '@onekeyhq/shared/src/locale';
+
+const HOME_WALLET_ACTION_GOLD = '#D5AC4C';
+const HOME_WALLET_ACTION_BG = '#161616';
+
+const HomeWalletActionsStyleContext = createContext(false);
 
 export type IActionItemsProps = {
   icon?: IKeyOfIcons | null;
@@ -45,16 +50,19 @@ function ActionItem({
   disabled,
   ...rest
 }: IActionItemsProps) {
+  const homeWalletStyle = useContext(HomeWalletActionsStyleContext);
   const visualDisabled = !!disabled;
   const effectiveDisabled = visualDisabled && !allowPressWhenDisabled;
 
-  let iconColor: '$iconDisabled' | '$iconInverse' | '$icon' = '$icon';
+  let iconColor: string = '$icon';
   if (visualDisabled) iconColor = '$iconDisabled';
   else if (highlighted) iconColor = '$iconInverse';
+  else if (homeWalletStyle) iconColor = HOME_WALLET_ACTION_GOLD;
 
-  let textColor: '$textDisabled' | '$textInverse' | '$text' = '$text';
+  let textColor: string = '$text';
   if (visualDisabled) textColor = '$textDisabled';
   else if (highlighted) textColor = '$textInverse';
+  else if (homeWalletStyle) textColor = '#FFFFFF';
 
   if (showButtonStyle) {
     return (
@@ -85,17 +93,33 @@ function ActionItem({
         flexBasis={0}
         alignItems="center"
         justifyContent="center"
-        bg={highlighted ? '$bgPrimary' : '$bgStrong'}
+        bg={
+          highlighted
+            ? '$bgPrimary'
+            : homeWalletStyle
+              ? HOME_WALLET_ACTION_BG
+              : '$bgStrong'
+        }
+        borderWidth={homeWalletStyle ? 0.5 : 0}
+        borderColor={homeWalletStyle ? 'rgba(213,172,76,0.35)' : undefined}
         borderRadius="$4"
         pt="$2.5"
         pb="$1"
         px="$1"
         userSelect="none"
         hoverStyle={{
-          bg: highlighted ? '$bgPrimaryHover' : '$bgStrongHover',
+          bg: highlighted
+            ? '$bgPrimaryHover'
+            : homeWalletStyle
+              ? '#2A2A2A'
+              : '$bgStrongHover',
         }}
         pressStyle={{
-          bg: highlighted ? '$bgPrimaryActive' : '$bgStrongActive',
+          bg: highlighted
+            ? '$bgPrimaryActive'
+            : homeWalletStyle
+              ? '#0F0F0F'
+              : '$bgStrongActive',
         }}
         focusable
         focusVisibleStyle={{
@@ -145,10 +169,18 @@ function ActionItem({
 
 function ActionBuy(props: IActionItemsProps) {
   const intl = useIntl();
+  const homeWalletStyle = useContext(HomeWalletActionsStyleContext);
   const { icon, label, ...rest } = props;
   return (
     <ActionItem
-      label={label ?? intl.formatMessage({ id: ETranslations.buy_and_sell })}
+      label={
+        label ??
+        intl.formatMessage({
+          id: homeWalletStyle
+            ? ETranslations.global_buy
+            : ETranslations.buy_and_sell,
+        })
+      }
       icon={icon ?? 'CurrencyDollarOutline'}
       {...rest}
     />
@@ -220,6 +252,17 @@ function ActionStaking(props: IActionItemsProps) {
   return <ActionItem icon={icon ?? 'Layers3Solid'} {...rest} />;
 }
 
+function ActionMultisig(props: IActionItemsProps) {
+  const { icon, label, ...rest } = props;
+  return (
+    <ActionItem
+      label={label ?? '多签'}
+      icon={icon ?? 'PeopleCircleOutline'}
+      {...rest}
+    />
+  );
+}
+
 function ActionMore({
   renderItemsAsync,
   testID,
@@ -233,6 +276,7 @@ function ActionMore({
   iconOnly?: boolean;
 }) {
   const intl = useIntl();
+  const homeWalletStyle = useContext(HomeWalletActionsStyleContext);
   const label = intl.formatMessage({ id: ETranslations.global_more });
 
   const handleMobilePress = () => {
@@ -269,14 +313,20 @@ function ActionMore({
         flexBasis={0}
         alignItems="center"
         justifyContent="center"
-        bg="$bgStrong"
+        bg={homeWalletStyle ? HOME_WALLET_ACTION_BG : '$bgStrong'}
+        borderWidth={homeWalletStyle ? 0.5 : 0}
+        borderColor={homeWalletStyle ? 'rgba(213,172,76,0.35)' : undefined}
         borderRadius="$4"
         pt="$2.5"
         pb="$1"
         px="$1"
         userSelect="none"
-        hoverStyle={{ bg: '$bgStrongHover' }}
-        pressStyle={{ bg: '$bgStrongActive' }}
+        hoverStyle={{
+          bg: homeWalletStyle ? '#2A2A2A' : '$bgStrongHover',
+        }}
+        pressStyle={{
+          bg: homeWalletStyle ? '#0F0F0F' : '$bgStrongActive',
+        }}
         focusable
         focusVisibleStyle={{
           outlineColor: '$focusRing',
@@ -288,9 +338,18 @@ function ActionMore({
         testID={testID}
       >
         <Stack>
-          <Icon name="DotHorOutline" size="$6" color="$icon" />
+          <Icon
+            name="DotHorOutline"
+            size="$6"
+            color={homeWalletStyle ? HOME_WALLET_ACTION_GOLD : '$icon'}
+          />
         </Stack>
-        <SizableText my="$1" textAlign="center" size="$bodySm" color="$text">
+        <SizableText
+          my="$1"
+          textAlign="center"
+          size="$bodySm"
+          color={homeWalletStyle ? '#FFFFFF' : '$text'}
+        >
           {label}
         </SizableText>
       </Stack>
@@ -315,19 +374,25 @@ function ActionMore({
   );
 }
 
-function RawActions({ children, ...rest }: IXStackProps) {
+function RawActions({
+  children,
+  homeWalletStyle = false,
+  ...rest
+}: IXStackProps & { homeWalletStyle?: boolean }) {
   return (
-    <XStack
-      gap="$2"
-      $gtSm={{
-        flexDirection: 'row', // override the 'column' direction set in packages/kit/src/views/AssetDetails/pages/TokenDetails/TokenDetailsHeader.tsx 205L
-        justifyContent: 'flex-start',
-        gap: '$3',
-      }}
-      {...rest}
-    >
-      {Children.toArray(children)}
-    </XStack>
+    <HomeWalletActionsStyleContext.Provider value={homeWalletStyle}>
+      <XStack
+        gap="$2"
+        $gtSm={{
+          flexDirection: 'row', // override the 'column' direction set in packages/kit/src/views/AssetDetails/pages/TokenDetails/TokenDetailsHeader.tsx 205L
+          justifyContent: 'flex-start',
+          gap: '$3',
+        }}
+        {...rest}
+      >
+        {Children.toArray(children)}
+      </XStack>
+    </HomeWalletActionsStyleContext.Provider>
   );
 }
 
@@ -339,5 +404,6 @@ RawActions.Swap = ActionSwap;
 RawActions.Perp = ActionPerp;
 RawActions.Earn = ActionEarn;
 RawActions.Staking = ActionStaking;
+RawActions.Multisig = ActionMultisig;
 
 export { RawActions, ActionItem };

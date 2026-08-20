@@ -5,7 +5,7 @@ import { Image } from 'react-native';
 import { MS_NETWORK_ID } from '@onekeyhq/shared/src/config/presetNetworks';
 import {
   HOME_GAS_TOKEN_SYMBOL,
-  isHomeGasTokenSymbol,
+  isHomeGasTokenDisplayAlias,
 } from '@onekeyhq/shared/src/utils/tokenUtils';
 import type { IAccountToken } from '@onekeyhq/shared/types/token';
 
@@ -34,7 +34,7 @@ export function getHomeTokenLocalLogoUri(symbol?: string): string | undefined {
   if (!symbol) {
     return undefined;
   }
-  if (isHomeGasTokenSymbol(symbol)) {
+  if (isHomeGasTokenDisplayAlias(symbol)) {
     return MSUSD_LOGO_URI;
   }
   return HOME_TOKEN_LOCAL_LOGO_BY_SYMBOL[symbol.toLowerCase()];

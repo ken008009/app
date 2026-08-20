@@ -22,8 +22,8 @@ import {
   hardwareWalletXfpStatusAtom,
   useHardwareWalletXfpStatusAtom,
 } from '@onekeyhq/kit-bg/src/states/jotai/atoms';
-import { ETranslations } from '@onekeyhq/shared/src/locale';
 import { APP_BRAND_NAME } from '@onekeyhq/shared/src/config/appBrand';
+import { ETranslations } from '@onekeyhq/shared/src/locale';
 import { EAccountSelectorSceneName } from '@onekeyhq/shared/types';
 
 import type { IntlShape } from 'react-intl';

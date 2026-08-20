@@ -12,6 +12,7 @@ import { HomeTokenListProviderMirrorWrapper } from '../HomeTokenListProvider';
 
 import { RawActions } from './RawActions';
 import { useWalletActionConfig } from './useWalletActionConfig';
+import { WalletActionBindVirtualCard } from './WalletActionBindVirtualCard';
 import { WalletActionCopy } from './WalletActionCopy';
 import { WalletActionSell } from './WalletActionSell';
 import { WalletActionViewInExplorer } from './WalletActionViewInExplorer';
@@ -48,6 +49,13 @@ export function WalletActionMore({ iconOnly }: { iconOnly?: boolean } = {}) {
 
       const elements: ReactNode[] = actions.map((action) => {
         switch (action) {
+          case 'bindVirtualCard':
+            return (
+              <WalletActionBindVirtualCard
+                key="bindVirtualCard"
+                onClose={handleActionListClose}
+              />
+            );
           case 'sell':
             return (
               <WalletActionSell key="sell" onClose={handleActionListClose} />

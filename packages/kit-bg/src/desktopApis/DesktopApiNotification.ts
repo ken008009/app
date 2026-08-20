@@ -1,10 +1,10 @@
-import { APP_DISPLAY_NAME } from '@onekeyhq/shared/src/config/appBrand';
 import { Notification, app, ipcMain, systemPreferences } from 'electron';
 import logger from 'electron-log/main';
 import TaskBarBadgeWindows from 'electron-taskbar-badge';
 import { isNil } from 'lodash';
 
 import { ipcMessageKeys } from '@onekeyhq/desktop/app/config';
+import { APP_DISPLAY_NAME } from '@onekeyhq/shared/src/config/appBrand';
 import type {
   INotificationPermissionDetail,
   INotificationSetBadgeParams,

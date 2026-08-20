@@ -16,7 +16,7 @@ import networkUtils from '@onekeyhq/shared/src/utils/networkUtils';
 import {
   checkIsOnlyOneTokenHasBalance,
   formatHomeTokenSymbolForDisplay,
-  isHomeGasTokenSymbol,
+  isHomeGasTokenDisplayAlias,
 } from '@onekeyhq/shared/src/utils/tokenUtils';
 
 import { useAggregateSubTokenFiatMap } from '../../states/jotai/contexts/tokenList/cells';
@@ -166,7 +166,7 @@ function TokenNameView(props: IProps) {
           </Badge.Text>
         </Badge>
       ) : null}
-      {isHomeGasTokenSymbol(symbol ?? name) &&
+      {isHomeGasTokenDisplayAlias(symbol ?? name) &&
       !isAllNetworks &&
       !showNetworkName ? (
         <Tooltip

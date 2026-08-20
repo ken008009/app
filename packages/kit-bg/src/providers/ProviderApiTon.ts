@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { APP_BRAND_NAME } from '@onekeyhq/shared/src/config/appBrand';
 import {
   Web3RpcError,
   web3Errors,
@@ -15,6 +14,7 @@ import {
   permissionRequired,
   providerApiMethod,
 } from '@onekeyhq/shared/src/background/backgroundDecorators';
+import { APP_BRAND_NAME } from '@onekeyhq/shared/src/config/appBrand';
 import { OneKeyLocalError } from '@onekeyhq/shared/src/errors';
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
 import type { INetworkAccount } from '@onekeyhq/shared/types/account';

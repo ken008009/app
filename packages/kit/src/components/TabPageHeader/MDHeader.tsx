@@ -1,4 +1,4 @@
-import { type ReactNode, memo, useCallback, useMemo, useState } from 'react';
+import { type ReactNode, memo, useMemo, useState } from 'react';
 
 import { useIntl } from 'react-intl';
 
@@ -13,11 +13,7 @@ import {
   isLiquidGlassAvailable,
   useSafeAreaInsets,
 } from '@onekeyhq/components';
-import {
-  AccountSelectorActiveAccountHome,
-  AccountSelectorTriggerHome,
-} from '@onekeyhq/kit/src/components/AccountSelector';
-import { NetworkSelectorTriggerHome } from '@onekeyhq/kit/src/components/AccountSelector/NetworkSelectorTrigger';
+import { AccountSelectorTriggerHome } from '@onekeyhq/kit/src/components/AccountSelector';
 import { useSpotlight } from '@onekeyhq/kit/src/components/Spotlight';
 import useListenTabFocusState from '@onekeyhq/kit/src/hooks/useListenTabFocusState';
 import { useAppIsLockedAtom } from '@onekeyhq/kit-bg/src/states/jotai/atoms';
@@ -33,7 +29,6 @@ import {
   useIsAccountSelectorSyncLoading,
 } from '../../states/jotai/contexts/accountSelector';
 import { HomeTokenListProviderMirror } from '../../views/Home/components/HomeTokenListProvider/HomeTokenListProviderMirror';
-import { AllNetworksManagerTrigger } from '../AccountSelector/AllNetworksManagerTrigger';
 import { MoreActionButton } from '../MoreActionButton';
 
 import { HeaderNotificationIconButton } from './components/HeaderNotificationIconButton';
@@ -91,52 +86,6 @@ function HomeAccountSelectorTrigger() {
 
 const MemoizedHomeAccountSelectorTrigger = memo(HomeAccountSelectorTrigger);
 
-function HomeNetworkAndAddressRow() {
-  const {
-    activeAccount: { wallet, network },
-  } = useActiveAccount({ num: 0 });
-
-  const renderNetworkSelector = useCallback(() => {
-    if (
-      network?.isAllNetworks &&
-      !accountUtils.isOthersWallet({ walletId: wallet?.id ?? '' })
-    ) {
-      return <AllNetworksManagerTrigger num={0} unifiedMode />;
-    }
-
-    return (
-      <NetworkSelectorTriggerHome
-        num={0}
-        size="large"
-        recordNetworkHistoryEnabled
-        unifiedMode
-      />
-    );
-  }, [network?.isAllNetworks, wallet?.id]);
-
-  return (
-    <XStack
-      alignItems="center"
-      justifyContent="space-between"
-      minHeight={36}
-      width="100%"
-    >
-      <XStack flexShrink={1} minWidth={0} alignItems="center">
-        {renderNetworkSelector()}
-      </XStack>
-      <XStack flexShrink={0} alignItems="center" pl="$2">
-        <AccountSelectorActiveAccountHome
-          num={0}
-          showAccountAddress
-          showCopyButton
-          showCreateAddressButton={false}
-          showNoAddressTip={false}
-        />
-      </XStack>
-    </XStack>
-  );
-}
-
 function HomeMDHeaderRows({ headerPx }: { headerPx: string }) {
   const { top } = useSafeAreaInsets();
   const headerGlassActive = isLiquidGlassAvailable();
@@ -175,11 +124,10 @@ function HomeMDHeaderRows({ headerPx }: { headerPx: string }) {
   return (
     <YStack
       px={headerPx}
-      gap="$2"
       pb="$2"
       {...(top || platformEnv.isNativeAndroid ? { mt: top || '$2' } : {})}
     >
-      {/* Row 1: Account selector | notification + more */}
+      {/* Account selector | notification + scan + more */}
       <XStack
         alignItems="center"
         justifyContent="space-between"
@@ -198,9 +146,6 @@ function HomeMDHeaderRows({ headerPx }: { headerPx: string }) {
           {rightIconGroup}
         </XStack>
       </XStack>
-
-      {/* Row 2: Network selector | address (space-between) */}
-      <HomeNetworkAndAddressRow />
     </YStack>
   );
 }

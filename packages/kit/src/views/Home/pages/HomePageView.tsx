@@ -70,7 +70,11 @@ import { NotBackedUpEmpty } from '../components/NotBakcedUp';
 import { PullToRefresh, onHomePageRefresh } from '../components/PullToRefresh';
 import { HomeTestIDs } from '../testIDs';
 
-import { HomeHeaderContainer } from './HomeHeaderContainer';
+import {
+  HOME_HEADER_NATIVE_HEIGHT,
+  // HOME_HEADER_NATIVE_HEIGHT_WITH_BANNER,
+  HomeHeaderContainer,
+} from './HomeHeaderContainer';
 import { homePageContentMaxWidthSx } from './homePageContentMaxWidth';
 import { shouldShowNoWalletContent } from './homePageNoWalletContent';
 import { NFTListContainerWithProvider } from './NFTListContainer';
@@ -789,7 +793,11 @@ export function HomePageView({
         ref={tabsRef as any}
         key={key}
         allowHeaderOverscroll
-        headerHeight={platformEnv.isNative ? 312 : undefined}
+        headerHeight={
+          platformEnv.isNative
+            ? HOME_HEADER_NATIVE_HEIGHT
+            : undefined
+        }
         useNativeHeaderAnimation={platformEnv.isNativeAndroid}
         width={platformEnv.isNative ? (tabContainerWidth as number) : undefined}
         renderHeader={renderHeader}
@@ -974,11 +982,10 @@ export function HomePageView({
   ]);
 
   // Initial heights based on measured header sizes on each platform.
-  // Home MDHeader is now 2 rows (account + network/address). Must match
-  // actual layout to prevent content covering the second row before onLayout.
-  // iOS measured ~162; Android ~128 (account row + network row + paddings).
+  // Home MDHeader is 1 row (account + notification/scan/more).
+  // iOS ~118; Android ~84 (account row + paddings, without network/address).
   const [tabPageHeight, setTabPageHeight] = useState(
-    platformEnv.isNativeIOS ? 162 : 128,
+    platformEnv.isNativeIOS ? 118 : 84,
   );
   const handleTabPageLayout = useCallback((e: LayoutChangeEvent) => {
     const height = e.nativeEvent.layout.height - 20;

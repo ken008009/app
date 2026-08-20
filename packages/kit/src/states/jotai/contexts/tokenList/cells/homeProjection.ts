@@ -23,7 +23,7 @@ import BigNumber from 'bignumber.js';
 
 import type { ITokenKey } from '@onekeyhq/kit-bg/src/states/jotai/contexts/tokenList/cellsPure/types';
 import { SEARCH_KEY_MIN_LENGTH } from '@onekeyhq/shared/src/consts/walletConsts';
-import { getHomeTokenSymbolPriority } from '@onekeyhq/shared/src/utils/tokenUtils';
+import { getHomeTokenListPinPriority } from '@onekeyhq/shared/src/utils/tokenUtils';
 import { ETokenListSortType } from '@onekeyhq/shared/types/token';
 import type { IToken, ITokenFiat } from '@onekeyhq/shared/types/token';
 
@@ -212,8 +212,8 @@ export function projectHomeDisplayIds(
     );
   } else if (sortType === ETokenListSortType.Value) {
     ids = stableSort(ids, sortDirection, (a, b) => {
-      const aPriority = getHomeTokenSymbolPriority(getMeta(a)?.symbol);
-      const bPriority = getHomeTokenSymbolPriority(getMeta(b)?.symbol);
+      const aPriority = getHomeTokenListPinPriority(getMeta(a));
+      const bPriority = getHomeTokenListPinPriority(getMeta(b));
       if (aPriority !== bPriority) {
         return aPriority < bPriority ? -1 : 1;
       }

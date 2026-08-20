@@ -33,8 +33,8 @@ import {
 import { EAccountSelectorSceneName } from '@onekeyhq/shared/types';
 
 import useAppNavigation from '../../hooks/useAppNavigation';
-import { getHomeTabStackLength } from '../../views/Home/pages/urlAccount/urlAccountUtils';
 import { DISCOVERY_NATIVE_HIDE_MARKET_EARN_TABS } from '../../views/Discovery/consts';
+import { getHomeTabStackLength } from '../../views/Home/pages/urlAccount/urlAccountUtils';
 import { AccountSelectorProviderMirror } from '../AccountSelector/AccountSelectorProvider';
 
 import { WalletConnectionGroup } from './components';

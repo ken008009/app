@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { APP_BRAND_NAME } from '@onekeyhq/shared/src/config/appBrand';
 import { tx, u, wallet } from '@cityofzion/neon-core';
 import { web3Errors } from '@onekeyfe/cross-inpage-provider-errors';
 import { IInjectedProviderNames } from '@onekeyfe/cross-inpage-provider-types';
@@ -9,6 +8,7 @@ import {
   backgroundClass,
   providerApiMethod,
 } from '@onekeyhq/shared/src/background/backgroundDecorators';
+import { APP_BRAND_NAME } from '@onekeyhq/shared/src/config/appBrand';
 import { getNetworkIdsMap } from '@onekeyhq/shared/src/config/networkIds';
 import { NotImplemented } from '@onekeyhq/shared/src/errors';
 import { defaultLogger } from '@onekeyhq/shared/src/logger/logger';

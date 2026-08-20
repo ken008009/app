@@ -10,8 +10,8 @@ import {
   rootNavigationRef,
   useRouterEventsRef,
 } from '@onekeyhq/components';
-import { ETranslations } from '@onekeyhq/shared/src/locale';
 import { APP_BRAND_NAME } from '@onekeyhq/shared/src/config/appBrand';
+import { ETranslations } from '@onekeyhq/shared/src/locale';
 import { defaultLogger } from '@onekeyhq/shared/src/logger/logger';
 import { debugLandingLog } from '@onekeyhq/shared/src/performance/init';
 import platformEnv from '@onekeyhq/shared/src/platformEnv';

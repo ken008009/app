@@ -40,12 +40,29 @@ import { RawActions } from './RawActions';
 import { useWalletActionConfig } from './useWalletActionConfig';
 import { WalletActionBuyMain } from './WalletActionBuyMain';
 import { WalletActionMore } from './WalletActionMore';
+import { WalletActionMultisig } from './WalletActionMultisig';
 import { WalletActionPerp } from './WalletActionPerp';
 import { WalletActionReceive } from './WalletActionReceive';
 import { WalletActionStaking } from './WalletActionStaking';
 import { WalletActionSwap } from './WalletActionSwap';
 
 import type { IActionCustomization, IWalletActionType } from './types';
+
+function insertActionAfterReceive(
+  actions: IWalletActionType[],
+  extra: IWalletActionType,
+): IWalletActionType[] {
+  const next = actions.filter((action) => action !== extra);
+  const receiveIndex = next.indexOf('receive');
+  if (receiveIndex < 0) {
+    return [...next, extra];
+  }
+  return [
+    ...next.slice(0, receiveIndex + 1),
+    extra,
+    ...next.slice(receiveIndex + 1),
+  ];
+}
 
 function WalletActionSend({
   customization,
@@ -436,12 +453,16 @@ function WalletActions({ ...rest }: IXStackProps) {
             variant="home_full_row"
           />
         );
-      // case 'buy':
-      //   return (
-      //     <ReviewControl key="buy">
-      //       <WalletActionBuyMain customization={customization} />
-      //     </ReviewControl>
-      //   );
+      case 'multisig':
+        return (
+          <WalletActionMultisig key="multisig" customization={customization} />
+        );
+      case 'buy':
+        return (
+          <ReviewControl key="buy">
+            <WalletActionBuyMain customization={customization} />
+          </ReviewControl>
+        );
       case 'swap':
         return platformEnv.isExtensionUiPopup ||
           platformEnv.isExtensionUiSidePanel ? (
@@ -460,9 +481,18 @@ function WalletActions({ ...rest }: IXStackProps) {
     }
   };
 
+  // Temporarily hide Buy / Swap on the Home action row.
+  const visibleMainActions = insertActionAfterReceive(
+    config.mainActions.filter(
+      (action) => action !== 'buy' && action !== 'swap',
+    ),
+    'multisig',
+  );
+
   return (
     <RawActions
       {...rest}
+      homeWalletStyle
       justifyContent="flex-start"
       gap="$2.5"
       $gtSm={{
@@ -471,7 +501,7 @@ function WalletActions({ ...rest }: IXStackProps) {
         gap: '$2.5',
       }}
     >
-      {config.mainActions.map(renderActionComponent).filter(Boolean)}
+      {visibleMainActions.map(renderActionComponent).filter(Boolean)}
       <WalletActionMore />
     </RawActions>
   );

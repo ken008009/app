@@ -24,11 +24,13 @@ function AllNetworksManagerTrigger({
   num,
   showSkeleton,
   unifiedMode = false,
+  size = 'large',
 }: {
   num: number;
   containerProps?: ComponentProps<typeof Stack>;
   showSkeleton?: boolean;
   unifiedMode?: boolean;
+  size?: 'large' | 'xl';
 }) {
   const navigation = useAppNavigation();
   const {
@@ -105,6 +107,10 @@ function AllNetworksManagerTrigger({
     showUnifiedNetworkSelector,
   ]);
 
+  const isXl = size === 'xl';
+  const avatarSize = isXl ? '$7' : '$6';
+  const plusBadgeHeight = isXl ? 32 : 28;
+
   if (!wallet) {
     return null;
   }
@@ -163,7 +169,7 @@ function AllNetworksManagerTrigger({
             >
               <NetworkAvatarBase
                 logoURI={item?.logoURI}
-                size="$6"
+                size={avatarSize}
                 networkName={item?.name}
                 isCustomNetwork={item?.isCustomNetwork}
               />
@@ -180,9 +186,9 @@ function AllNetworksManagerTrigger({
             borderColor="$bgApp"
             alignItems="center"
             justifyContent="center"
-            h={28}
+            h={plusBadgeHeight}
           >
-            <SizableText size="$bodySm">
+            <SizableText size={isXl ? '$bodyMd' : '$bodySm'}>
               +
               {enabledNetworksCompatibleWithWalletId.length -
                 MAX_DISPLAY_NETWORKS}
@@ -190,7 +196,11 @@ function AllNetworksManagerTrigger({
           </XStack>
         ) : null}
       </XStack>
-      <Icon name="ChevronDownSmallOutline" color="$iconSubdued" size="$5" />
+      <Icon
+        name="ChevronDownSmallOutline"
+        color="$iconSubdued"
+        size={isXl ? '$6' : '$5'}
+      />
       {enabledNetworksWithoutAccount.length > 0 ? (
         <Stack
           position="absolute"

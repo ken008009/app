@@ -17,12 +17,12 @@ import platformEnv from '@onekeyhq/shared/src/platformEnv';
 import { ETabRoutes } from '@onekeyhq/shared/src/routes';
 import { EAccountSelectorSceneName } from '@onekeyhq/shared/types';
 
-import type { ISubSettingConfig } from '../../Setting/pages/Tab/config';
 import { TabSettingsListGrid } from '../../Setting/pages/Tab/ListItem';
 import {
   showUnderDevelopmentToast,
   useMineMenuConfig,
 } from '../hooks/useMineMenuConfig';
+import type { ISubSettingConfig } from '../../Setting/pages/Tab/config';
 
 function MineMenuListGrid({ item }: { item: ISubSettingConfig }) {
   const resolvedItem = useMemo(() => {

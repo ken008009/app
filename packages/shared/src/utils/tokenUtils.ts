@@ -445,10 +445,19 @@ export const HOME_GAS_TOKEN_DISPLAY_SYMBOL = 'MSUSD';
  * On-chain aliases of the Home gas token (compared lowercase).
  *   msusd — canonical pin key / display ticker MSUSD
  *   ms    — current chain / native name
+ * `ispay` is intentionally NOT a global gas alias (would rename any ISPAY
+ * ticker on other chains). It is a Home display alias only.
  */
 const HOME_GAS_TOKEN_SYMBOL_ALIASES: ReadonlySet<string> = new Set([
   HOME_GAS_TOKEN_SYMBOL,
   'ms',
+]);
+
+/** Tickers rewritten to MSUSD in Home UI (includes historical RPC ticker). */
+const HOME_GAS_TOKEN_DISPLAY_ALIASES: ReadonlySet<string> = new Set([
+  HOME_GAS_TOKEN_SYMBOL,
+  'ms',
+  'ispay',
 ]);
 
 /** Home Assets token list: preferred symbol pin order (case-insensitive). */
@@ -465,16 +474,29 @@ export function isHomeGasTokenSymbol(symbol?: string): boolean {
   return !!symbol && HOME_GAS_TOKEN_SYMBOL_ALIASES.has(symbol.toLowerCase());
 }
 
+/** True for Home display tickers that should render as MSUSD (incl. ISPAY). */
+export function isHomeGasTokenDisplayAlias(symbol?: string): boolean {
+  return !!symbol && HOME_GAS_TOKEN_DISPLAY_ALIASES.has(symbol.toLowerCase());
+}
+
 export function isMsChainNativeToken(token: IAccountToken): boolean {
   return !!token.isNative && token.networkId === MS_NETWORK_ID;
 }
 
-/** Normalize pin-list tickers for UI (msUSD / msusd → MSUSD). */
+function shouldRewriteAsHomeGasToken(token: IAccountToken): boolean {
+  return (
+    isMsChainNativeToken(token) ||
+    isHomeGasTokenDisplayAlias(token.symbol) ||
+    isHomeGasTokenDisplayAlias(token.commonSymbol)
+  );
+}
+
+/** Normalize pin-list tickers for UI (msUSD / ISPAY / ms → MSUSD). */
 export function formatHomeTokenSymbolForDisplay(symbol?: string): string {
   if (!symbol) {
     return '';
   }
-  if (isHomeGasTokenSymbol(symbol)) {
+  if (isHomeGasTokenDisplayAlias(symbol)) {
     return HOME_GAS_TOKEN_DISPLAY_SYMBOL;
   }
   return symbol;
@@ -491,13 +513,63 @@ const HOME_TOKEN_SYMBOL_PRIORITY_INDEX: ReadonlyMap<string, number> = new Map(
 /**
  * Lower index = higher pin priority. Symbols not in the whitelist return
  * +Infinity so they sort after pinned tokens.
+ * ISPAY / MS display aliases share the MSUSD pin rank so the Home list
+ * keeps the gas token first even when cell meta still has the RPC ticker.
  */
 export function getHomeTokenSymbolPriority(symbol?: string): number {
   if (!symbol) {
     return Number.POSITIVE_INFINITY;
   }
-  const index = HOME_TOKEN_SYMBOL_PRIORITY_INDEX.get(symbol.toLowerCase());
+  const key = isHomeGasTokenDisplayAlias(symbol)
+    ? HOME_GAS_TOKEN_SYMBOL
+    : symbol.toLowerCase();
+  const index = HOME_TOKEN_SYMBOL_PRIORITY_INDEX.get(key);
   return index ?? Number.POSITIVE_INFINITY;
+}
+
+/** Pin rank for Home Value sort, including MS-chain native regardless of ticker. */
+export function getHomeTokenListPinPriority(token?: {
+  symbol?: string;
+  commonSymbol?: string;
+  isNative?: boolean;
+  networkId?: string;
+}): number {
+  if (!token) {
+    return Number.POSITIVE_INFINITY;
+  }
+  if (token.isNative && token.networkId === MS_NETWORK_ID) {
+    return 0;
+  }
+  return getHomeTokenSymbolPriority(token.commonSymbol ?? token.symbol);
+}
+
+export function sortTokensByHomeValue({
+  tokens = [],
+  map = {},
+  sortDirection = 'desc',
+}: {
+  tokens: IAccountToken[];
+  map?: {
+    [key: string]: ITokenFiat;
+  };
+  sortDirection?: 'desc' | 'asc';
+}) {
+  return tokens.toSorted((a, b) => {
+    const aPriority = getHomeTokenListPinPriority(a);
+    const bPriority = getHomeTokenListPinPriority(b);
+    if (aPriority !== bPriority) {
+      const pinCmp = aPriority < bPriority ? -1 : 1;
+      return sortDirection === 'desc' ? pinCmp : -pinCmp;
+    }
+    const aFiat = new BigNumber(map[a.$key]?.fiatValue ?? -1);
+    const bFiat = new BigNumber(map[b.$key]?.fiatValue ?? -1);
+    const aVal = new BigNumber(aFiat.isNaN() ? -1 : aFiat);
+    const bVal = new BigNumber(bFiat.isNaN() ? -1 : bFiat);
+    if (sortDirection === 'desc') {
+      return bVal.comparedTo(aVal);
+    }
+    return aVal.comparedTo(bVal);
+  });
 }
 
 const HOME_PIN_ZERO_FIAT: ITokenFiat = {
@@ -521,7 +593,9 @@ function tokenMatchesHomePinSymbol(
     return (
       token.networkId === MS_NETWORK_ID &&
       (isHomeGasTokenSymbol(token.symbol) ||
-        isHomeGasTokenSymbol(token.commonSymbol))
+        isHomeGasTokenSymbol(token.commonSymbol) ||
+        isHomeGasTokenDisplayAlias(token.symbol) ||
+        isHomeGasTokenDisplayAlias(token.commonSymbol))
     );
   }
   return (
@@ -538,10 +612,7 @@ function displaySymbolForHomePin(pinSymbol: string): string {
 }
 
 function normalizeHomePinnedTokenDisplay(token: IAccountToken): IAccountToken {
-  if (
-    !isHomeGasTokenSymbol(token.symbol) &&
-    !isHomeGasTokenSymbol(token.commonSymbol)
-  ) {
+  if (!shouldRewriteAsHomeGasToken(token)) {
     return token;
   }
   return {
@@ -551,7 +622,7 @@ function normalizeHomePinnedTokenDisplay(token: IAccountToken): IAccountToken {
       ? HOME_GAS_TOKEN_DISPLAY_SYMBOL
       : token.commonSymbol,
     name:
-      isHomeGasTokenSymbol(token.name) || !token.name
+      isHomeGasTokenDisplayAlias(token.name) || !token.name
         ? HOME_GAS_TOKEN_DISPLAY_SYMBOL
         : token.name,
   };

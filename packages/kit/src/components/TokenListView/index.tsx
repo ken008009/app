@@ -26,7 +26,7 @@ import { isTokenSelectorDappToken } from '@onekeyhq/shared/src/utils/tokenSelect
 import {
   buildHomeDefaultTokenMapKey,
   getFilteredTokenBySearchKey,
-  sortTokensByFiatValue,
+  sortTokensByHomeValue,
   sortTokensByName,
   sortTokensByPrice,
 } from '@onekeyhq/shared/src/utils/tokenUtils';
@@ -622,7 +622,7 @@ function TokenListViewCmp(props: IProps) {
           },
         });
       } else if (sortType === ETokenListSortType.Value) {
-        resp = sortTokensByFiatValue({
+        resp = sortTokensByHomeValue({
           tokens: resp,
           sortDirection,
           map: {

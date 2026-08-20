@@ -1,4 +1,3 @@
-import { APP_DISPLAY_NAME } from '@onekeyhq/shared/src/config/appBrand';
 import { execFile } from 'child_process';
 import fs from 'fs/promises';
 import os from 'os';
@@ -20,6 +19,7 @@ import {
 } from '@onekeyhq/desktop/app/libs/utils';
 import { restartBridge } from '@onekeyhq/desktop/app/process';
 import { getAppStaticResourcesPath } from '@onekeyhq/desktop/app/resoucePath';
+import { APP_DISPLAY_NAME } from '@onekeyhq/shared/src/config/appBrand';
 import { memoizee } from '@onekeyhq/shared/src/utils/cacheUtils';
 import type { IMediaType, IPrefType } from '@onekeyhq/shared/types/desktop';
 

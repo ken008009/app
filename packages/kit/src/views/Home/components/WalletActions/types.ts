@@ -16,6 +16,8 @@ export type IWalletActionType =
   | 'coins'
   | 'bulkSend'
   | 'sign'
+  | 'multisig'
+  | 'bindVirtualCard'
   | 'reward'
   | 'export'
   | 'vote'

@@ -114,11 +114,12 @@ class BaseApiProvider {
     const isMsNetwork = this.networkId === MS_NETWORK_ID;
     return {
       info: {
+        // Always show MSUSD to users. Ignore stale DB network.symbol (ISPAY).
         name: isMsNetwork
-          ? (network?.name ?? 'MS')
+          ? 'MSUSD'
           : (token?.info?.name ?? network?.name),
         symbol: isMsNetwork
-          ? (network?.symbol ?? 'MSUSD')
+          ? 'MSUSD'
           : (token?.info?.symbol ?? network?.symbol),
         address: this.nativeTokenAddress,
         sendAddress: undefined,
@@ -393,6 +394,10 @@ class BaseApiProvider {
           if (t.info && typeof token.info?.decimals === 'number') {
             t.info.decimals = token.info.decimals;
           }
+        }
+        if (this.networkId === MS_NETWORK_ID && t.info?.isNative) {
+          t.info.symbol = 'MSUSD';
+          t.info.name = 'MSUSD';
         }
 
         return t;

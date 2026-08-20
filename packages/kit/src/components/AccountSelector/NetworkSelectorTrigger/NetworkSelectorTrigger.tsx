@@ -97,7 +97,7 @@ function NetworkSelectorTriggerHomeCmp({
   num: number;
   recordNetworkHistoryEnabled?: boolean;
   hideOnNoAccount?: boolean;
-  size?: 'small' | 'large';
+  size?: 'small' | 'large' | 'xl';
   unifiedMode?: boolean;
 }) {
   const {
@@ -128,7 +128,8 @@ function NetworkSelectorTriggerHomeCmp({
     return network?.name;
   }, [intl, network?.isAllNetworks, network?.name]);
 
-  const isLarge = size === 'large';
+  const isLarge = size === 'large' || size === 'xl';
+  const isXl = size === 'xl';
 
   const handlePress = useCallback(() => {
     if (unifiedMode) {
@@ -172,15 +173,15 @@ function NetworkSelectorTriggerHomeCmp({
       userSelect="none"
       onPress={handlePress}
     >
-      <NetworkAvatar networkId={network?.id} size="$6" />
+      <NetworkAvatar networkId={network?.id} size={isXl ? '$7' : '$6'} />
       {isLarge ? (
         <SizableText
           testID="account-network-trigger-button-text"
           pl="$2"
-          size="$bodyMd"
-          maxWidth="$28"
+          size={isXl ? '$bodyLg' : '$bodyMd'}
+          maxWidth={isXl ? '$36' : '$28'}
           $gtXl={{
-            maxWidth: '$32',
+            maxWidth: isXl ? '$40' : '$32',
           }}
           flexShrink={1}
           numberOfLines={1}
@@ -191,7 +192,7 @@ function NetworkSelectorTriggerHomeCmp({
       <Icon
         name="ChevronDownSmallOutline"
         color="$iconSubdued"
-        size="$5"
+        size={isXl ? '$6' : '$5'}
         flexShrink={0}
       />
     </XStack>

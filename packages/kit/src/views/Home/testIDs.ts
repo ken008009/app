@@ -22,6 +22,7 @@ export const HomeTestIDs = {
   // Wallet actions
   sendButton: 'home-send-button',
   receiveButton: 'home-receive-button',
+  multisigButton: 'home-multisig-button',
   swapButton: 'home-swap-button',
   buyButton: 'home-buy-button',
   stakingButton: 'home-staking-button',

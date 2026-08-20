@@ -23,11 +23,11 @@ export const defaultWalletActionsConfig: INetworkWalletActionsConfig = {
     ? ['send', 'receive', 'swap']
     : ['send', 'receive', 'buy', 'swap'],
   // More menu: withdraw (sell) + copy address + view in explorer.
-  moreActions: ['sell', 'copy', 'explorer'],
+  moreActions: ['bindVirtualCard', 'sell', 'copy', 'explorer'],
   moreActionGroups: [
     {
       type: 'tools',
-      actions: ['sell', 'copy', 'explorer'],
+      actions: ['bindVirtualCard', 'sell', 'copy', 'explorer'],
       order: 1,
     },
   ],
@@ -39,11 +39,11 @@ export const detailedNetworkConfigs: Record<
 > = {
   [networkIds.trx]: {
     mainActions: ['send', 'receive', 'staking'],
-    moreActions: ['sell', 'copy', 'explorer'],
+    moreActions: ['bindVirtualCard', 'sell', 'copy', 'explorer'],
     moreActionGroups: [
       {
         type: 'tools',
-        actions: ['sell', 'copy', 'explorer'],
+        actions: ['bindVirtualCard', 'sell', 'copy', 'explorer'],
         order: 1,
       },
     ],

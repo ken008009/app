@@ -1,4 +1,5 @@
 import { applyAppBrandToLocaleMessages } from '../config/appBrand';
+
 import type { ILocaleJSONSymbol } from './type';
 
 type ILocaleMessageId = FormatjsIntl.Message['ids'];

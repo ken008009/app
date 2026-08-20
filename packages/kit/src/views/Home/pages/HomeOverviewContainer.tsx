@@ -5,16 +5,21 @@ import { useIntl } from 'react-intl';
 
 import {
   Button,
+  Icon,
   IconButton,
+  SizableText,
   Skeleton,
+  Theme,
   XStack,
   YStack,
+  useClipboard,
 } from '@onekeyhq/components';
 import type { IDialogInstance } from '@onekeyhq/components';
 import {
   settingsValuePersistAtom,
   useCurrencyPersistAtom,
   useSettingsPersistAtom,
+  useSettingsValuePersistAtom,
 } from '@onekeyhq/kit-bg/src/states/jotai/atoms';
 import { USD_CURRENCY_ID } from '@onekeyhq/shared/src/consts/currencyConsts';
 import { WALLET_TYPE_HD } from '@onekeyhq/shared/src/consts/dbConsts';
@@ -36,6 +41,8 @@ import {
 import { EHomeTab } from '@onekeyhq/shared/types';
 
 import backgroundApiProxy from '../../../background/instance/backgroundApiProxy';
+import { AllNetworksManagerTrigger } from '../../../components/AccountSelector/AllNetworksManagerTrigger';
+import { NetworkSelectorTriggerHome } from '../../../components/AccountSelector/NetworkSelectorTrigger';
 import NumberSizeableTextWrapper from '../../../components/NumberSizeableTextWrapper';
 import { showResourceDetailsDialog } from '../../../components/Resource';
 import { useDebounce } from '../../../hooks/useDebounce';
@@ -91,6 +98,8 @@ function HomeOverviewContainer() {
     });
   }, [account?.id, network?.id]);
   const intl = useIntl();
+  const { copyText } = useClipboard();
+  const [{ hideValue }] = useSettingsValuePersistAtom();
 
   const [isRefreshingWorth, setIsRefreshingWorth] = useState(false);
   const [isRefreshingTokenList, setIsRefreshingTokenList] = useState(false);
@@ -485,6 +494,7 @@ function HomeOverviewContainer() {
         icon="RefreshCcwOutline"
         variant="tertiary"
         loading={isLoading}
+        iconProps={{ color: '#D0D0D0' }}
         onPress={handleRefreshWorth}
         testID="wallet-refresh-manually"
         trackID="wallet-refresh-manually"
@@ -908,84 +918,121 @@ function HomeOverviewContainer() {
     setLastConfirmedOverviewBalance,
   ]);
 
+  const shortenedAddress = account?.address
+    ? accountUtils.shortenAddress({ address: account.address })
+    : undefined;
+
+  const handleCopyAddress = useCallback(() => {
+    if (!account?.address) {
+      return;
+    }
+    copyText(account.address);
+  }, [account?.address, copyText]);
+
   return (
-    <YStack gap="$2.5" alignItems="center" testID={HomeTestIDs.walletOverview}>
-      <YStack w="100%" gap="$2" alignItems="center">
-        {showSkeleton ? (
-          <Skeleton.Heading5Xl />
-        ) : (
-          <XStack alignItems="center" justifyContent="center" gap="$3" h={48}>
-            <XStack
+    <YStack
+      flex={1}
+      justifyContent="space-between"
+      testID={HomeTestIDs.walletOverview}
+    >
+      <Theme name="dark">
+        <XStack alignItems="center" maxWidth="100%" flexShrink={1}>
+          {network?.isAllNetworks &&
+          !accountUtils.isOthersWallet({ walletId: wallet?.id ?? '' }) ? (
+            <AllNetworksManagerTrigger num={0} unifiedMode size="xl" />
+          ) : (
+            <NetworkSelectorTriggerHome
+              num={0}
+              size="xl"
+              recordNetworkHistoryEnabled
+              unifiedMode
+            />
+          )}
+        </XStack>
+      </Theme>
+      {showSkeleton ? (
+        <Skeleton.HeadingXl />
+      ) : (
+        <XStack alignItems="center" gap="$1.5">
+          <XStack
+            flexShrink={1}
+            alignItems="center"
+            cursor="default"
+            onPress={handleBalanceOnPress}
+            testID={HomeTestIDs.totalBalance}
+          >
+            <NumberSizeableTextWrapper
+              hideValue
+              splitDecimal
               flexShrink={1}
-              borderRadius="$3"
-              px="$1"
-              py="$0.5"
-              mx="$-1"
-              my="$-0.5"
-              cursor="default"
-              focusable
-              hoverStyle={{
-                bg: '$bgHover',
-              }}
-              pressStyle={{
-                bg: '$bgActive',
-              }}
-              focusVisibleStyle={{
-                outlineColor: '$focusRing',
-                outlineWidth: 2,
-                outlineOffset: 0,
-                outlineStyle: 'solid',
-              }}
-              onPress={handleBalanceOnPress}
-              testID={HomeTestIDs.totalBalance}
+              minWidth={0}
+              fontSize={28}
+              lineHeight={32}
+              fontWeight={600}
+              color="#FFFFFF"
+              {...numberFormatter}
             >
-              <NumberSizeableTextWrapper
-                hideValue
-                splitDecimal
-                flexShrink={1}
-                minWidth={0}
-                fontSize={48}
-                lineHeight={48}
-                fontWeight={500}
-                textAlign="center"
-                {...numberFormatter}
-              >
-                {renderedBalanceStringDisplay ?? '0'}
-              </NumberSizeableTextWrapper>
-            </XStack>
-            {refreshButton}
+              {renderedBalanceStringDisplay ?? '0'}
+            </NumberSizeableTextWrapper>
           </XStack>
-        )}
+          <IconButton
+            icon={hideValue ? 'EyeOffOutline' : 'EyeOutline'}
+            variant="tertiary"
+            size="small"
+            iconSize="$5"
+            iconProps={{ color: '#D0D0D0' }}
+            onPress={handleBalanceOnPress}
+          />
+          {refreshButton}
+        </XStack>
+      )}
+      <YStack gap="$1">
+        {shortenedAddress ? (
+          <XStack
+            alignItems="center"
+            gap="$1.5"
+            alignSelf="flex-start"
+            hitSlop={8}
+            onPress={handleCopyAddress}
+          >
+            <SizableText size="$bodyLg" color="#A8A8A8">
+              {shortenedAddress}
+            </SizableText>
+            <Icon name="Copy1Outline" size="$5" color="#D0D0D0" />
+          </XStack>
+        ) : null}
+        {vaultSettings?.hasFrozenBalance ? (
+          <Button
+            testID="home-btn"
+            onPress={handleBalanceDetailsOnPress}
+            variant="tertiary"
+            size="small"
+            color="#D5AC4C"
+            iconAfter="InfoCircleOutline"
+          >
+            {intl.formatMessage({
+              id: ETranslations.balance_detail_button_balance,
+            })}
+          </Button>
+        ) : undefined}
+        {isWalletNotBackedUp && vaultSettings?.hasResource ? (
+          <Button
+            testID="home-btn"
+            onPress={handleResourceDetailsOnPress}
+            variant="tertiary"
+            size="small"
+            color="#D5AC4C"
+            iconAfter="InfoCircleOutline"
+            px="$1"
+            py="$0.5"
+            mx="$-1"
+          >
+            {intl.formatMessage({
+              id: vaultSettings.resourceKey,
+            })}
+          </Button>
+        ) : undefined}
       </YStack>
-      {vaultSettings?.hasFrozenBalance ? (
-        <Button
-          testID="home-btn"
-          onPress={handleBalanceDetailsOnPress}
-          variant="tertiary"
-          size="small"
-          iconAfter="InfoCircleOutline"
-        >
-          {intl.formatMessage({
-            id: ETranslations.balance_detail_button_balance,
-          })}
-        </Button>
-      ) : undefined}
-      {isWalletNotBackedUp && vaultSettings?.hasResource ? (
-        <Button
-          testID="home-btn"
-          onPress={handleResourceDetailsOnPress}
-          variant="tertiary"
-          size="small"
-          iconAfter="InfoCircleOutline"
-          px="$1"
-          py="$0.5"
-          mx="$-1"
-        >
-          {intl.formatMessage({
-            id: vaultSettings.resourceKey,
-          })}
-        </Button>
-      ) : undefined}
     </YStack>
   );
 }

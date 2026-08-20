@@ -30,7 +30,9 @@ export const TAB_BAR_RIPPLE_COLOR = brandA.brandA5;
 export const TAB_BAR_RIPPLE_COLOR_DARK = brandDarkA.brandA5;
 
 export function getTabBarActiveColor(themeName: string | undefined): string {
-  return themeName === 'dark' ? TAB_BAR_ACTIVE_COLOR_DARK : TAB_BAR_ACTIVE_COLOR;
+  return themeName === 'dark'
+    ? TAB_BAR_ACTIVE_COLOR_DARK
+    : TAB_BAR_ACTIVE_COLOR;
 }
 
 export function getTabBarActiveIndicatorColor(
@@ -42,5 +44,7 @@ export function getTabBarActiveIndicatorColor(
 }
 
 export function getTabBarRippleColor(themeName: string | undefined): string {
-  return themeName === 'dark' ? TAB_BAR_RIPPLE_COLOR_DARK : TAB_BAR_RIPPLE_COLOR;
+  return themeName === 'dark'
+    ? TAB_BAR_RIPPLE_COLOR_DARK
+    : TAB_BAR_RIPPLE_COLOR;
 }
