@@ -224,6 +224,8 @@ const TAB_TITLE_TRANSLATION_MAP: Record<ETabRoutes, ETranslations | null> = {
   [ETabRoutes.DeviceManagement]: ETranslations.global_homescreen,
   [ETabRoutes.ReferFriends]: ETranslations.sidebar_refer_a_friend,
   [ETabRoutes.Mine]: ETranslations.global_mine,
+  [ETabRoutes.CloudChat]: null,
+  [ETabRoutes.AI]: null,
   [ETabRoutes.BulkSend]: null,
   [ETabRoutes.SubPage]: null,
 };

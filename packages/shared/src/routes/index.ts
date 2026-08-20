@@ -30,6 +30,8 @@ export * from './signatureConfirm';
 export * from './staking';
 export * from './swap';
 export * from './tab';
+export * from './tabAI';
+export * from './tabCloudChat';
 export * from './tabDeveloper';
 export * from './tabDeviceManagement';
 export * from './tabDiscovery';

@@ -20,6 +20,8 @@ import { homeRouters } from '../../views/Home/router';
 import { perpRouters } from '../../views/Perp/router';
 import { perpTradeRouters as perpWebviewRouters } from '../../views/PerpTrade/router';
 
+import { aiRouters } from './AI/router';
+import { cloudChatRouters } from './CloudChat/router';
 import { deviceManagementRouters } from './DeviceManagement/router';
 import { discoveryRouters } from './Discovery/router';
 import { earnRouters } from './Earn/router';
@@ -60,6 +62,14 @@ const nativeTabIcons = {
     focused
       ? require('@onekeyhq/components/svg/solid/people.svg')
       : require('@onekeyhq/components/svg/outline/people.svg'),
+  cloudChat: ({ focused }: { focused: boolean }): INativeTabBarIcon =>
+    focused
+      ? require('@onekeyhq/components/svg/solid/chat.svg')
+      : require('@onekeyhq/components/svg/outline/chat.svg'),
+  ai: ({ focused }: { focused: boolean }): INativeTabBarIcon =>
+    focused
+      ? require('@onekeyhq/components/svg/solid/ai-star.svg')
+      : require('@onekeyhq/components/svg/outline/ai-star.svg'),
   developer: ({ focused }: { focused: boolean }): INativeTabBarIcon =>
     focused
       ? require('@onekeyhq/components/svg/solid/code-brackets.svg')
@@ -103,8 +113,6 @@ const getDiscoverRouterConfig = (
   children: discoveryRouters,
   tabBarStyle,
   trackId: 'global-browser',
-  // Hide Discovery on iOS native to stay within tab bar limits; show on Android.
-  hideOnTabBar: platformEnv.isNativeIOS,
 });
 
 export const useTabRouterConfig = (params?: IGetTabRouterParams) => {
@@ -155,7 +163,7 @@ export const useTabRouterConfig = (params?: IGetTabRouterParams) => {
   );
 
   return useMemo(() => {
-    // Market tab: shown on native tab bar (replaces Perp as the 3rd tab).
+    // Market stays registered so in-app navigation still works.
     const marketTabConfig = shouldShowMarketTab
       ? {
           name: ETabRoutes.Market,
@@ -168,6 +176,7 @@ export const useTabRouterConfig = (params?: IGetTabRouterParams) => {
           exact: true,
           children: marketRouters,
           trackId: 'global-market',
+          hideOnTabBar: platformEnv.isNative,
           // Only apply custom tab press handler for non-mobile platforms
           ...(platformEnv.isDesktop ||
           platformEnv.isWeb ||
@@ -191,6 +200,8 @@ export const useTabRouterConfig = (params?: IGetTabRouterParams) => {
       exact: true,
       children: swapRouters,
       trackId: 'global-trade',
+      // Native: Swap moved to Home WalletActions "More" menu.
+      hideOnTabBar: platformEnv.isNative,
     };
 
     const homeTabConfig = {
@@ -267,6 +278,38 @@ export const useTabRouterConfig = (params?: IGetTabRouterParams) => {
         }
       : undefined;
 
+    const cloudChatTabConfig = platformEnv.isNative
+      ? {
+          name: ETabRoutes.CloudChat,
+          tabBarIcon: (focused?: boolean) =>
+            focused ? 'ChatSolid' : 'ChatOutline',
+          nativeTabBarIcon: nativeTabIcons.cloudChat,
+          translationId: ETranslations.global_mine,
+          tabBarLabel: '云聊',
+          freezeOnBlur: Boolean(params?.freezeOnBlur),
+          rewrite: '/cloud-chat',
+          exact: true,
+          children: cloudChatRouters,
+          trackId: 'global-cloud-chat',
+        }
+      : undefined;
+
+    const aiTabConfig = platformEnv.isNative
+      ? {
+          name: ETabRoutes.AI,
+          tabBarIcon: (focused?: boolean) =>
+            focused ? 'AiStarSolid' : 'AiStarOutline',
+          nativeTabBarIcon: nativeTabIcons.ai,
+          translationId: ETranslations.global_mine,
+          tabBarLabel: 'AI',
+          freezeOnBlur: Boolean(params?.freezeOnBlur),
+          rewrite: '/ai',
+          exact: true,
+          children: aiRouters,
+          trackId: 'global-ai',
+        }
+      : undefined;
+
     const developerTabConfig =
       ENABLE_DEVELOPER_TAB && platformEnv.isDev
         ? {
@@ -283,18 +326,20 @@ export const useTabRouterConfig = (params?: IGetTabRouterParams) => {
           }
         : undefined;
 
-    // Android native tab bar: 资产 | 市场 | 发现 | 兑换 | 我的
-    // (iOS keeps Discovery registered but hideOnTabBar)
+    // Android native tab bar: 资产 | 云聊 | 发现 | AI | 我的
+    // (Market / Swap / Perp / Earn stay registered but hidden from the tab bar)
     const tabs = platformEnv.isNative
       ? [
           homeTabConfig,
-          marketTabConfig,
+          cloudChatTabConfig,
           isShowMDDiscover ? getDiscoverRouterConfig(params) : undefined,
+          aiTabConfig,
+          mineTabConfig,
+          marketTabConfig,
           swapTabConfig,
           perpWebviewTabConfig,
           perpTabConfig,
           earnTabConfig,
-          mineTabConfig,
           developerTabConfig,
         ].filter((i) => !!i)
       : [

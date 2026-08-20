@@ -208,7 +208,10 @@ export function MDHeader({
       tabRoute === ETabRoutes.Discovery ||
       tabRoute === ETabRoutes.Earn ||
       tabRoute === ETabRoutes.Perp ||
-      tabRoute === ETabRoutes.DeviceManagement
+      tabRoute === ETabRoutes.DeviceManagement ||
+      tabRoute === ETabRoutes.Mine ||
+      tabRoute === ETabRoutes.CloudChat ||
+      tabRoute === ETabRoutes.AI
     );
   }, [tabRoute]);
   const isHomeTab =

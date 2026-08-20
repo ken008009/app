@@ -10,11 +10,11 @@ type IPreloadEntry = { queue: ETabRoutes[]; intervalMs: number };
 // low    → no preload, fully on-demand
 const nativePreloadConfig: Record<string, IPreloadEntry> = {
   [EDevicePerformanceTier.high]: {
-    queue: [ETabRoutes.Swap, ETabRoutes.Market, ETabRoutes.Discovery],
+    queue: [ETabRoutes.Discovery],
     intervalMs: 2000,
   },
   [EDevicePerformanceTier.medium]: {
-    queue: [ETabRoutes.Swap, ETabRoutes.Market],
+    queue: [ETabRoutes.Discovery],
     intervalMs: 3000,
   },
 };

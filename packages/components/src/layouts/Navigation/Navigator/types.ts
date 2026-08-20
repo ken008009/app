@@ -44,6 +44,8 @@ export interface ITabNavigatorConfig<RouteName extends string> {
   /** Native tab bar icon for react-native-bottom-tabs (iOS/Android only) */
   nativeTabBarIcon?: (props: { focused: boolean }) => INativeTabBarIcon;
   translationId: ETranslations;
+  /** Overrides translationId on the native bottom tab label (e.g. 二开 custom names). */
+  tabBarLabel?: string;
   collapseSideBarTranslationId?: ETranslations;
   children: ITabSubNavigatorConfig<any, any>[] | null;
   freezeOnBlur?: boolean;

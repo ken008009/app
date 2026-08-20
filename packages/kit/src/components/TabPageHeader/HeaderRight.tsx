@@ -171,6 +171,9 @@ export function HeaderRight({
         return earnItems;
       case ETabRoutes.ReferFriends:
         return fixedItems;
+      case ETabRoutes.CloudChat:
+      case ETabRoutes.AI:
+        return fixedItems;
       default:
         break;
     }

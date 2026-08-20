@@ -6,6 +6,7 @@ import {
   useAccountSelectorSceneInfo,
   useActiveAccount,
 } from '@onekeyhq/kit/src/states/jotai/contexts/accountSelector';
+import { ETranslations } from '@onekeyhq/shared/src/locale';
 
 import { HomeTestIDs } from '../../testIDs';
 import { HomeTokenListProviderMirrorWrapper } from '../HomeTokenListProvider';
@@ -15,6 +16,7 @@ import { useWalletActionConfig } from './useWalletActionConfig';
 import { WalletActionBindVirtualCard } from './WalletActionBindVirtualCard';
 import { WalletActionCopy } from './WalletActionCopy';
 import { WalletActionSell } from './WalletActionSell';
+import { WalletActionSwap } from './WalletActionSwap';
 import { WalletActionViewInExplorer } from './WalletActionViewInExplorer';
 
 export function WalletActionMore({ iconOnly }: { iconOnly?: boolean } = {}) {
@@ -49,6 +51,15 @@ export function WalletActionMore({ iconOnly }: { iconOnly?: boolean } = {}) {
 
       const elements: ReactNode[] = actions.map((action) => {
         switch (action) {
+          case 'swap':
+            return (
+              <WalletActionSwap
+                key="swap"
+                inList
+                onClose={handleActionListClose}
+                customization={{ labelId: ETranslations.global_swap }}
+              />
+            );
           case 'bindVirtualCard':
             return (
               <WalletActionBindVirtualCard

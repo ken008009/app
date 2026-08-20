@@ -160,7 +160,15 @@ export function TabStackNavigator<RouteName extends string>({
       .filter(({ disable }) => !disable)
       .filter(({ hideOnTabBar }) => !hideOnTabBar)
       .filter(({ hiddenIcon }) => !hiddenIcon)
-      .map(({ name, children, nativeTabBarIcon, translationId, trackId }) => {
+      .map(
+        ({
+          name,
+          children,
+          nativeTabBarIcon,
+          translationId,
+          tabBarLabel,
+          trackId,
+        }) => {
         // eslint-disable-next-line react/no-unstable-nested-components
         const ScreenComponent = () => (
           <TabSubStackNavigator config={children} />
@@ -171,7 +179,8 @@ export function TabStackNavigator<RouteName extends string>({
           // Type assertion needed because our INativeTabBarIcon uses string for sfSymbol
           // while react-native-bottom-tabs expects SFSymbol type from sf-symbols-typescript
           tabBarIcon: nativeTabBarIcon as any,
-          tabBarLabel: intl.formatMessage({ id: translationId }),
+          tabBarLabel:
+            tabBarLabel ?? intl.formatMessage({ id: translationId }),
           tabBarActiveTintColor,
           tabBarInactiveTintColor,
         };

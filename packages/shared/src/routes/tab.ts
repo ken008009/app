@@ -6,6 +6,8 @@ import type {
   ITabSwapParamList,
 } from '@onekeyhq/shared/src/routes';
 
+import type { ITabAIParamList } from './tabAI';
+import type { ITabCloudChatParamList } from './tabCloudChat';
 import type { ITabDeviceManagementParamList } from './tabDeviceManagement';
 import type { ITabEarnParamList } from './tabEarn';
 import type { ITabMarketParamList } from './tabMarket';
@@ -25,6 +27,8 @@ export enum ETabRoutes {
   DeviceManagement = 'DeviceManagement',
   ReferFriends = 'ReferFriends',
   Mine = 'Mine',
+  CloudChat = 'CloudChat',
+  AI = 'AI',
   BulkSend = 'BulkSend',
   // Used by sub-pages (e.g. ApprovalList, BulkSend) that render a clean
   // TabPageHeader without the parent tab's account-selector controls.
@@ -44,6 +48,8 @@ export type ITabStackParamList = {
   [ETabRoutes.DeviceManagement]: ITabDeviceManagementParamList;
   [ETabRoutes.ReferFriends]: ITabReferFriendsParamList;
   [ETabRoutes.Mine]: ITabMineParamList;
+  [ETabRoutes.CloudChat]: ITabCloudChatParamList;
+  [ETabRoutes.AI]: ITabAIParamList;
   [ETabRoutes.BulkSend]: undefined;
   [ETabRoutes.SubPage]: undefined;
 };
