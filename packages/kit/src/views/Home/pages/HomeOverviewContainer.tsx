@@ -44,6 +44,7 @@ import { AllNetworksManagerTrigger } from '../../../components/AccountSelector/A
 import { NetworkSelectorTriggerHome } from '../../../components/AccountSelector/NetworkSelectorTrigger';
 import NumberSizeableTextWrapper from '../../../components/NumberSizeableTextWrapper';
 import { showResourceDetailsDialog } from '../../../components/Resource';
+import { useWebDappRealAddress } from '../../../components/TabPageHeader/components/WebAccountPanel/useWebDappRealAddress';
 import { useDebounce } from '../../../hooks/useDebounce';
 import {
   useAccountDeFiOverviewAtom,
@@ -58,6 +59,7 @@ import {
 import { buildOverviewOwnerKey } from '../../../states/jotai/contexts/accountOverview/atoms';
 import { useActiveAccount } from '../../../states/jotai/contexts/accountSelector';
 import { convertFiat } from '../../../utils/fiatConvert';
+import { useAllNetworkCopyAddressHandler } from '../../WalletAddress/hooks/useAllNetworkCopyAddressHandler';
 import { showBalanceDetailsDialog } from '../components/BalanceDetailsDialog';
 import { HomeTestIDs } from '../testIDs';
 
@@ -83,8 +85,14 @@ function isHomeOverviewRefreshTab(
 function HomeOverviewContainer() {
   const num = 0;
   const { activeAccount } = useActiveAccount({ num });
-  const { account, network, wallet, deriveInfoItems, vaultSettings } =
-    activeAccount;
+  const {
+    account,
+    network,
+    wallet,
+    deriveInfoItems,
+    vaultSettings,
+    indexedAccount,
+  } = activeAccount;
   const resourceDialogInstance = useRef<IDialogInstance | null>(null);
   const handleResourceDetailsOnPress = useCallback(() => {
     if (resourceDialogInstance.current) return;
@@ -862,9 +870,10 @@ function HomeOverviewContainer() {
 
   // Track when balance is first displayed
   const balanceReady =
-    !showSkeleton &&
-    renderedBalanceString !== null &&
-    renderedBalanceString !== undefined;
+    (!showSkeleton &&
+      renderedBalanceString !== null &&
+      renderedBalanceString !== undefined) ||
+    shouldDisplayZeroBalancePlaceholder;
   useEffect(() => {
     if (balanceReady && !(globalThis as any).__onekeyBalanceDisplayed) {
       (globalThis as any).__onekeyBalanceDisplayed = true;
@@ -917,16 +926,41 @@ function HomeOverviewContainer() {
     setLastConfirmedOverviewBalance,
   ]);
 
-  const shortenedAddress = account?.address
-    ? accountUtils.shortenAddress({ address: account.address })
-    : undefined;
+  // All-networks activeAccount.address is a mock sentinel — resolve a real
+  // EVM address (shared across EVM chains) so the card can show a shortened
+  // address instead of the "Copy address" fallback label.
+  const displayAddress = useWebDappRealAddress({
+    address: account?.address,
+    indexedAccountId: indexedAccount?.id ?? account?.indexedAccountId,
+  });
+
+  const shortenedAddress = useMemo(() => {
+    if (!displayAddress) {
+      return undefined;
+    }
+    return accountUtils.shortenAddress({ address: displayAddress });
+  }, [displayAddress]);
+
+  const { isAllNetworkEnabled, handleAllNetworkCopyAddress } =
+    useAllNetworkCopyAddressHandler({
+      activeAccount,
+    });
 
   const handleCopyAddress = useCallback(() => {
-    if (!account?.address) {
+    if (isAllNetworkEnabled) {
+      void handleAllNetworkCopyAddress(true);
       return;
     }
-    copyText(account.address);
-  }, [account?.address, copyText]);
+    if (!displayAddress) {
+      return;
+    }
+    copyText(displayAddress);
+  }, [
+    copyText,
+    displayAddress,
+    handleAllNetworkCopyAddress,
+    isAllNetworkEnabled,
+  ]);
 
   return (
     <YStack

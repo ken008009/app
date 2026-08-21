@@ -324,9 +324,9 @@ export function HomePageView({
   const { perpTabShowWeb } = usePerpTabConfig();
 
   const isWalletNotBackedUp = useMemo(() => {
-    // if (wallet && wallet.type === WALLET_TYPE_HD && !wallet.backuped) {
-    //   return true;
-    // }
+    if (wallet && wallet.type === WALLET_TYPE_HD && !wallet.backuped) {
+      return true;
+    }
     return false;
   }, [wallet]);
 

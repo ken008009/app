@@ -68,8 +68,8 @@ export function SplashView({
             {/* Keep intrinsic aspect ratio — do not force a square crop box. */}
             <Image
               source={splashSource}
-              width={128}
-              height={128}
+              width={140}
+              height={140}
               resizeMode="contain"
             />
           </Stack>

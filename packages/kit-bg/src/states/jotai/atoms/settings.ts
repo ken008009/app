@@ -83,7 +83,7 @@ export type ISettingsPersistAtom = {
 };
 
 export const settingsAtomInitialValue: ISettingsPersistAtom = {
-  theme: 'system',
+  theme: 'dark',
   lastLocale: 'system',
   selectedBrowserTab: ETranslations.global_browser,
   locale: 'system',

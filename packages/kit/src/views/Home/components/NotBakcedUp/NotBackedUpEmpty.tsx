@@ -87,6 +87,13 @@ function NotBackedUp() {
       accountId: account?.id ?? '',
       networkId: network?.id ?? '',
     });
+    // Not-backed-up home skips the normal balance-ready path that emits
+    // HomePageReady. Emit here so native splash can dismiss (otherwise a
+    // cached-balance wait / safety path leaves the user on a white logo screen).
+    if (!(globalThis as any).__onekeyBalanceDisplayed) {
+      (globalThis as any).__onekeyBalanceDisplayed = true;
+      appEventBus.emit(EAppEventBusNames.HomePageReady, undefined);
+    }
   }, [account?.id, network?.id, updateAccountOverviewState]);
 
   return (
