@@ -29,7 +29,6 @@ import {
   useIsAccountSelectorSyncLoading,
 } from '../../states/jotai/contexts/accountSelector';
 import { HomeTokenListProviderMirror } from '../../views/Home/components/HomeTokenListProvider/HomeTokenListProviderMirror';
-import { MoreActionButton } from '../MoreActionButton';
 
 import { HeaderNotificationIconButton } from './components/HeaderNotificationIconButton';
 import { HeaderScanIconButton } from './components/HeaderScanIconButton';
@@ -110,13 +109,13 @@ function HomeMDHeaderRows({ headerPx }: { headerPx: string }) {
     <GlassButtonCapsule>
       <HeaderNotificationIconButton testID="header-right-notification" />
       <HeaderScanIconButton testID="header-right-scan" />
-      <MoreActionButton />
+      {/* MoreActionButton temporarily hidden on Home. */}
     </GlassButtonCapsule>
   ) : (
     <XStack alignItems="center" gap="$3">
       <HeaderNotificationIconButton testID="header-right-notification" />
       <HeaderScanIconButton testID="header-right-scan" />
-      <MoreActionButton />
+      {/* MoreActionButton temporarily hidden on Home. */}
     </XStack>
   );
 

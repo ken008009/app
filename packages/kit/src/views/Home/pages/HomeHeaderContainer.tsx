@@ -129,7 +129,7 @@ function BaseHomeHeaderContainer({
 
   return (
     <YStack
-      pb="$2"
+      pb="$3"
       gap="$4"
       onLayout={handleNativeLayout}
       $gtMd={{ gap: '$8' }}
@@ -139,7 +139,7 @@ function BaseHomeHeaderContainer({
       <Stack
         testID={HomeTestIDs.headerContainer}
         gap="$4"
-        pt="$4"
+        pt="$2"
         $gtMd={{
           pt: '$8',
         }}

@@ -727,7 +727,7 @@ function TxHistoryListContainer(
         tableLayout={tableLayout ?? media.gtMd}
         listViewStyleProps={{
           contentContainerStyle: {
-            mt: '$3',
+            mt: '$1',
             pb: tabBarHeight,
           },
         }}

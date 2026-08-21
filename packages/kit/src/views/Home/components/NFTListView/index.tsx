@@ -153,7 +153,7 @@ function NFTListView(props: IProps) {
   const tabBarHeight = useScrollContentTabBarOffset();
   const contentContainerStyle = useMemo(
     () => ({
-      mt: '$3',
+      mt: '$1',
       pb: tabBarHeight ?? '$6',
       px: '$2.5',
     }),

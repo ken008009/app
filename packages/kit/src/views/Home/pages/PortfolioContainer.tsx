@@ -208,7 +208,7 @@ function PortfolioContainer() {
     <>
       <Stack
         flexDirection={tableLayout ? 'row' : 'column'}
-        pt="$3"
+        pt="$1"
         gap="$6"
         width="100%"
         $gtMd={{ maxWidth: PORTFOLIO_CONTENT_MAX_WIDTH, mx: 'auto' }}

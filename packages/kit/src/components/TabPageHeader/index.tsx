@@ -44,7 +44,7 @@ function HomeWalletConnectionInPage({ tabRoute }: { tabRoute: ETabRoutes }) {
   }
 
   return (
-    <XStack px="$pagePadding" pt="$5" pb="$2.5" bg="$bgApp" borderRadius="$4">
+    <XStack px="$pagePadding" pt="$5" pb="$2" bg="$bgApp" borderRadius="$4">
       <WalletConnectionGroup tabRoute={tabRoute} />
     </XStack>
   );

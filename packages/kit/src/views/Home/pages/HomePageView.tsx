@@ -92,6 +92,9 @@ const networksSupportBulkRevokeApproval =
 const HOME_TAB_BAR_CONTAINER_STYLE = {
   borderTopWidth: 0,
   borderBottomWidth: 0,
+  // Extra space above the pill row (below wallet card / actions).
+  pt: '$3',
+  pb: '$1',
 } as const;
 
 const HOME_TAB_BAR_WEB_CONTAINER_STYLE = {

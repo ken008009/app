@@ -59,7 +59,6 @@ import {
 import { buildOverviewOwnerKey } from '../../../states/jotai/contexts/accountOverview/atoms';
 import { useActiveAccount } from '../../../states/jotai/contexts/accountSelector';
 import { convertFiat } from '../../../utils/fiatConvert';
-import { useAllNetworkCopyAddressHandler } from '../../WalletAddress/hooks/useAllNetworkCopyAddressHandler';
 import { showBalanceDetailsDialog } from '../components/BalanceDetailsDialog';
 import { HomeTestIDs } from '../testIDs';
 
@@ -941,26 +940,14 @@ function HomeOverviewContainer() {
     return accountUtils.shortenAddress({ address: displayAddress });
   }, [displayAddress]);
 
-  const { isAllNetworkEnabled, handleAllNetworkCopyAddress } =
-    useAllNetworkCopyAddressHandler({
-      activeAccount,
-    });
-
+  // Always copy the address shown on the card — including All Networks, where
+  // displayAddress is the resolved EVM address behind the shortened label.
   const handleCopyAddress = useCallback(() => {
-    if (isAllNetworkEnabled) {
-      void handleAllNetworkCopyAddress(true);
-      return;
-    }
     if (!displayAddress) {
       return;
     }
     copyText(displayAddress);
-  }, [
-    copyText,
-    displayAddress,
-    handleAllNetworkCopyAddress,
-    isAllNetworkEnabled,
-  ]);
+  }, [copyText, displayAddress]);
 
   return (
     <YStack

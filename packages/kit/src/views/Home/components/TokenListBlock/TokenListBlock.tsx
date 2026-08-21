@@ -2667,7 +2667,7 @@ function TokenListBlock({
         }
         listViewStyleProps={{
           ListHeaderComponentStyle: {
-            pt: '$3',
+            pt: '$1',
           },
         }}
       />
