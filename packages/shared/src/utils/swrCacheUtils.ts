@@ -220,34 +220,38 @@ export const swrKeys = {
     accountId?: string;
   }) =>
     [NS.unifiedNetworkSelectorMeta, 'v1', walletId, accountId ?? ''].join(':'),
-  // UnifiedNetworkSelector modal's balances/DeFi bundle: formatted per-network
-  // USD values + currency + DeFi overview. SWR-cached (cold-start MMKV) so the
-  // "networks with assets" section is present on the first frame, eliminating
-  // the layout jump. Currency is deliberately NOT in the key — it only labels
-  // the same primitive values. Each account keeps its own snapshot via
-  // walletId + accountId + indexedAccountId.
+  // UnifiedNetworkSelector modal's balances/DeFi + single-network list bundle.
+  // Portfolio tab and NetworkContent share this one fetch so opening the modal
+  // does not double-hit getAllNetworkAccountsValue / DeFi / sort. Includes
+  // sorted chainSelectorNetworks (useDefaultPinnedNetworks) for the Network
+  // tab. Currency is deliberately NOT in the key. networkIdsKey scopes the
+  // optional route networkIds filter used by the single-network list.
+  //
+  // v2: previously NetworkContent used a separate networkContentData key and
+  // re-fetched the same balances/DeFi/sort. Old v1 entries (values-only) are
+  // orphaned.
   unifiedNetworkSelectorValues: ({
     walletId,
     accountId,
     indexedAccountId,
+    networkIdsKey,
   }: {
     walletId: string;
     accountId?: string;
     indexedAccountId?: string;
+    networkIdsKey?: string;
   }) =>
     [
       NS.unifiedNetworkSelectorValues,
-      'v1',
+      'v2',
       walletId,
       accountId ?? '',
       indexedAccountId ?? '',
+      networkIdsKey ?? '*',
     ].join(':'),
-  // NetworkContent (the "Network" tab inside UnifiedNetworkSelector) bundles
-  // sorted chainSelectorNetworks + account balances + DeFi overview into one
-  // result object. Balances/DeFi are included despite being volatile because
-  // the sorted list itself depends on them — caching them together lets the
-  // first render match the final UI. walletId + accountId in the key
-  // guarantees each account sees its own snapshot.
+  // Deprecated: NetworkContent now consumes unifiedNetworkSelectorValues.
+  // Keep the helper so any leftover cold-start MMKV entries stay orphaned
+  // under a stable key shape rather than colliding with v2 values.
   networkContentData: ({
     walletId,
     accountId,
@@ -259,13 +263,6 @@ export const swrKeys = {
     indexedAccountId?: string;
     networkIdsKey?: string;
   }) =>
-    // v3: v2 stored an empty frequentlyUsedItems (stripped to avoid a
-    // "ghost row" flash). In practice this caused the opposite problem —
-    // every cold open jumped from 0 pinned networks to the account's real
-    // set (often 8 items), a far larger visual glitch. v3 persists the
-    // real frequentlyUsedItems again so the first frame already matches
-    // the post-revalidate layout for accounts whose pinned segment is
-    // stable across sessions. Old v2 (empty-freq) entries are orphaned.
     [
       NS.networkContentData,
       'v3',

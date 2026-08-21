@@ -48,7 +48,10 @@ import { EAccountSelectorSceneName } from '@onekeyhq/shared/types';
 import { useFindNetworksWithoutAccount } from '../../hooks/useFindNetworksWithoutAccount';
 import { ChainSelectorTestIDs } from '../../testIDs';
 
-import { NetworkContent } from './NetworkContent';
+import {
+  NetworkContent,
+  defaultChainSelectorNetworks,
+} from './NetworkContent';
 import PortfolioContent from './PortfolioContent';
 import { TabSwitcher } from './TabSwitcher';
 
@@ -273,103 +276,113 @@ function UnifiedNetworkSelector() {
     }
   }, [networksState, networks.mainNetworks, networks.allNetworks]);
 
-  const compatibleNetworks = networkMeta?.compatibleNetworks;
+  // Stable hash of route networkIds so the values swrKey doesn't churn when
+  // the caller passes a fresh array reference with unchanged contents.
+  const networkIdsKey = useMemo(() => {
+    if (!networkIds) return undefined;
+    return networkIds.toSorted().join(',');
+  }, [networkIds]);
 
-  // Balances + DeFi: now SWR-cached via the cold-start MMKV instance so the
-  // "networks with assets" (有资产的网络) section is present on the very first
-  // render frame, eliminating the layout jump that happened when this section
-  // popped in only after the async resolved. The request still always fires and
-  // revalidates the cache in place; the cached values are local USD snapshots,
-  // so brief staleness before revalidation is acceptable. Only primitive
-  // (MMKV-serializable) fields are returned — Record<string,string> values, a
-  // currency string, and Record<string,{ netWorth: number }> DeFi overview;
-  // never the IServerNetwork objects from compatibleNetworks. Depends on
-  // compatibleNetworks for the sort step, so meta changes fan out here via the
-  // `compatibleNetworks` dep.
-  const { result: accountValuesResult } = usePromiseResult(
-    async (): Promise<
-      | {
-          accountNetworkValues: Record<string, string>;
-          currency: string | undefined;
-          accountDeFiOverview: Record<string, { netWorth: number }>;
+  // Balances + DeFi + single-network sorted list: one shared SWR fetch for both
+  // Portfolio and NetworkContent. Previously NetworkContent re-ran the same
+  // getAllNetworkAccountsValue / DeFi / sort path on open. Cached via cold-start
+  // MMKV so "networks with assets" and the Network tab list hydrate on first
+  // paint. Does NOT wait on meta — network-tab compatible list is fetched here
+  // with useDefaultPinnedNetworks (includes testnets), independent of meta's
+  // excludeTestNetwork portfolio list.
+  const { result: accountValuesResult, run: refreshAccountValues } =
+    usePromiseResult(
+      async (): Promise<
+        | {
+            accountNetworkValues: Record<string, string>;
+            currency: string | undefined;
+            accountDeFiOverview: Record<string, { netWorth: number }>;
+            chainSelectorNetworks: typeof defaultChainSelectorNetworks;
+            zeroValue: boolean;
+          }
+        | undefined
+      > => {
+        // Return `undefined` when we cannot compute yet so usePromiseResult
+        // does not overwrite a good cached snapshot with an empty shell.
+        if (!accountId && !indexedAccountId) {
+          return undefined;
         }
-      | undefined
-    > => {
-      // Return `undefined` (not an empty object) when we cannot compute a real
-      // result yet. usePromiseResult only writes the swr cache when the result
-      // is `!== undefined`, so this prevents a transient pre-meta run from
-      // overwriting a previously-good cached snapshot (which would bring the
-      // layout jump back on the next cold start). An empty *computed* result
-      // below (account genuinely has no assets) is still returned and cached.
-      if (!compatibleNetworks) {
-        return undefined;
-      }
-      if (!accountId && !indexedAccountId) {
-        return undefined;
-      }
 
-      const [_accountsValue, _localDeFiOverview] = await Promise.all([
-        backgroundApiProxy.serviceAccountProfile.getAllNetworkAccountsValueByAccountId(
-          { accountId: indexedAccountId ?? accountId ?? '' },
-        ),
-        backgroundApiProxy.serviceDeFi.getAccountsLocalDeFiOverview({
-          accounts: [
-            {
-              accountId: indexedAccountId ?? accountId ?? '',
-              networkId: getNetworkIdsMap().onekeyall,
-              indexedAccountId,
-            },
-          ],
-          networksEnabledOnly: false,
-        }),
-      ]);
+        const [_accountsValue, _localDeFiOverview, _chainSelectorNetworks] =
+          await Promise.all([
+            backgroundApiProxy.serviceAccountProfile.getAllNetworkAccountsValueByAccountId(
+              { accountId: indexedAccountId ?? accountId ?? '' },
+            ),
+            backgroundApiProxy.serviceDeFi.getAccountsLocalDeFiOverview({
+              accounts: [
+                {
+                  accountId: indexedAccountId ?? accountId ?? '',
+                  networkId: getNetworkIdsMap().onekeyall,
+                  indexedAccountId,
+                },
+              ],
+              networksEnabledOnly: false,
+            }),
+            backgroundApiProxy.serviceNetwork.getChainSelectorNetworksCompatibleWithAccountId(
+              {
+                accountId,
+                walletId,
+                networkIds,
+                useDefaultPinnedNetworks: true,
+              },
+            ),
+          ]);
 
-      if (_accountsValue || _localDeFiOverview[0]) {
-        const {
-          formattedAccountNetworkValues,
-          accountDeFiOverview: _accountDeFiOverview,
-        } =
-          await backgroundApiProxy.serviceNetwork.sortChainSelectorNetworksByValue(
-            {
-              walletId: accountUtils.getWalletIdFromAccountId({
-                accountId: _accountsValue?.accountId ?? '',
-              }),
-              chainSelectorNetworks: compatibleNetworks,
-              accountNetworkValues: _accountsValue?.value ?? {},
-              localDeFiOverview: _localDeFiOverview[0]?.overview ?? {},
-            },
-          );
+        if (_accountsValue || _localDeFiOverview[0]) {
+          const {
+            chainSelectorNetworks: sortedChainSelectorNetworks,
+            formattedAccountNetworkValues,
+            accountDeFiOverview: _accountDeFiOverview,
+            zeroValue,
+          } =
+            await backgroundApiProxy.serviceNetwork.sortChainSelectorNetworksByValue(
+              {
+                walletId: accountUtils.getWalletIdFromAccountId({
+                  accountId: _accountsValue?.accountId ?? '',
+                }),
+                chainSelectorNetworks: _chainSelectorNetworks,
+                accountNetworkValues: _accountsValue?.value ?? {},
+                localDeFiOverview: _localDeFiOverview[0]?.overview ?? {},
+              },
+            );
+
+          return {
+            accountNetworkValues: formattedAccountNetworkValues ?? {},
+            currency: _accountsValue?.currency,
+            accountDeFiOverview: _accountDeFiOverview ?? {},
+            chainSelectorNetworks: sortedChainSelectorNetworks,
+            zeroValue: zeroValue ?? false,
+          };
+        }
 
         return {
-          accountNetworkValues: formattedAccountNetworkValues ?? {},
-          currency: _accountsValue?.currency,
-          accountDeFiOverview: _accountDeFiOverview ?? {},
+          accountNetworkValues: {},
+          currency: undefined,
+          accountDeFiOverview: {},
+          chainSelectorNetworks: _chainSelectorNetworks,
+          zeroValue: true,
         };
-      }
+      },
+      // walletId feeds the swrKey; networkIds scopes the single-network list.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [accountId, indexedAccountId, walletId, networkIds],
+      {
+        swrKey: swrKeys.unifiedNetworkSelectorValues({
+          walletId,
+          accountId,
+          indexedAccountId,
+          networkIdsKey,
+        }),
+      },
+    );
 
-      // Defensive: `_accountsValue` is always a truthy object, so this branch
-      // is effectively unreachable, but if it ever is hit we have no data to
-      // compute — return `undefined` to leave the cache untouched.
-      return undefined;
-    },
-    // walletId is kept in deps because it feeds the swrKey: a wallet-scope
-    // change must trigger revalidation. exhaustive-deps only inspects the
-    // callback body (which derives its own walletId from the resolved account)
-    // and therefore flags walletId as unnecessary — suppress that here.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [accountId, indexedAccountId, compatibleNetworks, walletId],
-    {
-      swrKey: swrKeys.unifiedNetworkSelectorValues({
-        walletId,
-        accountId,
-        indexedAccountId,
-      }),
-    },
-  );
-
-  // Derive the portfolio values straight from the SWR result so the first
-  // render reflects cached data without a frame of empty objects. Declared
-  // after the usePromiseResult above to keep hook ordering stable.
+  // Derive portfolio / NetworkContent values straight from the SWR result so
+  // the first render reflects cached data without a frame of empty objects.
   const accountNetworkValues = useMemo(
     () => accountValuesResult?.accountNetworkValues ?? {},
     [accountValuesResult],
@@ -382,16 +395,25 @@ function UnifiedNetworkSelector() {
     () => accountValuesResult?.accountDeFiOverview ?? {},
     [accountValuesResult],
   );
+  const networkChainSelectorNetworks = useMemo(
+    () =>
+      accountValuesResult?.chainSelectorNetworks ??
+      defaultChainSelectorNetworks,
+    [accountValuesResult],
+  );
+  const networkZeroValue = accountValuesResult?.zeroValue ?? true;
 
-  // Refresh portfolio data when a custom network is added. Meta revalidation
-  // produces a new compatibleNetworks reference, which cascades into the
-  // values hook via its deps — no explicit values refresh needed here.
+  // Refresh meta + shared values when a custom network is added. Values no
+  // longer depend on meta's compatibleNetworks, so both must be revalidated.
   useEffect(() => {
     const fn = async () => {
       try {
         // alwaysSetState bypasses the isFocused guard because this event can
         // fire while the back-nav animation is still running.
-        await refreshNetworkMeta({ alwaysSetState: true });
+        await Promise.all([
+          refreshNetworkMeta({ alwaysSetState: true }),
+          refreshAccountValues({ alwaysSetState: true }),
+        ]);
       } catch {
         // silently ignore refresh errors
       }
@@ -400,7 +422,7 @@ function UnifiedNetworkSelector() {
     return () => {
       appEventBus.off(EAppEventBusNames.AddedCustomNetwork, fn);
     };
-  }, [refreshNetworkMeta]);
+  }, [refreshNetworkMeta, refreshAccountValues]);
 
   // Network tab callbacks
   const handleNetworkPressItem = useCallback(
@@ -725,11 +747,15 @@ function UnifiedNetworkSelector() {
                   accountId={accountId}
                   indexedAccountId={indexedAccountId}
                   networkId={networkId}
-                  networkIds={networkIds}
                   onPressItem={handleNetworkPressItem}
                   onEditCustomNetwork={handleEditCustomNetwork}
                   searchText={searchKey}
                   setSearchText={setSearchKey}
+                  chainSelectorNetworks={networkChainSelectorNetworks}
+                  accountNetworkValues={accountNetworkValues}
+                  accountNetworkValueCurrency={accountNetworkValueCurrency}
+                  accountDeFiOverview={accountDeFiOverview}
+                  zeroValue={networkZeroValue}
                 />
               </Stack>
             </PagerView>
@@ -769,11 +795,15 @@ function UnifiedNetworkSelector() {
                   accountId={accountId}
                   indexedAccountId={indexedAccountId}
                   networkId={networkId}
-                  networkIds={networkIds}
                   onPressItem={handleNetworkPressItem}
                   onEditCustomNetwork={handleEditCustomNetwork}
                   searchText={searchKey}
                   setSearchText={setSearchKey}
+                  chainSelectorNetworks={networkChainSelectorNetworks}
+                  accountNetworkValues={accountNetworkValues}
+                  accountNetworkValueCurrency={accountNetworkValueCurrency}
+                  accountDeFiOverview={accountDeFiOverview}
+                  zeroValue={networkZeroValue}
                 />
               </Stack>
             </>
@@ -785,11 +815,15 @@ function UnifiedNetworkSelector() {
               accountId={accountId}
               indexedAccountId={indexedAccountId}
               networkId={networkId}
-              networkIds={networkIds}
               onPressItem={handleNetworkPressItem}
               onEditCustomNetwork={handleEditCustomNetwork}
               searchText={searchKey}
               setSearchText={setSearchKey}
+              chainSelectorNetworks={networkChainSelectorNetworks}
+              accountNetworkValues={accountNetworkValues}
+              accountNetworkValueCurrency={accountNetworkValueCurrency}
+              accountDeFiOverview={accountDeFiOverview}
+              zeroValue={networkZeroValue}
             />
           </Stack>
         )}
