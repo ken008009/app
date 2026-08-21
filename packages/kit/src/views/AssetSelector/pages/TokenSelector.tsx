@@ -1008,6 +1008,12 @@ function TokenSelector() {
   // map (same `token-selector` flag/path the active-account branch uses) and
   // the scoped owned-aggregate map. These feed TokenListView via props so the
   // selector no longer reads the home tokenList atoms.
+  //
+  // All-networks MUST fan out via `fetchFilteredTokenSelectorTokens` (per-child
+  // network). A single `fetchAccountTokens` against `onekeyall` + the mock
+  // all-networks address never settles the list the home path expects, which
+  // left Receive → 选择币种 stuck on the skeleton forever. Always clear the
+  // skeleton in `finally` so API/RPC failures also exit loading.
   usePromiseResult(async () => {
     if (effectiveShowActiveAccountTokenList) {
       // Active-account / LP-dapp branch uses `scopedActiveTokenList*`; the
@@ -1031,49 +1037,79 @@ function TokenSelector() {
     // list for a frame.
     setSelectorInitialized(false);
 
-    const [r, aggregateTokenListMap] = await Promise.all([
-      backgroundApiProxy.serviceToken.fetchAccountTokens({
-        accountId,
-        networkId,
-        indexedAccountId,
-        flag: 'token-selector',
-        ...tokenSelectorFilterParams,
-      }),
-      backgroundApiProxy.serviceToken.getLocalAggregateTokenListMap({
-        accountId,
-        networkId,
-      }),
-    ]);
+    try {
+      const [responses, aggregateTokenListMap] = await Promise.all([
+        fetchFilteredTokenSelectorTokens({
+          accountId,
+          networkId,
+          indexedAccountId,
+          isAllNetworks: !!isSelectorAllNetworks,
+          mergeDeriveAddressData,
+          onlyBackendIndexedNetworks: showLpTokensOnly,
+          tokenSelectorFilterParams,
+        }),
+        backgroundApiProxy.serviceToken.getLocalAggregateTokenListMap({
+          accountId,
+          networkId,
+        }),
+      ]);
 
-    setSelectorTokenList({
-      tokens: r.tokens.data,
-      smallBalanceTokens: r.smallBalanceTokens.data,
-    });
-    setSelectorTokenListMap({
-      ...r.tokens.map,
-      ...r.smallBalanceTokens.map,
-    });
-    setSelectorAggregateTokenListMap(aggregateTokenListMap ?? {});
-    // The response `aggregateTokenMap` is FLAT ($key -> ITokenFiat) for this
-    // single-network request; nest it by networkId then flatten with the home
-    // sum semantics so aggregate rows resolve correct fiat in TokenListView.
-    setSelectorAggregateTokenFiatMap(
-      r.aggregateTokenMap
-        ? flattenAggregateTokensMap(
-            nestAggregateTokensMap({
-              aggregateTokenMap: r.aggregateTokenMap,
-              networkId,
-            }),
-          )
-        : {},
-    );
-    setSelectorInitialized(true);
+      const tokens: IAccountToken[] = [];
+      const smallBalanceTokens: IAccountToken[] = [];
+      let tokenListMap: Record<string, ITokenFiat> = {};
+      // Nest-then-flatten across child-network responses with the SAME sum
+      // semantics as a single-network nest(networkId) so all-networks aggregate
+      // rows resolve real fiat (per-row maps do not carry aggregate `$key`s).
+      let nestedAggregateTokenMap: Record<
+        string,
+        Record<string, ITokenFiat>
+      > = {};
+
+      for (const r of responses) {
+        tokens.push(...r.tokens.data);
+        smallBalanceTokens.push(...r.smallBalanceTokens.data);
+        tokenListMap = {
+          ...tokenListMap,
+          ...r.tokens.map,
+          ...r.smallBalanceTokens.map,
+        };
+        if (r.aggregateTokenMap) {
+          const nestNetworkId = r.networkId || networkId;
+          const nested = nestAggregateTokensMap({
+            aggregateTokenMap: r.aggregateTokenMap,
+            networkId: nestNetworkId,
+          });
+          for (const [aggregateKey, networkMap] of Object.entries(nested)) {
+            nestedAggregateTokenMap[aggregateKey] = {
+              ...nestedAggregateTokenMap[aggregateKey],
+              ...networkMap,
+            };
+          }
+        }
+      }
+
+      setSelectorTokenList({ tokens, smallBalanceTokens });
+      setSelectorTokenListMap(tokenListMap);
+      setSelectorAggregateTokenListMap(aggregateTokenListMap ?? {});
+      setSelectorAggregateTokenFiatMap(
+        Object.keys(nestedAggregateTokenMap).length
+          ? flattenAggregateTokensMap(nestedAggregateTokenMap)
+          : {},
+      );
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSelectorInitialized(true);
+    }
   }, [
     accountId,
     networkId,
     indexedAccountId,
     effectiveShowActiveAccountTokenList,
     tokenSelectorFilterParams,
+    isSelectorAllNetworks,
+    mergeDeriveAddressData,
+    showLpTokensOnly,
   ]);
 
   useEffect(() => {

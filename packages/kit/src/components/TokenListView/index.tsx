@@ -1012,7 +1012,7 @@ function TokenListViewCmp(props: IProps) {
   const renderPlainModeFooter = useCallback(() => {
     if (overFlowState.isOverflow && overFlowState.isSliced) {
       return (
-        <XStack pt="$3" px="$5" jc="center" ai="center">
+        <XStack pt="$1" pb="$3" px="$5" jc="center" ai="center">
           <Button
             testID="token-list-show-more-btn"
             size="medium"

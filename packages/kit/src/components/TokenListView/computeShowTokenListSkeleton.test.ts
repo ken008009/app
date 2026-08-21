@@ -64,6 +64,20 @@ describe('computeShowTokenListSkeleton — other branches unchanged', () => {
     ).toBe(true);
   });
 
+  it('token selector ignores home ownerMismatch once self-fetch initialized (Receive 选择币种)', () => {
+    expect(
+      computeShowTokenListSkeleton({
+        ...baseHomeFirstLoad(),
+        isTokenSelector: true,
+        ownerMismatch: true,
+        tokenSelectorInitialized: true,
+        tokenListInitialized: true,
+        tokenListIsRefreshing: false,
+        displayCount: 0,
+      }),
+    ).toBe(false);
+  });
+
   it('active-account first refresh skeletons', () => {
     expect(
       computeShowTokenListSkeleton({

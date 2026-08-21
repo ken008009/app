@@ -3464,6 +3464,9 @@ export abstract class LocalDbBase extends LocalDbBaseContainer {
   }) {
     indexedAccount.order =
       indexedAccount.orderSaved ?? indexedAccount.index + 1;
+    indexedAccount.name = accountUtils.normalizeLegacyDefaultAccountName(
+      indexedAccount.name,
+    );
     return indexedAccount;
   }
 

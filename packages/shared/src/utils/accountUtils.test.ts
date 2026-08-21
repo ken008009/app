@@ -291,3 +291,35 @@ describe('pickXpubFromDBAccount (address-keyed storage owner)', () => {
     ).toBe('stake1u...stake');
   });
 });
+
+describe('Default account naming (no hash)', () => {
+  test('buildIndexedAccountName uses Account N without #', () => {
+    expect(accountUtils.buildIndexedAccountName({ pathIndex: 0 })).toBe(
+      'Account 1',
+    );
+    expect(accountUtils.buildIndexedAccountName({ pathIndex: 2 })).toBe(
+      'Account 3',
+    );
+  });
+
+  test('buildHDAccountName and buildBaseAccountName omit #', () => {
+    expect(
+      accountUtils.buildHDAccountName({ pathIndex: 0, namePrefix: 'EVM' }),
+    ).toBe('EVM 1');
+    expect(
+      accountUtils.buildBaseAccountName({ nextAccountId: 1 }),
+    ).toBe('Account 1');
+  });
+
+  test('normalizeLegacyDefaultAccountName strips Account #N', () => {
+    expect(accountUtils.normalizeLegacyDefaultAccountName('Account #1')).toBe(
+      'Account 1',
+    );
+    expect(accountUtils.normalizeLegacyDefaultAccountName('Account 1')).toBe(
+      'Account 1',
+    );
+    expect(accountUtils.normalizeLegacyDefaultAccountName('My Account #1')).toBe(
+      'My Account #1',
+    );
+  });
+});

@@ -43,6 +43,7 @@ import {
   findScrollableAncestorFromLocalNode,
   getStickySidebarMaxHeight,
 } from './defiDesktopStickyDom';
+import { usePortfolioTabScrollContentStyle } from './usePortfolioTabScrollContentStyle';
 
 const SIDEBAR_STICKY_UNPIN_GAP = 8;
 
@@ -216,7 +217,7 @@ function PortfolioContainer() {
         <YStack
           flex={1}
           gap={tableLayout ? '$10' : '$6'}
-          pb={tableLayout ? '$8' : '$4'}
+          pb={tableLayout ? '$8' : 0}
         >
           <TokenListBlock
             showRecentHistory={tableLayout ? showRecentHistory : undefined}
@@ -266,6 +267,10 @@ function PortfolioContainerWithProvider() {
     activeAccount: { account },
   } = useActiveAccount({ num: 0 });
   const tabBarHeight = useScrollContentTabBarOffset();
+  const scrollContentStyle = usePortfolioTabScrollContentStyle(
+    tabBarHeight ?? 0,
+  );
+
   return (
     <HomeTokenListProviderMirrorWrapper accountId={account?.id ?? ''}>
       <ProviderJotaiContextHistoryList>
@@ -273,7 +278,7 @@ function PortfolioContainerWithProvider() {
           <ProviderJotaiContextDeFiList>
             <Tabs.ScrollView
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: tabBarHeight }}
+              contentContainerStyle={scrollContentStyle}
               nestedScrollEnabled={platformEnv.isNativeAndroid}
               refreshControl={
                 !platformEnv.isNativeAndroid ? (

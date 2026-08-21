@@ -65,7 +65,14 @@ export function computeShowTokenListSkeleton(
   // prior network so the final clause would not fire. (On home, cold-start
   // instant paint is the cells slim fan-out and in-session switch is the BG
   // per-owner VM pull; both paint cells before this gate matters.)
-  if (p.ownerMismatch && !p.showActiveAccountTokenList) {
+  // TokenSelector self-fetches into props and does not render home atoms — do
+  // NOT gate on home `listStructure.ownerKey` mismatch or Receive → 选择币种
+  // can skeleton forever after the self-fetch already resolved.
+  if (
+    p.ownerMismatch &&
+    !p.showActiveAccountTokenList &&
+    !p.isTokenSelector
+  ) {
     return true;
   }
 

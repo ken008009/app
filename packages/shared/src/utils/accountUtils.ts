@@ -422,7 +422,7 @@ function buildWatchingAccountId({
 }
 
 function buildIndexedAccountName({ pathIndex }: { pathIndex: number }): string {
-  return `Account #${pathIndex + 1}`;
+  return `Account ${pathIndex + 1}`;
 }
 
 function buildHDAccountName({
@@ -433,7 +433,7 @@ function buildHDAccountName({
   // VaultSettings.accountDeriveInfo.default.namePrefix
   namePrefix: string;
 }): string {
-  return `${namePrefix} #${pathIndex + 1}`;
+  return `${namePrefix} ${pathIndex + 1}`;
 }
 
 function buildBaseAccountName({
@@ -443,7 +443,19 @@ function buildBaseAccountName({
   mainName?: string;
   nextAccountId: number;
 }): string {
-  return `${mainName} #${nextAccountId}`;
+  return `${mainName} ${nextAccountId}`;
+}
+
+/**
+ * Legacy indexed-account defaults used `Account #1`. Normalize so existing
+ * wallets match the new `Account 1` format without a DB version bump.
+ */
+function normalizeLegacyDefaultAccountName(name: string): string {
+  const accountMatch = /^Account #(\d+)$/.exec(name);
+  if (accountMatch) {
+    return `Account ${accountMatch[1]}`;
+  }
+  return name;
 }
 
 function buildImportedAccountId({
@@ -1366,6 +1378,7 @@ export default {
   buildBaseAccountName,
   buildHDAccountName,
   buildIndexedAccountName,
+  normalizeLegacyDefaultAccountName,
   buildImportedAccountId,
   buildWatchingAccountId,
   buildLocalTokenId,

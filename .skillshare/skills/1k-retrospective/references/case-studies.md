@@ -47,3 +47,10 @@ Cases are appended by AI after each bug fix. Do NOT reorder or delete entries �
 **Root Cause**: Home pin list matched ticker `MSUSD` against catalog Metronome MSUSD, while this chain's native coin was still labeled ISPAY. The pin row was a zero stub, not `eth_getBalance` on `evm--1944873742`.
 **Fix**: Treat ISPAY as an MSUSD alias, bind the MSUSD pin to the MS chain native token, skip other-chain catalog MSUSD, and show the MSUSD icon for the MS chain.
 **Catchable by**: Section 4: Shared hook/utility modified → checked all consumers
+
+## Case: Receive 选择币种 stuck on skeleton
+**Date**: 2026-08-21 | **Platforms**: Android, iOS (native token selector)
+**Symptom**: 接收 → 接收转账 → 选择币种 stayed on loading/skeleton forever.
+**Root Cause**: TokenSelector self-fetch called a single `fetchAccountTokens` against All Networks (`onekeyall` + mock address) instead of fan-out via `fetchFilteredTokenSelectorTokens`; failures also never set `tokenSelectorInitialized`, and home `ownerMismatch` could keep the skeleton after init.
+**Fix**: Fan-out with `fetchFilteredTokenSelectorTokens`, always clear skeleton in `finally`, and skip `ownerMismatch` when `isTokenSelector`.
+**Catchable by**: Section 5: No infinite loops / stuck loading — async fetch must clear loading in finally; Section 4: Shared component gates must distinguish home vs selector data path

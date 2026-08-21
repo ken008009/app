@@ -428,14 +428,40 @@ function AddCustomNetwork() {
               {...(isFetchingChainId && { addOns: [{ loading: true }] })}
             />
           </Form.Field>
-          <Form.Field name="chainId" label="Chain ID" disabled>
+          <Form.Field
+            name="chainId"
+            label="Chain ID"
+            // Lock only when editing an existing custom network — chainId is
+            // part of the network identity. Add / ChainList flows stay editable
+            // so users can type when RPC auto-detect fails or needs override.
+            disabled={state === 'edit' && !!routeNetworkId}
+            rules={{
+              required: {
+                value: true,
+                message: intl.formatMessage({
+                  id: ETranslations.address_book_add_address_name_required,
+                }),
+              },
+              validate: (value: string) => {
+                if (!value) return undefined;
+                const chainId = new BigNumber(value);
+                if (!chainId.isInteger() || chainId.isNegative()) {
+                  return intl.formatMessage({
+                    id: ETranslations.form_rpc_url_invalid,
+                  });
+                }
+                return undefined;
+              },
+            }}
+          >
             <Input
-              testID="setting-chain-id-input"
+              testID="setting-chain-id-field-input"
               size="large"
               $gtMd={{
                 size: 'medium',
               }}
-              editable={false}
+              editable={!(state === 'edit' && !!routeNetworkId)}
+              keyboardType="number-pad"
             />
           </Form.Field>
           <Form.Field

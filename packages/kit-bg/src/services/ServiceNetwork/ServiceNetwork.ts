@@ -18,6 +18,7 @@ import { getNetworkIdsMap } from '@onekeyhq/shared/src/config/networkIds';
 import {
   dangerAggregateTokenNetworkRepresent,
   getPresetNetworks,
+  MS_NETWORK_ID,
   presetNetworksMap,
 } from '@onekeyhq/shared/src/config/presetNetworks';
 import {
@@ -64,6 +65,8 @@ import type {
 } from '../../vaults/types';
 
 const defaultPinnedNetworkIds = [
+  // MS stays at the top of the single-network list for this fork.
+  getNetworkIdsMap().ispay,
   getNetworkIdsMap().btc,
   getNetworkIdsMap().lightning,
   getNetworkIdsMap().eth,
@@ -73,6 +76,23 @@ const defaultPinnedNetworkIds = [
   getNetworkIdsMap().polygon,
   getNetworkIdsMap().ton,
 ];
+
+function pinMsNetworkToFront({
+  items,
+  fallbackItems,
+}: {
+  items: IServerNetwork[];
+  fallbackItems: IServerNetwork[];
+}): IServerNetwork[] {
+  const withoutMs = items.filter((item) => item.id !== MS_NETWORK_ID);
+  const msNetwork =
+    items.find((item) => item.id === MS_NETWORK_ID) ??
+    fallbackItems.find((item) => item.id === MS_NETWORK_ID);
+  if (!msNetwork) {
+    return withoutMs;
+  }
+  return [msNetwork, ...withoutMs];
+}
 
 @backgroundClass()
 class ServiceNetwork extends ServiceBase {
@@ -1793,6 +1813,15 @@ class ServiceNetwork extends ServiceBase {
       return new BigNumber(allAccountValues[b.id] ?? '0').comparedTo(
         new BigNumber(allAccountValues[a.id] ?? '0'),
       );
+    });
+
+    // Keep MS pinned at the top even when sorted by portfolio value.
+    frequentlyUsedItems = pinMsNetworkToFront({
+      items: frequentlyUsedItems,
+      fallbackItems: [
+        ...chainSelectorNetworks.frequentlyUsedItems,
+        ...chainSelectorNetworks.mainnetItems,
+      ],
     });
 
     return {

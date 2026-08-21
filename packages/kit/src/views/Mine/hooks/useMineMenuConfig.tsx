@@ -45,6 +45,8 @@ export interface IMineMenuSection {
 
 const UNDER_DEVELOPMENT_MESSAGE = '正在开发中';
 const SHOW_WHATS_NEW_ITEM = false;
+/** Temporarily hide referral rewards entry on Mine. */
+const SHOW_REFER_FRIENDS_ITEM = false;
 
 export function showUnderDevelopmentToast() {
   Toast.message({
@@ -285,16 +287,18 @@ export function useMineMenuConfig(): IMineMenuSection[] {
             },
           }
         : null,
-      {
-        icon: 'PeopleOutline',
-        title: intl.formatMessage({
-          id: ETranslations.id_refer_a_friend,
-        }),
-        subtitle: '邀请好友获得奖励',
-        onPress: () => {
-          void toReferFriendsPage();
-        },
-      },
+      SHOW_REFER_FRIENDS_ITEM
+        ? {
+            icon: 'PeopleOutline',
+            title: intl.formatMessage({
+              id: ETranslations.id_refer_a_friend,
+            }),
+            subtitle: '邀请好友获得奖励',
+            onPress: () => {
+              void toReferFriendsPage();
+            },
+          }
+        : null,
       SHOW_WHATS_NEW_ITEM
         ? {
             icon: 'InfoCircleOutline',
