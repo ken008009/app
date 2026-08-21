@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
-    android:gravity="fill"
-    android:src="@drawable/splashscreen_icon_fg" />
+<!--
+  Transparent animated icon so Android 12+ Splash Screen API does NOT clip
+  the brand logo into its circular/square icon mask. The real logo is drawn
+  via Theme.App.SplashScreen windowBackground (@drawable/splashscreen).
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@android:color/transparent" />
+    <size
+        android:width="1dp"
+        android:height="1dp" />
+</shape>

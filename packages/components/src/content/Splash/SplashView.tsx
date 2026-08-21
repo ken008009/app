@@ -65,9 +65,13 @@ export function SplashView({
             justifyContent="center"
             alignItems="center"
           >
-            <Stack w={80} h={80}>
-              <Image flex={1} source={splashSource} />
-            </Stack>
+            {/* Keep intrinsic aspect ratio — do not force a square crop box. */}
+            <Image
+              source={splashSource}
+              width={128}
+              height={128}
+              resizeMode="contain"
+            />
           </Stack>
         </Stack>
       ) : null}

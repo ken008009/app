@@ -123,7 +123,7 @@ function HomeMDHeaderRows({ headerPx }: { headerPx: string }) {
   return (
     <YStack
       px={headerPx}
-      pb="$0"
+      pb="$2"
       {...(top || platformEnv.isNativeAndroid ? { mt: top || '$2' } : {})}
     >
       {/* Account selector | notification + scan + more */}

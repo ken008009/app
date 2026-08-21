@@ -37,14 +37,14 @@ export function MineSettingsRow({
         pressStyle={{ opacity: 0.72 }}
       >
         <Stack
-          w={40}
-          h={40}
+          w={48}
+          h={48}
           borderRadius="$full"
           bg={MINE_ICON_BG}
           ai="center"
           jc="center"
         >
-          <Icon name={icon} size="$6" color={MINE_GOLD} />
+          <Icon name={icon} size="$8" color={MINE_GOLD} />
         </Stack>
         <YStack flex={1} minWidth={0}>
           <SizableText size="$bodyLgMedium" color="$text">
@@ -56,10 +56,10 @@ export function MineSettingsRow({
             </SizableText>
           ) : null}
         </YStack>
-        <Icon name="ChevronRightSmallOutline" size="$5" color={MINE_GOLD} />
+        <Icon name="ChevronRightSmallOutline" size="$6" color={MINE_GOLD} />
       </XStack>
       {showDivider ? (
-        <Stack h={StyleSheet.hairlineWidth} bg={MINE_DIVIDER} ml={70} mr="$4" />
+        <Stack h={StyleSheet.hairlineWidth} bg={MINE_DIVIDER} ml={78} mr="$4" />
       ) : null}
     </>
   );

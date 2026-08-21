@@ -1,6 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Full-screen splash: solid background + centered brand PNG at intrinsic
+  aspect ratio (no stretch / no square crop). Logo asset itself is untouched.
+-->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-  <item android:drawable="@color/splashscreen_background"/>
+  <item android:drawable="@color/splashscreen_background" />
   <item
-      android:drawable="@drawable/splashscreen_image"
-      android:gravity="center"/>
+      android:width="144dp"
+      android:height="144dp"
+      android:gravity="center">
+    <bitmap
+        android:gravity="fill"
+        android:src="@drawable/splashscreen_icon_fg" />
+  </item>
 </layer-list>

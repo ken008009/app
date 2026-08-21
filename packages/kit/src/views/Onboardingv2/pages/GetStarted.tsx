@@ -6,12 +6,15 @@ import { useIntl } from 'react-intl';
 import {
   Button,
   Icon,
+  Image,
   SizableText,
   XStack,
   YStack,
   useMedia,
 } from '@onekeyhq/components';
 import useAppNavigation from '@onekeyhq/kit/src/hooks/useAppNavigation';
+import { BRAND_ACCOUNT_AVATAR } from '@onekeyhq/kit/src/utils/brandAssets';
+import { APP_BRAND_NAME } from '@onekeyhq/shared/src/config/appBrand';
 import { ETranslations } from '@onekeyhq/shared/src/locale';
 import { defaultLogger } from '@onekeyhq/shared/src/logger/logger';
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
@@ -454,7 +457,17 @@ function GetStarted() {
         }}
         gap="$8"
       >
-        <Icon name="OnekeyTextIllus" color="$text" h={48} w={174} />
+        <XStack alignItems="center" gap="$3">
+          <Image
+            source={BRAND_ACCOUNT_AVATAR}
+            width={40}
+            height={40}
+            resizeMode="contain"
+          />
+          <SizableText size="$heading2xl" fontWeight="600" color="$text">
+            {APP_BRAND_NAME}
+          </SizableText>
+        </XStack>
         {platformEnv.isNative ? (
           <HeroSentenceNative
             prefix={heroPrefix}

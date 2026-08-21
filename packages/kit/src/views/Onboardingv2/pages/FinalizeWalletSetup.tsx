@@ -1161,17 +1161,15 @@ function FinalizeWalletSetupPage({
                 </YStack>
               </YStack>
               <StepTextSwap text={stepText} />
-              {gtMd ? (
-                <YStack mt="$4" minHeight={48} {...enterWalletTransitionProps}>
-                  {enterWalletButton}
-                </YStack>
-              ) : null}
-            </YStack>
-            {!gtMd ? (
-              <YStack pb="$5" {...enterWalletTransitionProps}>
+              <YStack
+                mt="$4"
+                minHeight={48}
+                {...(gtMd ? undefined : { alignSelf: 'stretch' as const })}
+                {...enterWalletTransitionProps}
+              >
                 {enterWalletButton}
               </YStack>
-            ) : null}
+            </YStack>
           </>
         )}
       </YStack>

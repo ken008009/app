@@ -12,7 +12,7 @@ import platformEnv from '@onekeyhq/shared/src/platformEnv';
 import { hasPendingInstallTask } from '@onekeyhq/shared/src/utils/pendingTaskUtils';
 
 import backgroundApiProxy from '../background/instance/backgroundApiProxy';
-import { BRAND_SPLASH_SVG } from '../utils/brandAssets';
+import { BRAND_SPLASH_PNG } from '../utils/brandAssets';
 
 const SPLASH_SAFETY_TIMEOUT = 5000;
 const jsEntryStart: number =
@@ -290,7 +290,7 @@ export function SplashProvider({ children }: PropsWithChildren<unknown>) {
   }
 
   return (
-    <Splash canDismissSplash={canDismissSplash} source={BRAND_SPLASH_SVG}>
+    <Splash canDismissSplash={canDismissSplash} source={BRAND_SPLASH_PNG}>
       {children}
     </Splash>
   );
