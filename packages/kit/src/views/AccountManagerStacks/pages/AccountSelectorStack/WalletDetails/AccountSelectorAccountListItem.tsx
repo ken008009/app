@@ -430,7 +430,7 @@ export function AccountSelectorAccountListItem({
             <SizableText
               size="$bodyLgMedium"
               numberOfLines={1}
-              color={isSelected ? AS_GOLD : '#FFFFFF'}
+              color={isSelected ? AS_GOLD : '$text'}
             >
               {item.name}
             </SizableText>

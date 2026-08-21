@@ -9,7 +9,6 @@ import {
   IconButton,
   SizableText,
   Skeleton,
-  Theme,
   XStack,
   YStack,
   useClipboard,
@@ -935,8 +934,7 @@ function HomeOverviewContainer() {
       justifyContent="space-between"
       testID={HomeTestIDs.walletOverview}
     >
-      <Theme name="dark">
-        <XStack alignItems="center" maxWidth="100%" flexShrink={1}>
+      <XStack alignItems="center" maxWidth="100%" flexShrink={1}>
           {network?.isAllNetworks &&
           !accountUtils.isOthersWallet({ walletId: wallet?.id ?? '' }) ? (
             <AllNetworksManagerTrigger num={0} unifiedMode size="xl" />
@@ -949,7 +947,6 @@ function HomeOverviewContainer() {
             />
           )}
         </XStack>
-      </Theme>
       {showSkeleton ? (
         <Skeleton.HeadingXl />
       ) : (
@@ -969,7 +966,7 @@ function HomeOverviewContainer() {
               fontSize={28}
               lineHeight={32}
               fontWeight={600}
-              color="#FFFFFF"
+              color="$text"
               {...numberFormatter}
             >
               {renderedBalanceStringDisplay ?? '0'}
@@ -980,7 +977,7 @@ function HomeOverviewContainer() {
             variant="tertiary"
             size="small"
             iconSize="$5"
-            iconProps={{ color: '#D0D0D0' }}
+            iconProps={{ color: '$iconSubdued' }}
             onPress={handleBalanceOnPress}
           />
           {refreshButton}
@@ -995,10 +992,10 @@ function HomeOverviewContainer() {
             hitSlop={8}
             onPress={handleCopyAddress}
           >
-            <SizableText size="$bodyLg" color="#A8A8A8">
+            <SizableText size="$bodyLg" color="$textSubdued">
               {shortenedAddress}
             </SizableText>
-            <Icon name="Copy1Outline" size="$5" color="#D0D0D0" />
+            <Icon name="Copy1Outline" size="$5" color="$iconSubdued" />
           </XStack>
         ) : null}
         {vaultSettings?.hasFrozenBalance ? (

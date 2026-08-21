@@ -1,5 +1,8 @@
-export const MINE_GOLD = '#D5AC4C';
-export const MINE_GOLD_BORDER = 'rgba(213,172,76,0.28)';
-export const MINE_CARD_BG = '#161616';
-export const MINE_ICON_BG = '#0F0F0F';
-export const MINE_DIVIDER = 'rgba(213,172,76,0.16)';
+/**
+ * Mine page visual tokens — Tamagui semantic colors so light/dark follow system theme.
+ */
+export const MINE_GOLD = '$bgAccent';
+export const MINE_GOLD_BORDER = '$borderSubdued';
+export const MINE_CARD_BG = '$bg';
+export const MINE_ICON_BG = '$bgSubdued';
+export const MINE_DIVIDER = '$borderSubdued';

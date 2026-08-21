@@ -12,6 +12,7 @@ import type { IHomePageViewedState } from '@onekeyhq/shared/src/logger/scopes/ac
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
 
 import { useHomeBalanceState } from '../../../hooks/useHomeBalanceState';
+import { useThemeVariant } from '../../../hooks/useThemeVariant';
 // import { useWalletTopBannersAtom } from '../../../states/jotai/contexts/accountOverview';
 import { useActiveAccount } from '../../../states/jotai/contexts/accountSelector';
 import { HomeTokenListProviderMirror } from '../components/HomeTokenListProvider/HomeTokenListProviderMirror';
@@ -25,11 +26,15 @@ import { HomeOverviewContainer } from './HomeOverviewContainer';
 
 import type { LayoutChangeEvent } from 'react-native';
 
-const WALLET_CARD_SOURCE = require('@onekeyhq/kit/assets/home/wallet-card.png');
+const WALLET_CARD_SOURCE_DARK = require('@onekeyhq/kit/assets/home/wallet-card.png');
+const WALLET_CARD_SOURCE_LIGHT = require('@onekeyhq/kit/assets/home/wallet-card-light.png');
 
-// Cropped from wallet.png so left/right and top/bottom transparent
-// margins are equal (original canvas was L24/R44 and T68/B17).
-const WALLET_CARD_ASPECT_RATIO = 1467 / 1007;
+// Dark card cropped from wallet.png (L/R/T/B transparent margins equalized).
+const WALLET_CARD_ASPECT_RATIO_DARK = 1467 / 1007;
+// Light card asset canvas size.
+const WALLET_CARD_ASPECT_RATIO_LIGHT = 1486 / 1055;
+// Compat alias — some HMR/stale bundles still resolve this name.
+const WALLET_CARD_ASPECT_RATIO = WALLET_CARD_ASPECT_RATIO_DARK;
 
 // Wallet card (full-width, aspect-ratio) + action row + tight padding.
 // Native Tabs.Container still needs an initial headerHeight; actual height is
@@ -42,6 +47,15 @@ function BaseHomeHeaderContainer({
 }: {
   onNativeLayoutHeight?: (height: number) => void;
 }) {
+  const themeVariant = useThemeVariant();
+  const isLightTheme = themeVariant === 'light';
+  const walletCardSource = isLightTheme
+    ? WALLET_CARD_SOURCE_LIGHT
+    : WALLET_CARD_SOURCE_DARK;
+  const walletCardAspectRatio = isLightTheme
+    ? WALLET_CARD_ASPECT_RATIO_LIGHT
+    : WALLET_CARD_ASPECT_RATIO;
+
   const {
     activeAccount: { wallet },
   } = useActiveAccount({
@@ -125,7 +139,7 @@ function BaseHomeHeaderContainer({
       <Stack
         testID={HomeTestIDs.headerContainer}
         gap="$4"
-        pt="$4"
+        pt="$0.5"
         $gtMd={{
           pt: '$8',
         }}
@@ -136,13 +150,13 @@ function BaseHomeHeaderContainer({
           <Stack w="100%" alignItems="center" justifyContent="center">
             <Stack
               w="100%"
-              aspectRatio={WALLET_CARD_ASPECT_RATIO}
+              aspectRatio={walletCardAspectRatio}
               alignItems="center"
               justifyContent="center"
               overflow="hidden"
             >
               <Image
-                source={WALLET_CARD_SOURCE}
+                source={walletCardSource}
                 w="100%"
                 h="100%"
                 contentFit="contain"

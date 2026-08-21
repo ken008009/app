@@ -136,7 +136,7 @@ export function WalletDetailsHeader({
             <WalletRenameButton
               wallet={wallet}
               editable={editable}
-              textColor="#FFFFFF"
+              textColor="$text"
               iconColor={AS_GOLD}
               mr="$1.5"
             />

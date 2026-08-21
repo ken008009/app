@@ -22,8 +22,7 @@ import {
 } from '@onekeyhq/components';
 import { ETranslations } from '@onekeyhq/shared/src/locale';
 
-const HOME_WALLET_ACTION_GOLD = '#D5AC4C';
-const HOME_WALLET_ACTION_BG = '#161616';
+import { HOME_GOLD, HOME_GOLD_BORDER, HOME_TOKEN_CARD_BG } from '../../homeTheme';
 
 const HomeWalletActionsStyleContext = createContext(false);
 
@@ -57,12 +56,12 @@ function ActionItem({
   let iconColor: string = '$icon';
   if (visualDisabled) iconColor = '$iconDisabled';
   else if (highlighted) iconColor = '$iconInverse';
-  else if (homeWalletStyle) iconColor = HOME_WALLET_ACTION_GOLD;
+  else if (homeWalletStyle) iconColor = HOME_GOLD;
 
   let textColor: string = '$text';
   if (visualDisabled) textColor = '$textDisabled';
   else if (highlighted) textColor = '$textInverse';
-  else if (homeWalletStyle) textColor = '#FFFFFF';
+  else if (homeWalletStyle) textColor = '$text';
 
   if (showButtonStyle) {
     return (
@@ -97,11 +96,11 @@ function ActionItem({
           highlighted
             ? '$bgPrimary'
             : homeWalletStyle
-              ? HOME_WALLET_ACTION_BG
+              ? HOME_TOKEN_CARD_BG
               : '$bgStrong'
         }
-        borderWidth={homeWalletStyle ? 0.5 : 0}
-        borderColor={homeWalletStyle ? 'rgba(213,172,76,0.35)' : undefined}
+        borderWidth={homeWalletStyle ? 1 : 0}
+        borderColor={homeWalletStyle ? HOME_GOLD_BORDER : undefined}
         borderRadius="$4"
         pt="$2.5"
         pb="$1"
@@ -111,14 +110,14 @@ function ActionItem({
           bg: highlighted
             ? '$bgPrimaryHover'
             : homeWalletStyle
-              ? '#2A2A2A'
+              ? '$bgHover'
               : '$bgStrongHover',
         }}
         pressStyle={{
           bg: highlighted
             ? '$bgPrimaryActive'
             : homeWalletStyle
-              ? '#0F0F0F'
+              ? '$bgActive'
               : '$bgStrongActive',
         }}
         focusable
@@ -313,19 +312,19 @@ function ActionMore({
         flexBasis={0}
         alignItems="center"
         justifyContent="center"
-        bg={homeWalletStyle ? HOME_WALLET_ACTION_BG : '$bgStrong'}
-        borderWidth={homeWalletStyle ? 0.5 : 0}
-        borderColor={homeWalletStyle ? 'rgba(213,172,76,0.35)' : undefined}
+        bg={homeWalletStyle ? HOME_TOKEN_CARD_BG : '$bgStrong'}
+        borderWidth={homeWalletStyle ? 1 : 0}
+        borderColor={homeWalletStyle ? HOME_GOLD_BORDER : undefined}
         borderRadius="$4"
         pt="$2.5"
         pb="$1"
         px="$1"
         userSelect="none"
         hoverStyle={{
-          bg: homeWalletStyle ? '#2A2A2A' : '$bgStrongHover',
+          bg: homeWalletStyle ? '$bgHover' : '$bgStrongHover',
         }}
         pressStyle={{
-          bg: homeWalletStyle ? '#0F0F0F' : '$bgStrongActive',
+          bg: homeWalletStyle ? '$bgActive' : '$bgStrongActive',
         }}
         focusable
         focusVisibleStyle={{
@@ -341,14 +340,14 @@ function ActionMore({
           <Icon
             name="DotHorOutline"
             size="$6"
-            color={homeWalletStyle ? HOME_WALLET_ACTION_GOLD : '$icon'}
+            color={homeWalletStyle ? HOME_GOLD : '$icon'}
           />
         </Stack>
         <SizableText
           my="$1"
           textAlign="center"
           size="$bodySm"
-          color={homeWalletStyle ? '#FFFFFF' : '$text'}
+          color="$text"
         >
           {label}
         </SizableText>

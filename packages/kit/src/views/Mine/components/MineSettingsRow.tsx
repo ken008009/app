@@ -47,7 +47,7 @@ export function MineSettingsRow({
           <Icon name={icon} size="$6" color={MINE_GOLD} />
         </Stack>
         <YStack flex={1} minWidth={0}>
-          <SizableText size="$bodyLgMedium" color="#FFFFFF">
+          <SizableText size="$bodyLgMedium" color="$text">
             {title}
           </SizableText>
           {subtitle ? (

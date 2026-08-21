@@ -1,12 +1,15 @@
-// Visual tokens aligned with Home TokenListBlock card style (homeTheme).
-export const AS_GOLD = '#D5AC4C';
-export const AS_GOLD_BORDER = 'rgba(213,172,76,0.45)';
-export const AS_PAGE_BG = '#0F0F0F';
-export const AS_CARD_BG = '#1C1C1C';
-export const AS_SELECTED_BG = 'rgba(213,172,76,0.16)';
-export const AS_PRESS_BG = 'rgba(213,172,76,0.10)';
-export const AS_DIVIDER = 'rgba(213,172,76,0.16)';
-export const AS_ICON_BG = '#0F0F0F';
+/**
+ * Account selector visual tokens — aligned with Home TokenListBlock cards.
+ * All values are Tamagui semantic tokens so light/dark follow system theme.
+ */
+export const AS_GOLD = '$bgAccent';
+export const AS_GOLD_BORDER = '$borderSubdued';
+export const AS_PAGE_BG = '$bgApp';
+export const AS_CARD_BG = '$bg';
+export const AS_SELECTED_BG = '$bgActive';
+export const AS_PRESS_BG = '$bgHover';
+export const AS_DIVIDER = '$borderSubdued';
+export const AS_ICON_BG = '$bgSubdued';
 
 /** Mirrors TokenListItem HOME_TOKEN_CARD_ITEM_PROPS */
 export const AS_ACCOUNT_CARD_ITEM_PROPS = {
