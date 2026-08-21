@@ -434,7 +434,7 @@ function AddCustomNetwork() {
             // Lock only when editing an existing custom network — chainId is
             // part of the network identity. Add / ChainList flows stay editable
             // so users can type when RPC auto-detect fails or needs override.
-            disabled={state === 'edit' && !!routeNetworkId}
+            disabled={state === 'edit' ? !!routeNetworkId : null}
             rules={{
               required: {
                 value: true,

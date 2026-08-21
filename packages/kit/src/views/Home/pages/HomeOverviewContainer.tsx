@@ -956,18 +956,18 @@ function HomeOverviewContainer() {
       testID={HomeTestIDs.walletOverview}
     >
       <XStack alignItems="center" maxWidth="100%" flexShrink={1}>
-          {network?.isAllNetworks &&
-          !accountUtils.isOthersWallet({ walletId: wallet?.id ?? '' }) ? (
-            <AllNetworksManagerTrigger num={0} unifiedMode size="xl" />
-          ) : (
-            <NetworkSelectorTriggerHome
-              num={0}
-              size="xl"
-              recordNetworkHistoryEnabled
-              unifiedMode
-            />
-          )}
-        </XStack>
+        {network?.isAllNetworks &&
+        !accountUtils.isOthersWallet({ walletId: wallet?.id ?? '' }) ? (
+          <AllNetworksManagerTrigger num={0} unifiedMode size="xl" />
+        ) : (
+          <NetworkSelectorTriggerHome
+            num={0}
+            size="xl"
+            recordNetworkHistoryEnabled
+            unifiedMode
+          />
+        )}
+      </XStack>
       {showSkeleton ? (
         <Skeleton.HeadingXl />
       ) : (
@@ -994,6 +994,7 @@ function HomeOverviewContainer() {
             </NumberSizeableTextWrapper>
           </XStack>
           <IconButton
+            testID="home-balance-visibility-button"
             icon={hideValue ? 'EyeOffOutline' : 'EyeOutline'}
             variant="tertiary"
             size="small"

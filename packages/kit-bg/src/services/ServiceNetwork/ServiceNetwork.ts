@@ -16,9 +16,9 @@ import {
 } from '@onekeyhq/shared/src/background/backgroundDecorators';
 import { getNetworkIdsMap } from '@onekeyhq/shared/src/config/networkIds';
 import {
+  MS_NETWORK_ID,
   dangerAggregateTokenNetworkRepresent,
   getPresetNetworks,
-  MS_NETWORK_ID,
   presetNetworksMap,
 } from '@onekeyhq/shared/src/config/presetNetworks';
 import {
@@ -66,6 +66,7 @@ import type {
 
 const defaultPinnedNetworkIds = [
   // MS stays at the top of the single-network list for this fork.
+  // cspell:disable-next-line
   getNetworkIdsMap().ispay,
   getNetworkIdsMap().btc,
   getNetworkIdsMap().lightning,

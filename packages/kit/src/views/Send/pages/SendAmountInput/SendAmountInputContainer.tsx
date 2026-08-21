@@ -82,6 +82,7 @@ import {
 } from '@onekeyhq/shared/src/routes';
 import type {
   EModalSignatureConfirmRoutes,
+  IModalSendParamList,
   IModalSignatureConfirmParamList,
 } from '@onekeyhq/shared/src/routes';
 import accountUtils from '@onekeyhq/shared/src/utils/accountUtils';
@@ -799,7 +800,15 @@ function PrivateSendValueDropWarningContent({
   );
 }
 
-function SendAmountInputContainer() {
+type ISendAmountInputContainerProps = {
+  embedded?: boolean;
+  params?: IModalSendParamList[EModalSendRoutes.SendAmountInput];
+};
+
+export function SendAmountInputContainer({
+  embedded = false,
+  params,
+}: ISendAmountInputContainerProps = {}) {
   const intl = useIntl();
   const media = useMedia();
   const isRouteFocused = useRouteIsFocused();
@@ -836,7 +845,7 @@ function SendAmountInputContainer() {
     onCancel,
     amount: prefillAmount,
     isInvoiceAmountLocked,
-  } = route.params;
+  } = params ?? route.params;
 
   const nft = nfts?.[0];
   const [tokenInfo] = useState(token);
@@ -2286,11 +2295,12 @@ function SendAmountInputContainer() {
 
   // Auto-focus the amount input after page transition animation completes
   useEffect(() => {
+    if (embedded) return;
     const timer = setTimeout(() => {
       amountInputRef.current?.focus();
     }, 300);
     return () => clearTimeout(timer);
-  }, []);
+  }, [embedded]);
 
   const handleAmountInputFocus = useCallback(() => {
     setIsAmountInputFocused(true);
@@ -3539,6 +3549,7 @@ function SendAmountInputContainer() {
           <SendAutoSizeAmountInput
             ref={amountInputRef}
             tokenSymbol={isUseFiat ? undefined : tokenSymbol}
+            compactTokenSymbol={(tokenSymbol?.length ?? 0) > 4}
             reversible={
               !isInvoiceAmountLocked ? hasUsablePrice || isUseFiat : undefined
             }
@@ -4566,6 +4577,19 @@ function SendAmountInputContainer() {
       <Page.Body px="$5" justifyContent="center">
         {renderAmountFormContent}
       </Page.Body>
+    );
+  }
+
+  if (embedded) {
+    return (
+      <YStack width="100%" gap="$5" pt="$2">
+        {renderPrivateSendModeBand()}
+        <YStack width="100%" gap="$3">
+          {renderAmountFormContent}
+          {renderBottomInfoContent}
+        </YStack>
+        {renderFooterActions}
+      </YStack>
     );
   }
 

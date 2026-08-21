@@ -164,12 +164,7 @@ const AppStateLock = ({
                   deliberately hard to trigger so it is not hit by accident on
                   the lock screen. (OK-56874) */}
               <MultipleClickStack onPress={handleExportLogs}>
-                <Image
-                  w={72}
-                  h={72}
-                  source={Logo}
-                  resizeMode="contain"
-                />
+                <Image w={72} h={72} source={Logo} resizeMode="contain" />
               </MultipleClickStack>
               <Heading size="$headingLg" textAlign="center">
                 {intl.formatMessage({

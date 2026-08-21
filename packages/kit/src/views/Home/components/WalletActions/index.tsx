@@ -3,7 +3,7 @@ import { useCallback } from 'react';
 import { useIntl } from 'react-intl';
 
 import type { IPageNavigationProp, IXStackProps } from '@onekeyhq/components';
-import { Button, Dialog, SizableText, YStack } from '@onekeyhq/components';
+import { Button, Dialog, YStack } from '@onekeyhq/components';
 import backgroundApiProxy from '@onekeyhq/kit/src/background/instance/backgroundApiProxy';
 import {
   OptionCard,
@@ -19,6 +19,7 @@ import { useTokenListStateAtom } from '@onekeyhq/kit/src/states/jotai/contexts/t
 import { useHomeTokenListSnapshot } from '@onekeyhq/kit/src/states/jotai/contexts/tokenList/cells';
 import { showBotWalletDisabledToast } from '@onekeyhq/kit/src/utils/botWalletDisabledToast';
 import { shouldBlockBotWalletReceive } from '@onekeyhq/kit/src/utils/botWalletStatusUtils';
+import { MS_NETWORK_ID } from '@onekeyhq/shared/src/config/presetNetworks';
 import { ETranslations } from '@onekeyhq/shared/src/locale';
 import { defaultLogger } from '@onekeyhq/shared/src/logger/logger';
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
@@ -34,6 +35,7 @@ import { openFiatCryptoUrl } from '@onekeyhq/shared/src/utils/openUrlUtils';
 import type { IToken } from '@onekeyhq/shared/types/token';
 
 import { useSupportNetworkId } from '../../../FiatCrypto/hooks';
+import { resolveSendNetworkTarget } from '../../../Send/utils/resolveSendNetworkTarget';
 import { HomeTestIDs } from '../../testIDs';
 
 import { RawActions } from './RawActions';
@@ -330,73 +332,61 @@ function WalletActionSend({
       return;
     }
 
-    navigation.pushModal(EModalRoutes.SignatureConfirmModal, {
-      screen: EModalSignatureConfirmRoutes.TxSelectToken,
-      params: {
-        hideZeroBalanceTokens: true,
-        keepDefaultZeroBalanceTokens: false,
-        showDeFiTokenSwitch: true,
-        aggregateTokenSelectorScreen:
-          EModalSignatureConfirmRoutes.TxSelectAggregateToken,
-        title: intl.formatMessage({ id: ETranslations.global_select_crypto }),
-        searchPlaceholder: intl.formatMessage({
-          id: ETranslations.global_search_asset,
-        }),
-        networkId: network.id,
-        accountId: account?.id ?? '',
-        isAllNetworks: network.isAllNetworks,
-        tokens: {
-          data: allTokens,
-          keys: allTokensKeys,
-          map,
-        },
-        tokenListState,
-        closeAfterSelect: false,
-        onSelect: async (token: IToken) => {
-          const settings =
-            await backgroundApiProxy.serviceNetwork.getVaultSettings({
-              networkId: token.networkId ?? '',
-            });
+    // Skip token selector: land on the transfer form with MS native token.
+    // User can switch network from the form (next to amount / network chip).
+    const target = await resolveSendNetworkTarget({
+      networkId: MS_NETWORK_ID,
+      walletId: wallet?.id,
+      indexedAccountId: indexedAccount?.id,
+      fallbackAccountId: account?.id,
+    });
 
-          if (
-            settings.mergeDeriveAssetsEnabled &&
-            network.isAllNetworks &&
-            !accountUtils.isOthersWallet({ walletId: wallet?.id ?? '' })
-          ) {
-            const defaultDeriveType =
-              await backgroundApiProxy.serviceNetwork.getGlobalDeriveTypeOfNetwork(
-                {
-                  networkId: token.networkId ?? '',
-                },
-              );
-            const { accounts } =
-              await backgroundApiProxy.serviceAccount.getAccountsByIndexedAccounts(
-                {
-                  indexedAccountIds: [indexedAccount?.id ?? ''],
-                  networkId: token.networkId ?? '',
-                  deriveType: defaultDeriveType,
-                },
-              );
-
+    if (!target.token) {
+      // Fallback: open selector if MS native token cannot be resolved.
+      navigation.pushModal(EModalRoutes.SignatureConfirmModal, {
+        screen: EModalSignatureConfirmRoutes.TxSelectToken,
+        params: {
+          hideZeroBalanceTokens: true,
+          keepDefaultZeroBalanceTokens: false,
+          showDeFiTokenSwitch: true,
+          aggregateTokenSelectorScreen:
+            EModalSignatureConfirmRoutes.TxSelectAggregateToken,
+          title: intl.formatMessage({ id: ETranslations.global_select_crypto }),
+          searchPlaceholder: intl.formatMessage({
+            id: ETranslations.global_search_asset,
+          }),
+          networkId: network.id,
+          accountId: account?.id ?? '',
+          isAllNetworks: network.isAllNetworks,
+          tokens: {
+            data: allTokens,
+            keys: allTokensKeys,
+            map,
+          },
+          tokenListState,
+          closeAfterSelect: false,
+          onSelect: async (token: IToken) => {
             navigation.push(EModalSignatureConfirmRoutes.TxDataInput, {
-              accountId: accounts?.[0]?.id ?? account?.id ?? '',
+              accountId: token.accountId ?? account?.id ?? '',
               networkId: token.networkId ?? network.id,
               isNFT: false,
               token,
               isAllNetworks: network?.isAllNetworks,
             });
-
-            return;
-          }
-
-          navigation.push(EModalSignatureConfirmRoutes.TxDataInput, {
-            accountId: token.accountId ?? account?.id ?? '',
-            networkId: token.networkId ?? network.id,
-            isNFT: false,
-            token,
-            isAllNetworks: network?.isAllNetworks,
-          });
+          },
         },
+      });
+      return;
+    }
+
+    navigation.pushModal(EModalRoutes.SignatureConfirmModal, {
+      screen: EModalSignatureConfirmRoutes.TxDataInput,
+      params: {
+        accountId: target.accountId,
+        networkId: target.networkId,
+        isNFT: false,
+        token: target.token,
+        isAllNetworks: false,
       },
     });
   }, [
@@ -449,7 +439,7 @@ function WalletActions({ ...rest }: IXStackProps) {
           <WalletActionReceive
             key="receive"
             customization={customization}
-            useSelector
+            directReceiveNetworkId={MS_NETWORK_ID}
             variant="home_full_row"
           />
         );

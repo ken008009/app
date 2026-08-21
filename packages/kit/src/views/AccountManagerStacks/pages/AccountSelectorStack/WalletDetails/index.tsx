@@ -52,8 +52,11 @@ import { swrKeys } from '@onekeyhq/shared/src/utils/swrCacheUtils';
 import { HiddenWalletRememberSwitch } from '../../../components/WalletEdit/HiddenWalletRememberSwitch';
 import { useAccountSelectorRoute } from '../../../router/useAccountSelectorRoute';
 import { AccountManagerTestIDs } from '../../../testIDs';
+import {
+  AS_ACCOUNT_LIST_ITEM_HEIGHT,
+  AS_PAGE_BG,
+} from '../accountSelectorTheme';
 
-import { AS_ACCOUNT_LIST_ITEM_HEIGHT, AS_PAGE_BG } from '../accountSelectorTheme';
 import { AccountSelectorAccountListItem } from './AccountSelectorAccountListItem';
 import { AccountSelectorAddAccountButton } from './AccountSelectorAddAccountButton';
 import { EmptyNoAccountsView, EmptyView } from './EmptyView';

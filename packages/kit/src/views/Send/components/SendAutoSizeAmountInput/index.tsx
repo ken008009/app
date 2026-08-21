@@ -202,6 +202,7 @@ type ISendAmountAutoSizeInputProps = {
   validator?: (value: string) => boolean;
   reversible?: boolean;
   tokenSymbol?: string;
+  compactTokenSymbol?: boolean;
   inlineTextAlignMode?: 'auto' | 'center';
   // Cap the display font (in px). Defaults to the full 56*scale ramp; pass a
   // smaller value to line the amount up with a sibling hero.
@@ -232,6 +233,7 @@ function SendAutoSizeAmountInputComponent(
     value: controlledValue,
     valueProps,
     tokenSymbol,
+    compactTokenSymbol,
     inlineTextAlignMode,
     maxFontSize: maxFontSizeProp,
     extraContent,
@@ -362,6 +364,7 @@ function SendAutoSizeAmountInputComponent(
     [tokenSymbol],
   );
   const shouldWrapTokenSymbol =
+    compactTokenSymbol ||
     (normalizedTokenSymbol?.length ?? 0) > INLINE_SYMBOL_MAX_LENGTH;
   const inlineTokenSymbol = shouldWrapTokenSymbol
     ? undefined

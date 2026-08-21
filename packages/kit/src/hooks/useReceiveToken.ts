@@ -10,11 +10,7 @@ import { EModalReceiveRoutes, EModalRoutes } from '@onekeyhq/shared/src/routes';
 import type { IModalReceiveParamList } from '@onekeyhq/shared/src/routes';
 import accountUtils from '@onekeyhq/shared/src/utils/accountUtils';
 import networkUtils from '@onekeyhq/shared/src/utils/networkUtils';
-import type {
-  IAccountToken,
-  IToken,
-  ITokenData,
-} from '@onekeyhq/shared/types/token';
+import type { IToken, ITokenData } from '@onekeyhq/shared/types/token';
 
 import backgroundApiProxy from '../background/instance/backgroundApiProxy';
 
@@ -58,11 +54,12 @@ function useReceiveToken({
   const handleOnReceive = useCallback(
     async ({
       token,
-      withAllAggregateTokens,
+      withAllAggregateTokens: _withAllAggregateTokens,
       sameModal,
       useSelector,
     }: {
       token?: IToken;
+      /** @deprecated Always loads aggregate catalog for receive; kept for callers. */
       withAllAggregateTokens?: boolean;
       sameModal?: boolean;
       useSelector?: boolean;
@@ -145,18 +142,12 @@ function useReceiveToken({
           });
         }
       } else {
-        let allAggregateTokenMap:
-          | Record<string, { tokens: IAccountToken[] }>
-          | undefined;
-        let allAggregateTokens: IAccountToken[] | undefined;
-
-        if (withAllAggregateTokens) {
-          const res =
-            await backgroundApiProxy.serviceToken.getAllAggregateTokenInfo();
+        // Receive must not depend on "wallet already holds assets". Always load
+        // the aggregate catalog so the token selector still lists common assets (and can
+        // drill into networks) even when the account balance list is empty or
+        // the account-token fetch races to an empty result.
+        const { allAggregateTokenMap, allAggregateTokens } =
           await backgroundApiProxy.serviceToken.getAllAggregateTokenInfo();
-          allAggregateTokenMap = res.allAggregateTokenMap;
-          allAggregateTokens = res.allAggregateTokens;
-        }
 
         const params = {
           allAggregateTokenMap,

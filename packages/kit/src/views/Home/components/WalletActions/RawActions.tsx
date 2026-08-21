@@ -4,6 +4,7 @@ import { Children, createContext, useContext } from 'react';
 import { useIntl } from 'react-intl';
 
 import type {
+  ColorTokens,
   IActionListProps,
   IButtonProps,
   IIconButtonProps,
@@ -22,7 +23,11 @@ import {
 } from '@onekeyhq/components';
 import { ETranslations } from '@onekeyhq/shared/src/locale';
 
-import { HOME_GOLD, HOME_GOLD_BORDER, HOME_TOKEN_CARD_BG } from '../../homeTheme';
+import {
+  HOME_GOLD,
+  HOME_GOLD_BORDER,
+  HOME_TOKEN_CARD_BG,
+} from '../../homeTheme';
 
 const HomeWalletActionsStyleContext = createContext(false);
 
@@ -53,7 +58,7 @@ function ActionItem({
   const visualDisabled = !!disabled;
   const effectiveDisabled = visualDisabled && !allowPressWhenDisabled;
 
-  let iconColor: string = '$icon';
+  let iconColor: ColorTokens = '$icon';
   if (visualDisabled) iconColor = '$iconDisabled';
   else if (highlighted) iconColor = '$iconInverse';
   else if (homeWalletStyle) iconColor = HOME_GOLD;
@@ -62,6 +67,15 @@ function ActionItem({
   if (visualDisabled) textColor = '$textDisabled';
   else if (highlighted) textColor = '$textInverse';
   else if (homeWalletStyle) textColor = '$text';
+
+  let actionBackground = homeWalletStyle ? HOME_TOKEN_CARD_BG : '$bgStrong';
+  let actionHoverBackground = homeWalletStyle ? '$bgHover' : '$bgStrongHover';
+  let actionPressBackground = homeWalletStyle ? '$bgActive' : '$bgStrongActive';
+  if (highlighted) {
+    actionBackground = '$bgPrimary';
+    actionHoverBackground = '$bgPrimaryHover';
+    actionPressBackground = '$bgPrimaryActive';
+  }
 
   if (showButtonStyle) {
     return (
@@ -92,13 +106,7 @@ function ActionItem({
         flexBasis={0}
         alignItems="center"
         justifyContent="center"
-        bg={
-          highlighted
-            ? '$bgPrimary'
-            : homeWalletStyle
-              ? HOME_TOKEN_CARD_BG
-              : '$bgStrong'
-        }
+        bg={actionBackground}
         borderWidth={homeWalletStyle ? 1 : 0}
         borderColor={homeWalletStyle ? HOME_GOLD_BORDER : undefined}
         borderRadius="$4"
@@ -106,20 +114,8 @@ function ActionItem({
         pb="$1"
         px="$1"
         userSelect="none"
-        hoverStyle={{
-          bg: highlighted
-            ? '$bgPrimaryHover'
-            : homeWalletStyle
-              ? '$bgHover'
-              : '$bgStrongHover',
-        }}
-        pressStyle={{
-          bg: highlighted
-            ? '$bgPrimaryActive'
-            : homeWalletStyle
-              ? '$bgActive'
-              : '$bgStrongActive',
-        }}
+        hoverStyle={{ bg: actionHoverBackground }}
+        pressStyle={{ bg: actionPressBackground }}
         focusable
         focusVisibleStyle={{
           outlineColor: '$focusRing',
@@ -343,12 +339,7 @@ function ActionMore({
             color={homeWalletStyle ? HOME_GOLD : '$icon'}
           />
         </Stack>
-        <SizableText
-          my="$1"
-          textAlign="center"
-          size="$bodySm"
-          color="$text"
-        >
+        <SizableText my="$1" textAlign="center" size="$bodySm" color="$text">
           {label}
         </SizableText>
       </Stack>

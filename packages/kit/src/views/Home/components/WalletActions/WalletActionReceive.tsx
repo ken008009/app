@@ -3,7 +3,10 @@ import { useCallback, useMemo } from 'react';
 
 import { useIntl } from 'react-intl';
 
+import type { IPageNavigationProp } from '@onekeyhq/components';
+import { Toast } from '@onekeyhq/components';
 import backgroundApiProxy from '@onekeyhq/kit/src/background/instance/backgroundApiProxy';
+import useAppNavigation from '@onekeyhq/kit/src/hooks/useAppNavigation';
 import { useBotWalletDeactivatedStatus } from '@onekeyhq/kit/src/hooks/useBotWalletDeactivatedStatus';
 import { useReceiveToken } from '@onekeyhq/kit/src/hooks/useReceiveToken';
 import { useUserWalletProfile } from '@onekeyhq/kit/src/hooks/useUserWalletProfile';
@@ -13,9 +16,13 @@ import { useHomeTokenListSnapshot } from '@onekeyhq/kit/src/states/jotai/context
 import { showBotWalletDisabledToast } from '@onekeyhq/kit/src/utils/botWalletDisabledToast';
 import { shouldBlockBotWalletReceive } from '@onekeyhq/kit/src/utils/botWalletStatusUtils';
 import { WALLET_TYPE_WATCHING } from '@onekeyhq/shared/src/consts/dbConsts';
+import { ETranslations } from '@onekeyhq/shared/src/locale';
 import { defaultLogger } from '@onekeyhq/shared/src/logger/logger';
 import type { IWalletActionBaseParams } from '@onekeyhq/shared/src/logger/scopes/wallet/scenes/walletActions';
+import type { IModalReceiveParamList } from '@onekeyhq/shared/src/routes';
+import { EModalReceiveRoutes, EModalRoutes } from '@onekeyhq/shared/src/routes';
 
+import { resolveSendNetworkTarget } from '../../../Send/utils/resolveSendNetworkTarget';
 import { HomeTestIDs } from '../../testIDs';
 
 import { RawActions } from './RawActions';
@@ -29,6 +36,7 @@ function WalletActionReceive({
   variant,
   sameModal,
   useSelector,
+  directReceiveNetworkId,
   showButtonStyle,
   highlighted,
 }: {
@@ -41,10 +49,13 @@ function WalletActionReceive({
   variant?: IWalletActionBaseParams['variant'];
   sameModal?: boolean;
   useSelector?: boolean;
+  directReceiveNetworkId?: string;
   showButtonStyle?: boolean;
   highlighted?: boolean;
 } = {}) {
   const intl = useIntl();
+  const navigation =
+    useAppNavigation<IPageNavigationProp<IModalReceiveParamList>>();
   const {
     activeAccount: {
       network,
@@ -119,6 +130,37 @@ function WalletActionReceive({
     });
     if (customization?.onPress) {
       void customization.onPress();
+    } else if (directReceiveNetworkId) {
+      const target = await resolveSendNetworkTarget({
+        networkId: directReceiveNetworkId,
+        walletId: wallet?.id,
+        indexedAccountId: indexedAccount?.id,
+        fallbackAccountId: account?.id,
+      });
+      if (target.token && target.accountId) {
+        const params = {
+          networkId: target.networkId,
+          accountId: target.accountId,
+          walletId: wallet?.id ?? '',
+          indexedAccountId: indexedAccount?.id,
+          token: target.token,
+          disableSelector: true,
+        };
+        if (sameModal) {
+          navigation.push(EModalReceiveRoutes.ReceiveToken, params);
+        } else {
+          navigation.pushModal(EModalRoutes.ReceiveModal, {
+            screen: EModalReceiveRoutes.ReceiveToken,
+            params,
+          });
+        }
+      } else {
+        Toast.error({
+          title: intl.formatMessage({
+            id: ETranslations.global_an_error_occurred,
+          }),
+        });
+      }
     } else {
       void handleOnReceive({
         withAllAggregateTokens: network?.isAllNetworks,
@@ -137,7 +179,12 @@ function WalletActionReceive({
     variant,
     isSoftwareWalletOnlyUser,
     customization,
+    directReceiveNetworkId,
     handleOnReceive,
+    intl,
+    account?.id,
+    indexedAccount?.id,
+    navigation,
     sameModal,
     useSelector,
   ]);

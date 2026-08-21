@@ -45,7 +45,8 @@ const bullets: ReadonlyArray<{
   },
   {
     icon: 'ShieldCheckDoneOutline',
-    messageId: ETranslations.onboarding_bullet_onekey_support_no_recovery_phrase,
+    messageId:
+      ETranslations.onboarding_bullet_onekey_support_no_recovery_phrase,
   },
 ];
 

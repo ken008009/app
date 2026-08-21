@@ -2,12 +2,7 @@ import { useCallback } from 'react';
 
 import { useIntl } from 'react-intl';
 
-import {
-  Button,
-  Icon,
-  SizableText,
-  YStack,
-} from '@onekeyhq/components';
+import { Button, Icon, SizableText, YStack } from '@onekeyhq/components';
 import { ETranslations } from '@onekeyhq/shared/src/locale';
 import { defaultLogger } from '@onekeyhq/shared/src/logger/logger';
 import { EOnboardingPagesV2 } from '@onekeyhq/shared/src/routes';

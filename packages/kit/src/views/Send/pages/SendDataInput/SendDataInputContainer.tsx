@@ -9,7 +9,9 @@ import { useIntl } from 'react-intl';
 import type { IPageNavigationProp } from '@onekeyhq/components';
 import {
   Alert,
+  Button,
   Form,
+  Icon,
   Page,
   SizableText,
   TextArea,
@@ -30,6 +32,7 @@ import {
 } from '@onekeyhq/kit/src/components/AddressInput';
 import { renderAddressSecurityHeaderRightButton } from '@onekeyhq/kit/src/components/AddressInput/AddressSecurityHeaderRightButton';
 import { ListItem } from '@onekeyhq/kit/src/components/ListItem';
+import { NetworkAvatar } from '@onekeyhq/kit/src/components/NetworkAvatar';
 import { Token } from '@onekeyhq/kit/src/components/Token';
 import { useAccountData } from '@onekeyhq/kit/src/hooks/useAccountData';
 import useAppNavigation from '@onekeyhq/kit/src/hooks/useAppNavigation';
@@ -53,6 +56,8 @@ import type {
   IModalSignatureConfirmParamList,
 } from '@onekeyhq/shared/src/routes';
 import {
+  EChainSelectorPages,
+  EModalRoutes,
   EModalSendRoutes,
   EModalSignatureConfirmRoutes,
 } from '@onekeyhq/shared/src/routes';
@@ -60,16 +65,20 @@ import accountUtils from '@onekeyhq/shared/src/utils/accountUtils';
 import hexUtils from '@onekeyhq/shared/src/utils/hexUtils';
 import { isReusableLightningRecipient } from '@onekeyhq/shared/src/utils/lnUrlUtils';
 import networkUtils from '@onekeyhq/shared/src/utils/networkUtils';
+import type { IServerNetwork } from '@onekeyhq/shared/types';
 import { EAccountSelectorSceneName } from '@onekeyhq/shared/types';
 import { EInputAddressChangeType } from '@onekeyhq/shared/types/address';
 import type { IAccountNFT } from '@onekeyhq/shared/types/nft';
 import { EQRCodeHandlerType } from '@onekeyhq/shared/types/qrCode';
 import type { IToken, ITokenFiat } from '@onekeyhq/shared/types/token';
 
+import { useAddressBookPick } from '../../../AddressBook/hooks/useAddressBook';
 import { HomeTokenListProviderMirror } from '../../../Home/components/HomeTokenListProvider/HomeTokenListProviderMirror';
 import { getAccountIdOnNetwork } from '../../../ScanQrCode/utils/getAccountIdOnNetwork';
 import { parseOnChainAmount } from '../../../ScanQrCode/utils/parseOnChainAmount';
 import { SendConfirmProviderMirror } from '../../components/SendConfirmProvider/SendConfirmProviderMirror';
+import { resolveSendNetworkTarget } from '../../utils/resolveSendNetworkTarget';
+import { SendAmountInputContainer } from '../SendAmountInput/SendAmountInputContainer';
 
 import RecipientQuickSelect from './RecipientQuickSelect';
 import {
@@ -112,6 +121,8 @@ type ISendDataInputRouteName =
 type ISendAmountInputParams =
   IModalSignatureConfirmParamList[EModalSignatureConfirmRoutes.TxAmountInput];
 
+const showRecipientQuickSelect = false;
+
 function SendDataInputContainer() {
   const intl = useIntl();
   const media = useMedia();
@@ -119,6 +130,7 @@ function SendDataInputContainer() {
   const [settings] = useSettingsPersistAtom();
   const navigation =
     useAppNavigation<IPageNavigationProp<ISendInputFlowParamList>>();
+  const pickAddressBookItem = useAddressBookPick();
 
   const addressInputChangeType = useRef(EInputAddressChangeType.Manual);
   const isNavigatingRef = useRef(false);
@@ -178,6 +190,7 @@ function SendDataInputContainer() {
   const {
     account,
     network,
+    wallet,
     vaultSettings,
     deriveType: senderDeriveType,
   } = useAccountData({
@@ -301,6 +314,57 @@ function SendDataInputContainer() {
 
   const form = useForm<IFormValues>(formOptions);
 
+  const handleSwitchSendNetwork = useCallback(() => {
+    navigation.pushModal(EModalRoutes.ChainSelectorModal, {
+      screen: EChainSelectorPages.ChainSelector,
+      params: {
+        defaultNetworkId: currentAccount.networkId,
+        excludeAllNetworkItem: true,
+        closeAfterSelect: true,
+        onSelect: async (selectedNetwork: IServerNetwork) => {
+          if (selectedNetwork.id === currentAccount.networkId) {
+            return;
+          }
+          const target = await resolveSendNetworkTarget({
+            networkId: selectedNetwork.id,
+            walletId: wallet?.id,
+            indexedAccountId: account?.indexedAccountId,
+            fallbackAccountId: currentAccount.accountId,
+          });
+          if (!target.token) {
+            Toast.error({
+              title: intl.formatMessage({
+                id: ETranslations.global_an_error_occurred,
+              }),
+            });
+            return;
+          }
+          setCurrentAccount({
+            accountId: target.accountId,
+            networkId: target.networkId,
+          });
+          setTokenInfo(target.token);
+          form.setValue('to', {
+            raw: '',
+            resolved: undefined,
+            pending: false,
+          });
+          form.setValue('networkId', target.networkId);
+          form.setValue('accountId', target.accountId);
+          setScannedAmount('');
+        },
+      },
+    });
+  }, [
+    account?.indexedAccountId,
+    currentAccount.accountId,
+    currentAccount.networkId,
+    form,
+    intl,
+    navigation,
+    wallet?.id,
+  ]);
+
   const memoValue = form.watch('memo') as string | undefined;
   const noteValue = form.watch('note') as string | undefined;
   const paymentIdValue = form.watch('paymentId') as string | undefined;
@@ -319,6 +383,10 @@ function SendDataInputContainer() {
   const toResolved = toValue?.resolved;
   const toAddressRaw = toValue?.raw;
   const toSimilarAddress = toValue?.similarAddress;
+  const isLightningNetwork = networkUtils.isLightningNetworkByNetworkId(
+    currentAccount.networkId,
+  );
+  const shouldEmbedAmountInput = !isNFT && !isLightningNetwork;
 
   const onScanResult = useCallback(
     async (result: IQRCodeHandlerParseResult<IChainValue>) => {
@@ -893,6 +961,24 @@ function SendDataInputContainer() {
     [displayMemoForm, isNoteOnlyChain, form],
   );
 
+  const handleOpenAddressBook = useCallback(() => {
+    void pickAddressBookItem({
+      networkId: currentAccount.networkId,
+      onPick: (item) => {
+        addressInputChangeType.current = EInputAddressChangeType.AddressBook;
+        fillRecipientFromQuickSelect({
+          selectedAddress: item.address,
+          selectedMemo: item.memo,
+          selectedNote: item.note,
+        });
+      },
+    });
+  }, [
+    currentAccount.networkId,
+    fillRecipientFromQuickSelect,
+    pickAddressBookItem,
+  ]);
+
   const shouldStayOnDataStepForQuickSelect = useCallback(
     ({
       selectedMemo,
@@ -1173,11 +1259,7 @@ function SendDataInputContainer() {
     >
       <Page.Header
         title={intl.formatMessage({
-          id: networkUtils.isLightningNetworkByNetworkId(
-            currentAccount.networkId,
-          )
-            ? ETranslations.send_title
-            : ETranslations.select_address__title,
+          id: ETranslations.send_title,
         })}
         headerRight={
           enableAllowListValidation
@@ -1250,6 +1332,19 @@ function SendDataInputContainer() {
             ) : null}
             <AddressInputField
               name="to"
+              labelAddon={
+                <Button
+                  icon="ContactsOutline"
+                  size="small"
+                  variant="tertiary"
+                  onPress={handleOpenAddressBook}
+                  testID="send-address-book-button"
+                >
+                  {intl.formatMessage({
+                    id: ETranslations.settings_address_book,
+                  })}
+                </Button>
+              }
               numberOfLines={
                 networkUtils.isLightningNetworkByNetworkId(
                   currentAccount.networkId,
@@ -1283,6 +1378,43 @@ function SendDataInputContainer() {
               enableCheckSimilarAddressInAddressBook
               hasQuickSelectMatches={hasQuickSelectMatches}
             />
+            {!isNFT ? (
+              <XStack
+                alignItems="center"
+                justifyContent="space-between"
+                mb="$2"
+                mt="$4"
+              >
+                <SizableText size="$bodyMdMedium">
+                  {intl.formatMessage({ id: ETranslations.send_amount })}
+                </SizableText>
+                <XStack
+                  alignItems="center"
+                  gap="$1.5"
+                  px="$2.5"
+                  py="$1.5"
+                  borderRadius="$full"
+                  bg="$bgStrong"
+                  borderWidth="$px"
+                  borderColor="$border"
+                  onPress={handleSwitchSendNetwork}
+                  testID="send-network-switcher"
+                >
+                  <NetworkAvatar
+                    networkId={currentAccount.networkId}
+                    size="$5"
+                  />
+                  <SizableText size="$bodyMdMedium">
+                    {network?.shortname || network?.name || ''}
+                  </SizableText>
+                  <Icon
+                    name="ChevronDownSmallOutline"
+                    size="$4"
+                    color="$iconSubdued"
+                  />
+                </XStack>
+              </XStack>
+            ) : null}
             {toSimilarAddress ? (
               <Alert
                 type="warning"
@@ -1292,24 +1424,50 @@ function SendDataInputContainer() {
               />
             ) : null}
             {renderDataInput()}
-            <RecipientQuickSelect
-              accountId={currentAccount.accountId}
-              networkId={currentAccount.networkId}
-              senderDeriveType={senderDeriveType}
-              searchKey={toAddressRaw}
-              isSearchMode={!!toAddressRaw?.trim()}
-              activeTab={quickSelectActiveTab}
-              onActiveTabChange={setQuickSelectActiveTab}
-              onInputTypeChange={handleAddressInputChangeType}
-              onMatchStatusChange={setHasQuickSelectMatches}
-              onSelect={handleQuickSelectRecipient}
-              hideTabs={recipientHiddenTabs}
-              keylessWalletsOnly={keylessWalletsOnly}
-            />
+            {showRecipientQuickSelect ? (
+              <RecipientQuickSelect
+                accountId={currentAccount.accountId}
+                networkId={currentAccount.networkId}
+                senderDeriveType={senderDeriveType}
+                searchKey={toAddressRaw}
+                isSearchMode={!!toAddressRaw?.trim()}
+                activeTab={quickSelectActiveTab}
+                onActiveTabChange={setQuickSelectActiveTab}
+                onInputTypeChange={handleAddressInputChangeType}
+                onMatchStatusChange={setHasQuickSelectMatches}
+                onSelect={handleQuickSelectRecipient}
+                hideTabs={recipientHiddenTabs}
+                keylessWalletsOnly={keylessWalletsOnly}
+              />
+            ) : null}
+            {shouldEmbedAmountInput ? (
+              <SendAmountInputContainer
+                key={`${currentAccount.networkId}:${tokenInfo?.address ?? ''}:${scannedAmount}`}
+                embedded
+                params={{
+                  networkId: currentAccount.networkId,
+                  accountId: currentAccount.accountId,
+                  isNFT,
+                  token: tokenInfo,
+                  nfts,
+                  recipientAddress: toResolved ?? '',
+                  recipientMemo: memoValue?.trim() || undefined,
+                  recipientPaymentId: paymentIdValue || undefined,
+                  recipientNote: noteValue || undefined,
+                  recipientIsContract: toValue?.isContract,
+                  amount: scannedAmount || sendAmount || undefined,
+                  isAllNetworks,
+                  onSuccess,
+                  onFail,
+                  onCancel,
+                }}
+              />
+            ) : null}
           </Form>
         </AccountSelectorProviderMirror>
       </Page.Body>
-      {(toResolved && !toPending) || isSubmitting ? (
+      {!shouldEmbedAmountInput &&
+      ((toResolved && !toPending) || isSubmitting) ? (
         <Page.Footer>
           <Page.FooterActions
             onConfirm={handleNavigateToAmountInput}

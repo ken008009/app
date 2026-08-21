@@ -306,9 +306,9 @@ describe('Default account naming (no hash)', () => {
     expect(
       accountUtils.buildHDAccountName({ pathIndex: 0, namePrefix: 'EVM' }),
     ).toBe('EVM 1');
-    expect(
-      accountUtils.buildBaseAccountName({ nextAccountId: 1 }),
-    ).toBe('Account 1');
+    expect(accountUtils.buildBaseAccountName({ nextAccountId: 1 })).toBe(
+      'Account 1',
+    );
   });
 
   test('normalizeLegacyDefaultAccountName strips Account #N', () => {
@@ -318,8 +318,8 @@ describe('Default account naming (no hash)', () => {
     expect(accountUtils.normalizeLegacyDefaultAccountName('Account 1')).toBe(
       'Account 1',
     );
-    expect(accountUtils.normalizeLegacyDefaultAccountName('My Account #1')).toBe(
-      'My Account #1',
-    );
+    expect(
+      accountUtils.normalizeLegacyDefaultAccountName('My Account #1'),
+    ).toBe('My Account #1');
   });
 });

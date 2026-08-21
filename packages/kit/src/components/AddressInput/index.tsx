@@ -1,4 +1,4 @@
-import type { ComponentProps, FC } from 'react';
+import type { ComponentProps, FC, ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useIntl } from 'react-intl';
@@ -175,6 +175,7 @@ type IAddressInputProps = Omit<
   enableCheckSimilarAddressInAddressBook?: boolean;
   onScanResult?: IScanPluginProps['onScanResult'];
   hasQuickSelectMatches?: boolean;
+  labelAddon?: ReactNode;
 };
 
 export type IAddressQueryResult = {
@@ -824,6 +825,7 @@ export function AddressInputField(
     networkId,
     accountId,
     name,
+    labelAddon,
     hideNonBackedUpWallet,
     hasQuickSelectMatches,
   } = props;
@@ -867,6 +869,7 @@ export function AddressInputField(
     <AddressInputContext.Provider value={contextValue}>
       <Form.Field
         label={intl.formatMessage({ id: ETranslations.global_recipient })}
+        labelAddon={labelAddon}
         name={name}
         description={hintDescription}
         renderErrorMessage={

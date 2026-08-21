@@ -33,6 +33,7 @@ import type {
   IAccountDeriveInfo,
   IAccountDeriveTypes,
 } from '@onekeyhq/kit-bg/src/vaults/types';
+import { MS_NETWORK_ID } from '@onekeyhq/shared/src/config/presetNetworks';
 import {
   EAppEventBusNames,
   appEventBus,
@@ -121,6 +122,7 @@ function ReceiveToken() {
   >(account);
 
   const isBtcUsedAddressVerifyMode = btcUsedAddress && btcUsedAddressPath;
+  const isMsNetwork = networkId === MS_NETWORK_ID;
 
   const displayAddress = isBtcUsedAddressVerifyMode
     ? btcUsedAddress
@@ -160,6 +162,7 @@ function ReceiveToken() {
     accountUtils.isHwWallet({
       walletId,
     });
+  const useCompactMsLayout = isMsNetwork && !isHardwareWallet;
 
   const shouldShowAddress = useMemo(() => {
     if (!isHardwareWallet) {
@@ -591,7 +594,19 @@ function ReceiveToken() {
     let addressContent: ReactNode;
 
     if (shouldShowAddress) {
-      addressContent = <HighlightAddress address={displayAddress} />;
+      addressContent = useCompactMsLayout ? (
+        <SizableText
+          fontFamily="$monoMedium"
+          size="$bodyMd"
+          flexShrink={1}
+          textAlign="center"
+          $platform-web={{ wordBreak: 'break-all' }}
+        >
+          {displayAddress}
+        </SizableText>
+      ) : (
+        <HighlightAddress address={displayAddress} />
+      );
     } else {
       const maskedText = Array.from({ length: 11 })
         .map(() => '****')
@@ -640,6 +655,7 @@ function ReceiveToken() {
     wallet,
     shouldShowAddress,
     handleCopyAddress,
+    useCompactMsLayout,
   ]);
 
   const renderReceiveFooter = useCallback(() => {
@@ -781,7 +797,12 @@ function ReceiveToken() {
     if (!displayAddress) return null;
 
     return (
-      <YStack flex={1} justifyContent="center" alignItems="center">
+      <YStack
+        flex={useCompactMsLayout ? undefined : 1}
+        mt={useCompactMsLayout ? '$8' : undefined}
+        justifyContent="center"
+        alignItems="center"
+      >
         <YStack
           width={264}
           height={264}
@@ -858,6 +879,7 @@ function ReceiveToken() {
     shouldShowQRCode,
     handleVerifyOnDevicePress,
     intl,
+    useCompactMsLayout,
   ]);
 
   const isPressable = useMemo(() => {
@@ -869,7 +891,47 @@ function ReceiveToken() {
         title={intl.formatMessage({ id: ETranslations.global_receive })}
       />
       <Page.Body flex={1} pb="$5" px="$5">
+        {isMsNetwork ? (
+          <YStack
+            mt="$3"
+            px="$4"
+            py="$3"
+            borderRadius="$3"
+            bg="$bgStrong"
+            alignItems="center"
+          >
+            <SizableText size="$bodyLgMedium" textAlign="center">
+              {intl.formatMessage(
+                {
+                  id: ETranslations.receive_send_asset_warning_message,
+                },
+                {
+                  network: token?.symbol ?? network?.name ?? '',
+                },
+              )}
+            </SizableText>
+          </YStack>
+        ) : null}
         {renderReceiveQrCode()}
+        {useCompactMsLayout && shouldShowAddress ? (
+          <YStack
+            mt="$5"
+            px="$4"
+            py="$4"
+            gap="$3"
+            borderRadius="$3"
+            bg="$bgSubdued"
+            alignItems="center"
+          >
+            <SizableText size="$bodyMd" color="$textSubdued">
+              {intl.formatMessage({ id: ETranslations.global_address })}
+            </SizableText>
+            <XStack width="100%" gap="$3" alignItems="center">
+              {renderAddress()}
+              {renderCopyAddressButton()}
+            </XStack>
+          </YStack>
+        ) : null}
         <YStack gap="$2">
           {banner && shouldShowQRCode && !isBtcUsedAddressVerifyMode ? (
             <XStack
@@ -924,7 +986,9 @@ function ReceiveToken() {
           ) : null}
         </YStack>
       </Page.Body>
-      <Page.Footer>{renderReceiveFooter()}</Page.Footer>
+      {useCompactMsLayout ? null : (
+        <Page.Footer>{renderReceiveFooter()}</Page.Footer>
+      )}
     </Page>
   );
 }

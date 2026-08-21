@@ -203,6 +203,7 @@ function TokenSelector() {
     forceShowActiveAccountTokenList,
     aggregateTokenSelectorScreen,
     allAggregateTokenMap,
+    allAggregateTokens,
     hideZeroBalanceTokens,
     keepDefaultZeroBalanceTokens,
     enableNetworkAfterSelect,
@@ -1060,7 +1061,7 @@ function TokenSelector() {
       // Nest-then-flatten across child-network responses with the SAME sum
       // semantics as a single-network nest(networkId) so all-networks aggregate
       // rows resolve real fiat (per-row maps do not carry aggregate `$key`s).
-      let nestedAggregateTokenMap: Record<
+      const nestedAggregateTokenMap: Record<
         string,
         Record<string, ITokenFiat>
       > = {};
@@ -1132,6 +1133,32 @@ function TokenSelector() {
     tokenSelectorSearchFilterContext,
   ]);
 
+  // Receive (`searchAll`) must not treat "no balance tokens" as empty. Merge the
+  // aggregate catalog so users can still pick a crypto when the account list is
+  // empty or the wallet-token fetch raced to []. Send selectors leave this off.
+  const displaySelectorTokenList = useMemo(() => {
+    if (!searchAll || !allAggregateTokens?.length) {
+      return selectorTokenList;
+    }
+    const existingKeys = new Set<string>();
+    for (const token of selectorTokenList.tokens) {
+      existingKeys.add(token.$key);
+    }
+    for (const token of selectorTokenList.smallBalanceTokens) {
+      existingKeys.add(token.$key);
+    }
+    const catalogExtras = allAggregateTokens.filter(
+      (token) => !existingKeys.has(token.$key),
+    );
+    if (catalogExtras.length === 0) {
+      return selectorTokenList;
+    }
+    return {
+      tokens: [...selectorTokenList.tokens, ...catalogExtras],
+      smallBalanceTokens: selectorTokenList.smallBalanceTokens,
+    };
+  }, [searchAll, allAggregateTokens, selectorTokenList]);
+
   return (
     <Page
       lazyLoad
@@ -1163,7 +1190,7 @@ function TokenSelector() {
           scopedActiveAccountTokenList={scopedActiveTokenList}
           scopedActiveAccountTokenListState={scopedActiveTokenListState}
           scopedActiveAccountTokenListMap={scopedActiveTokenListMap}
-          tokenSelectorTokenList={selectorTokenList}
+          tokenSelectorTokenList={displaySelectorTokenList}
           tokenSelectorTokenListMap={selectorTokenListMap}
           tokenSelectorAggregateTokenListMap={selectorAggregateTokenListMap}
           tokenSelectorAggregateTokenFiatMap={selectorAggregateTokenFiatMap}
@@ -1188,6 +1215,14 @@ function TokenSelector() {
           hideBalanceAndValue={hideBalanceAndValue}
           emptyProps={{
             mt: '18%',
+            // Receive must not use the send empty copy ("当前钱包中没有资产").
+            ...(searchAll
+              ? {
+                  title: intl.formatMessage({
+                    id: ETranslations.receive_token_list_footer_text,
+                  }),
+                }
+              : null),
           }}
         />
       </Page.Body>

@@ -48,10 +48,7 @@ import { EAccountSelectorSceneName } from '@onekeyhq/shared/types';
 import { useFindNetworksWithoutAccount } from '../../hooks/useFindNetworksWithoutAccount';
 import { ChainSelectorTestIDs } from '../../testIDs';
 
-import {
-  NetworkContent,
-  defaultChainSelectorNetworks,
-} from './NetworkContent';
+import { NetworkContent, defaultChainSelectorNetworks } from './NetworkContent';
 import PortfolioContent from './PortfolioContent';
 import { TabSwitcher } from './TabSwitcher';
 
@@ -339,17 +336,16 @@ function UnifiedNetworkSelector() {
             formattedAccountNetworkValues,
             accountDeFiOverview: _accountDeFiOverview,
             zeroValue,
-          } =
-            await backgroundApiProxy.serviceNetwork.sortChainSelectorNetworksByValue(
-              {
-                walletId: accountUtils.getWalletIdFromAccountId({
-                  accountId: _accountsValue?.accountId ?? '',
-                }),
-                chainSelectorNetworks: _chainSelectorNetworks,
-                accountNetworkValues: _accountsValue?.value ?? {},
-                localDeFiOverview: _localDeFiOverview[0]?.overview ?? {},
-              },
-            );
+          } = await backgroundApiProxy.serviceNetwork.sortChainSelectorNetworksByValue(
+            {
+              walletId: accountUtils.getWalletIdFromAccountId({
+                accountId: _accountsValue?.accountId ?? '',
+              }),
+              chainSelectorNetworks: _chainSelectorNetworks,
+              accountNetworkValues: _accountsValue?.value ?? {},
+              localDeFiOverview: _localDeFiOverview[0]?.overview ?? {},
+            },
+          );
 
           return {
             accountNetworkValues: formattedAccountNetworkValues ?? {},
