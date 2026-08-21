@@ -9,7 +9,7 @@ import { ENetworkStatus } from '@onekeyhq/shared/types';
 import platformEnv from '../platformEnv';
 
 export const MS_NETWORK_ID = 'evm--1944873742';
-export const MS_RPC_URL = 'https://rpc.ispaypaly.org';
+export const MS_RPC_URL = 'https://rpc.msworldpay.com';
 export const MS_WSS_URL = 'wss://ws.ispaypaly.org';
 
 export const dangerAggregateTokenNetworkRepresent: IServerNetwork = {
@@ -1244,12 +1244,12 @@ const ms: IServerNetwork = {
   'chainId': '1944873742',
   'id': MS_NETWORK_ID,
   // User-facing chain name. RPC identity stays `evm--1944873742`.
-  'name': 'MS',
+  'name': 'ms',
   // Native gas ticker shown in TokenListBlock (MSUSD).
   'symbol': 'MSUSD',
   'code': 'ispay',
   'shortcode': 'ispay',
-  'shortname': 'MS',
+  'shortname': 'ms',
   'decimals': 18,
   'feeMeta': {
     'decimals': 9,
