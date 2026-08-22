@@ -582,3 +582,329 @@ index 1867ec9..c29dfb2 100644
  };
  
  } // namespace margelo::nitro
+diff --git a/node_modules/react-native-nitro-modules/lib/commonjs/turbomodule/NativeNitroModules.js b/node_modules/react-native-nitro-modules/lib/commonjs/turbomodule/NativeNitroModules.js
+index 9650b7d..23e047a 100644
+--- a/node_modules/react-native-nitro-modules/lib/commonjs/turbomodule/NativeNitroModules.js
++++ b/node_modules/react-native-nitro-modules/lib/commonjs/turbomodule/NativeNitroModules.js
+@@ -7,33 +7,53 @@ exports.NitroModules = void 0;
+ exports.isRuntimeAlive = isRuntimeAlive;
+ var _reactNative = require("react-native");
+ var _ModuleNotFoundError = require("../ModuleNotFoundError");
+-// 1. Get (and initialize) the TurboModule
+-let turboModule;
+-try {
+-  turboModule = _reactNative.TurboModuleRegistry.getEnforcing('NitroModules');
+-} catch (e) {
+-  throw new _ModuleNotFoundError.ModuleNotFoundError(e);
+-}
+ 
+-// 2. Install Dispatcher and install `NitroModulesProxy` into the Runtime's `global`
+-const errorMessage = turboModule.install();
+-if (errorMessage != null) {
+-  throw new Error(`Failed to install Nitro: ${errorMessage}`);
++// OneKey patch: see src/turbomodule/NativeNitroModules.ts
++let installState = 'none';
++function ensureInstalled() {
++  if (installState === 'done') {
++    return;
++  }
++  if (installState === 'installing') {
++    throw new Error('[NitroModules] re-entrant access during install(); a hybrid imported NitroModules mid-install');
++  }
++  installState = 'installing';
++  try {
++    let turboModule;
++    try {
++      turboModule = _reactNative.TurboModuleRegistry.getEnforcing('NitroModules');
++    } catch (e) {
++      throw new _ModuleNotFoundError.ModuleNotFoundError(e);
++    }
++    const errorMessage = turboModule.install();
++    if (errorMessage != null) {
++      throw new Error(`Failed to install Nitro: ${errorMessage}`);
++    }
++    if (global.NitroModulesProxy == null) {
++      throw new _ModuleNotFoundError.ModuleNotFoundError(new Error('NitroModules was installed, but `global.NitroModulesProxy` was null!'));
++    }
++    installState = 'done';
++  } catch (e) {
++    installState = 'none';
++    throw e;
++  }
+ }
+-
+-// 3. Find `NitroModulesProxy` in `global`
+-// @ts-expect-error
+-const NitroModules = exports.NitroModules = global.NitroModulesProxy;
+-if (NitroModules == null) {
+-  const cause = new Error('NitroModules was installed, but `global.NitroModulesProxy` was null!');
+-  throw new _ModuleNotFoundError.ModuleNotFoundError(cause);
++function getImpl() {
++  ensureInstalled();
++  return global.NitroModulesProxy;
+ }
+-
+-// Double-check native version
++const NitroModules = exports.NitroModules = new Proxy({}, {
++  get(_target, prop, receiver) {
++    const impl = getImpl();
++    const value = Reflect.get(impl, prop, receiver);
++    return typeof value === 'function' ? value.bind(impl) : value;
++  }
++});
++ensureInstalled();
+ if (__DEV__) {
+   const jsVersion = require('react-native-nitro-modules/package.json').version;
+-  if (jsVersion !== NitroModules.version) {
+-    console.warn(`The native Nitro Modules core runtime version is ${NitroModules.version}, but the JS code is using version ${jsVersion}. ` + `This could lead to undefined behaviour! Make sure to keep your Nitro versions in sync.`);
++  if (jsVersion !== global.NitroModulesProxy.version) {
++    console.warn(`The native Nitro Modules core runtime version is ${global.NitroModulesProxy.version}, but the JS code is using version ${jsVersion}. ` + `This could lead to undefined behaviour! Make sure to keep your Nitro versions in sync.`);
+   }
+ }
+ function isRuntimeAlive() {
+@@ -41,4 +61,4 @@ function isRuntimeAlive() {
+   const dispatcher = globalThis.__nitroDispatcher;
+   return cache != null && dispatcher != null;
+ }
+-//# sourceMappingURL=NativeNitroModules.js.map
+\ No newline at end of file
++//# sourceMappingURL=NativeNitroModules.js.map
+diff --git a/node_modules/react-native-nitro-modules/lib/commonjs/worklets/installWorkletsSupport.js b/node_modules/react-native-nitro-modules/lib/commonjs/worklets/installWorkletsSupport.js
+index 2028e68..330478b 100644
+--- a/node_modules/react-native-nitro-modules/lib/commonjs/worklets/installWorkletsSupport.js
++++ b/node_modules/react-native-nitro-modules/lib/commonjs/worklets/installWorkletsSupport.js
+@@ -10,7 +10,9 @@ function installWorkletsSupport() {
+     const {
+       registerCustomSerializable
+     } = require('react-native-worklets');
+-    const boxedNitroProxy = _NitroModules.NitroModules.box(_NitroModules.NitroModules);
++    // OneKey patch: box native NitroModulesProxy, not the JS forwarding Proxy.
++    const nativeProxy = global.NitroModulesProxy;
++    const boxedNitroProxy = nativeProxy.box(nativeProxy);
+     registerCustomSerializable({
+       name: 'nitro.HybridObject',
+       determine(value) {
+diff --git a/node_modules/react-native-nitro-modules/lib/module/turbomodule/NativeNitroModules.js b/node_modules/react-native-nitro-modules/lib/module/turbomodule/NativeNitroModules.js
+index 826cd3e..2b76e0c 100644
+--- a/node_modules/react-native-nitro-modules/lib/module/turbomodule/NativeNitroModules.js
++++ b/node_modules/react-native-nitro-modules/lib/module/turbomodule/NativeNitroModules.js
+@@ -2,33 +2,53 @@
+ 
+ import { TurboModuleRegistry } from 'react-native';
+ import { ModuleNotFoundError } from '../ModuleNotFoundError';
+-// 1. Get (and initialize) the TurboModule
+-let turboModule;
+-try {
+-  turboModule = TurboModuleRegistry.getEnforcing('NitroModules');
+-} catch (e) {
+-  throw new ModuleNotFoundError(e);
+-}
+ 
+-// 2. Install Dispatcher and install `NitroModulesProxy` into the Runtime's `global`
+-const errorMessage = turboModule.install();
+-if (errorMessage != null) {
+-  throw new Error(`Failed to install Nitro: ${errorMessage}`);
++// OneKey patch: see src/turbomodule/NativeNitroModules.ts
++let installState = 'none';
++function ensureInstalled() {
++  if (installState === 'done') {
++    return;
++  }
++  if (installState === 'installing') {
++    throw new Error('[NitroModules] re-entrant access during install(); a hybrid imported NitroModules mid-install');
++  }
++  installState = 'installing';
++  try {
++    let turboModule;
++    try {
++      turboModule = TurboModuleRegistry.getEnforcing('NitroModules');
++    } catch (e) {
++      throw new ModuleNotFoundError(e);
++    }
++    const errorMessage = turboModule.install();
++    if (errorMessage != null) {
++      throw new Error(`Failed to install Nitro: ${errorMessage}`);
++    }
++    if (global.NitroModulesProxy == null) {
++      throw new ModuleNotFoundError(new Error('NitroModules was installed, but `global.NitroModulesProxy` was null!'));
++    }
++    installState = 'done';
++  } catch (e) {
++    installState = 'none';
++    throw e;
++  }
+ }
+-
+-// 3. Find `NitroModulesProxy` in `global`
+-// @ts-expect-error
+-export const NitroModules = global.NitroModulesProxy;
+-if (NitroModules == null) {
+-  const cause = new Error('NitroModules was installed, but `global.NitroModulesProxy` was null!');
+-  throw new ModuleNotFoundError(cause);
++function getImpl() {
++  ensureInstalled();
++  return global.NitroModulesProxy;
+ }
+-
+-// Double-check native version
++export const NitroModules = new Proxy({}, {
++  get(_target, prop, receiver) {
++    const impl = getImpl();
++    const value = Reflect.get(impl, prop, receiver);
++    return typeof value === 'function' ? value.bind(impl) : value;
++  }
++});
++ensureInstalled();
+ if (__DEV__) {
+   const jsVersion = require('react-native-nitro-modules/package.json').version;
+-  if (jsVersion !== NitroModules.version) {
+-    console.warn(`The native Nitro Modules core runtime version is ${NitroModules.version}, but the JS code is using version ${jsVersion}. ` + `This could lead to undefined behaviour! Make sure to keep your Nitro versions in sync.`);
++  if (jsVersion !== global.NitroModulesProxy.version) {
++    console.warn(`The native Nitro Modules core runtime version is ${global.NitroModulesProxy.version}, but the JS code is using version ${jsVersion}. ` + `This could lead to undefined behaviour! Make sure to keep your Nitro versions in sync.`);
+   }
+ }
+ export function isRuntimeAlive() {
+@@ -36,4 +56,4 @@ export function isRuntimeAlive() {
+   const dispatcher = globalThis.__nitroDispatcher;
+   return cache != null && dispatcher != null;
+ }
+-//# sourceMappingURL=NativeNitroModules.js.map
+\ No newline at end of file
++//# sourceMappingURL=NativeNitroModules.js.map
+diff --git a/node_modules/react-native-nitro-modules/lib/module/worklets/installWorkletsSupport.js b/node_modules/react-native-nitro-modules/lib/module/worklets/installWorkletsSupport.js
+index 0d40d1d..1a76ae2 100644
+--- a/node_modules/react-native-nitro-modules/lib/module/worklets/installWorkletsSupport.js
++++ b/node_modules/react-native-nitro-modules/lib/module/worklets/installWorkletsSupport.js
+@@ -6,7 +6,8 @@ export function installWorkletsSupport() {
+     const {
+       registerCustomSerializable
+     } = require('react-native-worklets');
+-    const boxedNitroProxy = NitroModules.box(NitroModules);
++    const nativeProxy = global.NitroModulesProxy;
++    const boxedNitroProxy = nativeProxy.box(nativeProxy);
+     registerCustomSerializable({
+       name: 'nitro.HybridObject',
+       determine(value) {
+diff --git a/node_modules/react-native-nitro-modules/src/turbomodule/NativeNitroModules.ts b/node_modules/react-native-nitro-modules/src/turbomodule/NativeNitroModules.ts
+index a5e1a1b..435d7b7 100644
+--- a/node_modules/react-native-nitro-modules/src/turbomodule/NativeNitroModules.ts
++++ b/node_modules/react-native-nitro-modules/src/turbomodule/NativeNitroModules.ts
+@@ -12,37 +12,79 @@ interface Spec extends TurboModule {
+   install(): string | undefined
+ }
+ 
+-// 1. Get (and initialize) the TurboModule
+-let turboModule: Spec | undefined
+-try {
+-  turboModule = TurboModuleRegistry.getEnforcing<Spec>('NitroModules')
+-} catch (e) {
+-  throw new ModuleNotFoundError(e)
+-}
++// OneKey patch: install must finish before createHybridObject / box() run.
++// Do NOT return fake JS stubs — native box()/HybridFunction expects real
++// HybridObject pointers; stubs caused SIGSEGV after fixing the undefined error.
++type InstallState = 'none' | 'installing' | 'done'
++let installState: InstallState = 'none'
+ 
+-// 2. Install Dispatcher and install `NitroModulesProxy` into the Runtime's `global`
+-const errorMessage = turboModule.install()
+-if (errorMessage != null) {
+-  throw new Error(`Failed to install Nitro: ${errorMessage}`)
++function ensureInstalled(): void {
++  if (installState === 'done') {
++    return
++  }
++  if (installState === 'installing') {
++    throw new Error(
++      '[NitroModules] re-entrant access during install(); a hybrid imported NitroModules mid-install',
++    )
++  }
++  installState = 'installing'
++  try {
++    let turboModule: Spec
++    try {
++      turboModule = TurboModuleRegistry.getEnforcing<Spec>('NitroModules')
++    } catch (e) {
++      throw new ModuleNotFoundError(e)
++    }
++    const errorMessage = turboModule.install()
++    if (errorMessage != null) {
++      throw new Error(`Failed to install Nitro: ${errorMessage}`)
++    }
++    // @ts-expect-error Nitro installs onto global
++    if (global.NitroModulesProxy == null) {
++      throw new ModuleNotFoundError(
++        new Error(
++          'NitroModules was installed, but `global.NitroModulesProxy` was null!',
++        ),
++      )
++    }
++    installState = 'done'
++  } catch (e) {
++    installState = 'none'
++    throw e
++  }
+ }
+ 
+-// 3. Find `NitroModulesProxy` in `global`
+-// @ts-expect-error
+-export const NitroModules = global.NitroModulesProxy as NitroModulesProxy
+-if (NitroModules == null) {
+-  const cause = new Error(
+-    'NitroModules was installed, but `global.NitroModulesProxy` was null!'
+-  )
+-  throw new ModuleNotFoundError(cause)
++function getImpl(): NitroModulesProxy {
++  ensureInstalled()
++  // @ts-expect-error Nitro installs onto global
++  return global.NitroModulesProxy as NitroModulesProxy
+ }
+ 
++// Stable export for circular importers: never `undefined`, always forwards to
++// the real native proxy after ensureInstalled().
++export const NitroModules: NitroModulesProxy = new Proxy(
++  {} as NitroModulesProxy,
++  {
++    get(_target, prop, receiver) {
++      const impl = getImpl()
++      const value = Reflect.get(impl, prop, receiver)
++      return typeof value === 'function' ? value.bind(impl) : value
++    },
++  },
++)
++
++// Install eagerly when this module loads (same as upstream, but via ensureInstalled).
++ensureInstalled()
++
+ // Double-check native version
+ if (__DEV__) {
+   const jsVersion = require('react-native-nitro-modules/package.json').version
+-  if (jsVersion !== NitroModules.version) {
++  // @ts-expect-error
++  if (jsVersion !== global.NitroModulesProxy.version) {
+     console.warn(
+-      `The native Nitro Modules core runtime version is ${NitroModules.version}, but the JS code is using version ${jsVersion}. ` +
+-        `This could lead to undefined behaviour! Make sure to keep your Nitro versions in sync.`
++      // @ts-expect-error
++      `The native Nitro Modules core runtime version is ${global.NitroModulesProxy.version}, but the JS code is using version ${jsVersion}. ` +
++        `This could lead to undefined behaviour! Make sure to keep your Nitro versions in sync.`,
+     )
+   }
+ }
+diff --git a/node_modules/react-native-nitro-modules/src/worklets/installWorkletsSupport.ts b/node_modules/react-native-nitro-modules/src/worklets/installWorkletsSupport.ts
+index bd7b20e..2c17a6b 100644
+--- a/node_modules/react-native-nitro-modules/src/worklets/installWorkletsSupport.ts
++++ b/node_modules/react-native-nitro-modules/src/worklets/installWorkletsSupport.ts
+@@ -6,7 +6,11 @@ export function installWorkletsSupport() {
+     const { registerCustomSerializable } =
+       require('react-native-worklets') as typeof import('react-native-worklets')
+ 
+-    const boxedNitroProxy = NitroModules.box(NitroModules)
++    // OneKey patch: must box the *native* NitroModulesProxy, not the JS
++    // forwarding Proxy export (boxing the JS Proxy caused Android Release SIGSEGV).
++    // @ts-expect-error Nitro installs onto global
++    const nativeProxy = global.NitroModulesProxy as typeof NitroModules
++    const boxedNitroProxy = nativeProxy.box(nativeProxy)
+     registerCustomSerializable({
+       name: 'nitro.HybridObject',
+       determine(value): value is HybridObject<{}> {

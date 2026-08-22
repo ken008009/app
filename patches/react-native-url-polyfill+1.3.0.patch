@@ -1,3 +1,75 @@
+diff --git a/node_modules/react-native-url-polyfill/js/URL.js b/node_modules/react-native-url-polyfill/js/URL.js
+index 720fcff..6324aa5 100644
+--- a/node_modules/react-native-url-polyfill/js/URL.js
++++ b/node_modules/react-native-url-polyfill/js/URL.js
+@@ -1,14 +1,61 @@
+-import {NativeModules} from 'react-native';
++import {NativeModules, TurboModuleRegistry} from 'react-native';
+ import {URL as whatwgUrl} from 'whatwg-url-without-unicode';
+ 
+ let BLOB_URL_PREFIX = null;
+ 
+-const {BlobModule} = NativeModules;
++// OneKey patch: do NOT destructure NativeModules.BlobModule at top-level.
++// On Android Release + bridgeless, NativeModules can be undefined during early
++// polyfill evaluation → TypeError "Cannot read property 'BlobModule' of
++// undefined" and a white-screen crash. Prefer TurboModule, then optional
++// NativeModules access.
++function resolveBlobModule() {
++  try {
++    const turbo = TurboModuleRegistry.get('BlobModule');
++    if (turbo) {
++      return turbo;
++    }
++  } catch (_e) {
++    // TurboModule not ready / not linked.
++  }
++
++  try {
++    return NativeModules?.BlobModule;
++  } catch (_e) {
++    return undefined;
++  }
++}
++
++function readBlobUriConstants(module) {
++  if (!module) {
++    return null;
++  }
++  if (typeof module.BLOB_URI_SCHEME === 'string') {
++    return {
++      scheme: module.BLOB_URI_SCHEME,
++      host: module.BLOB_URI_HOST,
++    };
++  }
++  if (typeof module.getConstants === 'function') {
++    try {
++      const constants = module.getConstants();
++      if (constants && typeof constants.BLOB_URI_SCHEME === 'string') {
++        return {
++          scheme: constants.BLOB_URI_SCHEME,
++          host: constants.BLOB_URI_HOST,
++        };
++      }
++    } catch (_e) {
++      return null;
++    }
++  }
++  return null;
++}
+ 
+-if (BlobModule && typeof BlobModule.BLOB_URI_SCHEME === 'string') {
+-  BLOB_URL_PREFIX = BlobModule.BLOB_URI_SCHEME + ':';
+-  if (typeof BlobModule.BLOB_URI_HOST === 'string') {
+-    BLOB_URL_PREFIX += `//${BlobModule.BLOB_URI_HOST}/`;
++const blobUri = readBlobUriConstants(resolveBlobModule());
++if (blobUri) {
++  BLOB_URL_PREFIX = blobUri.scheme + ':';
++  if (typeof blobUri.host === 'string') {
++    BLOB_URL_PREFIX += `//${blobUri.host}/`;
+   }
+ }
+ 
 diff --git a/node_modules/react-native-url-polyfill/js/ios10Fix.ios.js b/node_modules/react-native-url-polyfill/js/ios10Fix.ios.js
 new file mode 100644
 index 0000000..ef7ba61

@@ -68,3 +68,24 @@ Cases are appended by AI after each bug fix. Do NOT reorder or delete entries �
 **Root Cause**: Inline `Array.prototype.toSorted = fn` made the method enumerable; `assertUtils.isSerializable` walks `for...in` on arrays and rejected payloads with keyPath `["toSorted"]`.
 **Fix**: Install via `Object.defineProperty(..., { enumerable: false })`, and reinstall when an existing descriptor is enumerable.
 **Catchable by**: Section 1: No extend-native via plain assignment — prototype methods must be non-enumerable; Section 5: background API serialization failures surface as stuck loading
+
+## Case: Release APK white screen — BlobModule of undefined
+**Date**: 2026-08-22 | **Platforms**: Android Release (bridgeless)
+**Symptom**: Fresh install of ProdRelease APK shows white screen then exits to launcher
+**Root Cause**: `react-native-url-polyfill/js/URL.js` did `const {BlobModule} = NativeModules` at module load. On Android Release bridgeless early boot, `NativeModules` can be undefined → TypeError → SIGABRT. Prior WalletConnect / toSorted fixes were insufficient because this path still ran via `polyfillsPlatform.js` → `react-native-url-polyfill/auto`.
+**Fix**: Patch URL.js to resolve BlobModule via TurboModuleRegistry then `NativeModules?.BlobModule`, and read BLOB_URI_* from getConstants when needed. Regenerated `patches/react-native-url-polyfill+1.3.0.patch`.
+**Catchable by**: Section 5 Potential Bugs (startup crash / dual-runtime early native access) — NEW: polyfill must not assume NativeModules exists during bridgeless Release boot
+
+## Case: Release APK white screen — NitroModules.createHybridObject undefined
+**Date**: 2026-08-22 | **Platforms**: Android Release (bridgeless)
+**Symptom**: After BlobModule fix, Release APK still white-screens; log shows TypeError: Cannot read property 'createHybridObject' of undefined
+**Root Cause**: Multiple `@onekeyfe/*` Nitro hybrids call `NitroModules.createHybridObject(...)` at module top-level while `NativeNitroModules` export can still be undefined during circular/early init on bridgeless Release boot.
+**Fix**: Patch `react-native-nitro-modules` so `NitroModules` is a forwarding Proxy that `ensureInstalled()` before use; harden native-logger / file-logger. Do NOT return fake HybridObject stubs.
+**Catchable by**: Section 5 — NEW: Nitro/HybridObject modules must not assume NitroModules is ready at import time during bridgeless Release boot
+
+## Case: Release APK white screen — Nitro box() SIGSEGV from JS Proxy stub
+**Date**: 2026-08-22 | **Platforms**: Android Release (bridgeless)
+**Symptom**: After masking createHybridObject undefined with a JS Proxy stub, app still crashes; tombstone shows SIGSEGV in libNitroModules / hermes during HybridFunction / box.
+**Root Cause**: `installWorkletsSupport` called `NitroModules.box(NitroModules)` on the JS forwarding Proxy (or early stub). Native `box()` requires a real HybridObject pointer; boxing a plain JS Proxy causes SIGSEGV.
+**Fix**: `ensureInstalled()` then forward to `global.NitroModulesProxy`; `installWorkletsSupport` boxes `global.NitroModulesProxy` only. Verify main `index.android.bundle` was rebuilt (avoid Gradle UP-TO-DATE skipping Nitro patches). Fast iterate via `apps/mobile/scripts/inject-release-js-into-apk.sh`.
+**Catchable by**: Section 5 — NEW: never pass JS Proxy/stub into Nitro native box()/HybridFunction; Section 7 — Release JS changes must force recreate `createBundle*JsAndAssets` / confirm strings in index.android.bundle

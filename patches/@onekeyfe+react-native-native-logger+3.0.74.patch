@@ -1,0 +1,103 @@
+diff --git a/node_modules/@onekeyfe/react-native-native-logger/lib/module/index.js b/node_modules/@onekeyfe/react-native-native-logger/lib/module/index.js
+index ff687ad..75e8535 100644
+--- a/node_modules/@onekeyfe/react-native-native-logger/lib/module/index.js
++++ b/node_modules/@onekeyfe/react-native-native-logger/lib/module/index.js
+@@ -1,6 +1,43 @@
+ "use strict";
+ 
+-import { NitroModules } from 'react-native-nitro-modules';
+-const NativeLoggerHybridObject = NitroModules.createHybridObject('NativeLogger');
+-export const NativeLogger = NativeLoggerHybridObject;
+-//# sourceMappingURL=index.js.map
+\ No newline at end of file
++// OneKey patch: Android Release bridgeless boot can evaluate this module
++// before NitroModules is ready (or while its export binding is still
++// undefined due to circular init). Never call createHybridObject unsafely.
++let NitroModules;
++try {
++  // eslint-disable-next-line @typescript-eslint/no-var-requires
++  NitroModules = require('react-native-nitro-modules').NitroModules;
++} catch (_error) {
++  NitroModules = undefined;
++}
++
++const stubNativeLogger = {
++  write(_level, _message) {},
++  getLogDirectory() {
++    return '';
++  },
++  flushPendingRepeat() {},
++};
++
++function createNativeLogger() {
++  try {
++    if (
++      NitroModules == null ||
++      typeof NitroModules.createHybridObject !== 'function'
++    ) {
++      // eslint-disable-next-line no-console
++      console.warn(
++        '[NativeLogger] NitroModules unavailable during early boot; using stub',
++      );
++      return stubNativeLogger;
++    }
++    return NitroModules.createHybridObject('NativeLogger');
++  } catch (error) {
++    // eslint-disable-next-line no-console
++    console.warn('[NativeLogger] createHybridObject failed; using stub', error);
++    return stubNativeLogger;
++  }
++}
++
++export const NativeLogger = createNativeLogger();
++//# sourceMappingURL=index.js.map
+diff --git a/node_modules/@onekeyfe/react-native-native-logger/src/index.tsx b/node_modules/@onekeyfe/react-native-native-logger/src/index.tsx
+index 14a8d06..c508730 100644
+--- a/node_modules/@onekeyfe/react-native-native-logger/src/index.tsx
++++ b/node_modules/@onekeyfe/react-native-native-logger/src/index.tsx
+@@ -1,8 +1,41 @@
+-import { NitroModules } from 'react-native-nitro-modules';
+ import type { NativeLogger as NativeLoggerType } from './NativeLogger.nitro';
+ 
+-const NativeLoggerHybridObject =
+-  NitroModules.createHybridObject<NativeLoggerType>('NativeLogger');
++// OneKey patch: see lib/module/index.js
++let NitroModules: { createHybridObject?: (name: string) => NativeLoggerType } | undefined;
++try {
++  // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
++  NitroModules = require('react-native-nitro-modules').NitroModules;
++} catch {
++  NitroModules = undefined;
++}
+ 
+-export const NativeLogger = NativeLoggerHybridObject;
++const stubNativeLogger = {
++  write(_level: number, _message: string) {},
++  getLogDirectory() {
++    return '';
++  },
++  flushPendingRepeat() {},
++} as NativeLoggerType;
++
++function createNativeLogger(): NativeLoggerType {
++  try {
++    if (
++      NitroModules == null ||
++      typeof NitroModules.createHybridObject !== 'function'
++    ) {
++      // eslint-disable-next-line no-console
++      console.warn(
++        '[NativeLogger] NitroModules unavailable during early boot; using stub',
++      );
++      return stubNativeLogger;
++    }
++    return NitroModules.createHybridObject('NativeLogger');
++  } catch (error) {
++    // eslint-disable-next-line no-console
++    console.warn('[NativeLogger] createHybridObject failed; using stub', error);
++    return stubNativeLogger;
++  }
++}
++
++export const NativeLogger = createNativeLogger();
+ export type * from './NativeLogger.nitro';
