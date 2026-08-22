@@ -95,19 +95,19 @@ export const AutoSizeInput = forwardRef<IAutoSizeInputRef, IAutoSizeInputProps>(
       <Stack
         width="100%"
         alignItems={fillWidth ? 'stretch' : 'center'}
-        py="$1"
+        py={fillWidth ? '$0' : '$1'}
         overflow="hidden"
       >
         <AutoSizeInputView
-          contentCentered={!fillWidth && autoSizeTextAlign === 'center'}
+          contentCentered={fillWidth ? false : autoSizeTextAlign === 'center'}
           style={{
             width: '100%',
-            height: fillWidth ? 48 : 64,
+            height: fillWidth ? 28 : 64,
           }}
           text={value}
           placeholder={placeholder ?? '0'}
           prefix={currencyLabel ?? ''}
-          suffix={showInlineSuffix ? inlineTokenSymbol ?? '' : ''}
+          suffix={showInlineSuffix ? (inlineTokenSymbol ?? '') : ''}
           fontSize={maxFontSize}
           minFontSize={minFontSize}
           textAlign={autoSizeTextAlign}

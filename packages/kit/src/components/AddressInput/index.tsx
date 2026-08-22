@@ -643,32 +643,30 @@ export function AddressInput(props: IAddressInputProps) {
   const AddressInputExtension = useMemo(() => {
     const isRecipientLayout = actionsLayout === 'recipient';
     const hasContent = inputText.trim().length > 0;
-    const actionDisplay = isRecipientLayout ? 'button' : 'icon';
-    const actionGap = isRecipientLayout ? '$2' : '$6';
+    const actionDisplay = 'icon';
+    const actionGap = isRecipientLayout ? '$1' : '$6';
     const showSelector = !isRecipientLayout && (contacts || accountSelector);
 
-    const clearButton =
-      actionDisplay === 'button' ? (
-        <Button
-          size="small"
-          variant="secondary"
-          icon="BroomOutline"
-          disabled={disabled}
-          onPress={disabled ? undefined : handleClear}
-          testID={testID ? `${testID}-clear` : undefined}
-        >
-          {intl.formatMessage({ id: ETranslations.global_clear })}
-        </Button>
-      ) : (
-        <IconButton
-          title={intl.formatMessage({ id: ETranslations.global_clear })}
-          variant="tertiary"
-          icon="BroomOutline"
-          disabled={disabled}
-          onPress={disabled ? undefined : handleClear}
-          testID={testID ? `${testID}-clear` : undefined}
-        />
-      );
+    const clearButton = isRecipientLayout ? (
+      <IconButton
+        title={intl.formatMessage({ id: ETranslations.global_clear })}
+        size="small"
+        variant="tertiary"
+        icon="CrossedLargeOutline"
+        disabled={disabled}
+        onPress={disabled ? undefined : handleClear}
+        testID={testID ? `${testID}-clear` : undefined}
+      />
+    ) : (
+      <IconButton
+        title={intl.formatMessage({ id: ETranslations.global_clear })}
+        variant="tertiary"
+        icon="BroomOutline"
+        disabled={disabled}
+        onPress={disabled ? undefined : handleClear}
+        testID={testID ? `${testID}-clear` : undefined}
+      />
+    );
 
     return (
       <XStack
@@ -677,15 +675,17 @@ export function AddressInput(props: IAddressInputProps) {
         alignItems={isRecipientLayout ? 'flex-end' : 'center'}
         gap="$2"
       >
-        <XStack gap="$2" flex={1} minWidth={0}>
-          <AddressInputBadgeGroup
-            loading={loading}
-            result={queryResult}
-            setResolveAddress={setResolveAddress}
-            onRefresh={onRefresh}
-            networkId={networkId}
-          />
-        </XStack>
+        {!isRecipientLayout ? (
+          <XStack gap="$2" flex={1} minWidth={0}>
+            <AddressInputBadgeGroup
+              loading={loading}
+              result={queryResult}
+              setResolveAddress={setResolveAddress}
+              onRefresh={onRefresh}
+              networkId={networkId}
+            />
+          </XStack>
+        ) : null}
         <XStack gap={actionGap}>
           {(() => {
             if (isRecipientLayout) {
@@ -807,6 +807,8 @@ export function AddressInput(props: IAddressInputProps) {
         }
         placeholder={placeholder ?? getAddressInputPlaceholder}
         extension={AddressInputExtension}
+        extensionLayout={actionsLayout === 'recipient' ? 'inline' : 'stacked'}
+        extensionPaddingRight={inputText.trim() ? 48 : 88}
         numberOfLines={screenWidth <= 768 ? 3 : 2}
         {...(screenWidth <= 768 && { minHeight: 64 })}
         {...rest}
@@ -817,7 +819,7 @@ export function AddressInput(props: IAddressInputProps) {
 }
 
 export function AddressInputField(
-  props: IAddressInputProps & { name: string },
+  props: IAddressInputProps & { name: string; label?: string },
 ) {
   const intl = useIntl();
   const {
@@ -825,6 +827,7 @@ export function AddressInputField(
     networkId,
     accountId,
     name,
+    label,
     labelAddon,
     hideNonBackedUpWallet,
     hasQuickSelectMatches,
@@ -868,7 +871,9 @@ export function AddressInputField(
   return (
     <AddressInputContext.Provider value={contextValue}>
       <Form.Field
-        label={intl.formatMessage({ id: ETranslations.global_recipient })}
+        label={
+          label ?? intl.formatMessage({ id: ETranslations.global_recipient })
+        }
         labelAddon={labelAddon}
         name={name}
         description={hintDescription}

@@ -53,6 +53,8 @@ const useAutoSize = (value?: string, numberOfLines = 2) => {
 
 export type IBaseInputProps = {
   extension?: React.ReactNode;
+  extensionLayout?: 'stacked' | 'inline';
+  extensionPaddingRight?: number;
   numberOfLines?: number;
 } & ComponentProps<typeof TextArea>;
 function BaseInput(props: IBaseInputProps) {
@@ -62,6 +64,8 @@ function BaseInput(props: IBaseInputProps) {
     editable,
     size,
     extension,
+    extensionLayout = 'stacked',
+    extensionPaddingRight,
     value,
     numberOfLines: numberOfLinesProp = 2,
     ...rest
@@ -78,6 +82,38 @@ function BaseInput(props: IBaseInputProps) {
     value,
     numberOfLinesProp,
   );
+
+  if (extension && extensionLayout === 'inline') {
+    return (
+      <Stack position="relative">
+        <TextArea
+          testID="base-input-shared-styles-textarea"
+          ref={textAreaRef as any}
+          value={value}
+          onLayout={onLayout}
+          error={error}
+          numberOfLines={numberOfLines}
+          multiline
+          editable={editable}
+          disabled={disabled}
+          size={size}
+          spellCheck={false}
+          minHeight={minHeight}
+          {...rest}
+          pr={extensionPaddingRight}
+        />
+        <Stack
+          position="absolute"
+          right="$2"
+          top={0}
+          bottom={0}
+          justifyContent="center"
+        >
+          {extension}
+        </Stack>
+      </Stack>
+    );
+  }
 
   return (
     <Group borderRadius={sharedStyles.borderRadius} disabled={disabled}>

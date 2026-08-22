@@ -77,6 +77,7 @@ import { HomeTokenListProviderMirror } from '../../../Home/components/HomeTokenL
 import { getAccountIdOnNetwork } from '../../../ScanQrCode/utils/getAccountIdOnNetwork';
 import { parseOnChainAmount } from '../../../ScanQrCode/utils/parseOnChainAmount';
 import { SendConfirmProviderMirror } from '../../components/SendConfirmProvider/SendConfirmProviderMirror';
+import { SignatureConfirmProviderMirror } from '../../../SignatureConfirm/components/SignatureConfirmProvider/SignatureConfirmProviderMirror';
 import { resolveSendNetworkTarget } from '../../utils/resolveSendNetworkTarget';
 import { SendAmountInputContainer } from '../SendAmountInput/SendAmountInputContainer';
 
@@ -1267,7 +1268,7 @@ function SendDataInputContainer() {
             : undefined
         }
       />
-      <Page.Body px="$5" testID="send-recipient-amount-form">
+      <Page.Body px="$4" testID="send-recipient-amount-form">
         <AccountSelectorProviderMirror
           config={{
             sceneName: EAccountSelectorSceneName.addressInput, // can replace with other sceneName
@@ -1332,6 +1333,7 @@ function SendDataInputContainer() {
             ) : null}
             <AddressInputField
               name="to"
+              label={intl.formatMessage({ id: ETranslations.global_to })}
               labelAddon={
                 <Button
                   icon="ContactsOutline"
@@ -1352,6 +1354,15 @@ function SendDataInputContainer() {
                   ? 5
                   : 2
               }
+              minHeight={
+                networkUtils.isLightningNetworkByNetworkId(
+                  currentAccount.networkId,
+                )
+                  ? undefined
+                  : 60
+              }
+              px="$3"
+              py="$1.5"
               actionsLayout="recipient"
               placeholder={
                 // Lightning has its own placeholder ("Enter invoice, Lightning Address or LNURL")
@@ -1382,17 +1393,17 @@ function SendDataInputContainer() {
               <XStack
                 alignItems="center"
                 justifyContent="space-between"
-                mb="$2"
-                mt="$4"
+                mb="$1"
+                mt="$2"
               >
                 <SizableText size="$bodyMdMedium">
                   {intl.formatMessage({ id: ETranslations.send_amount })}
                 </SizableText>
                 <XStack
                   alignItems="center"
-                  gap="$1.5"
-                  px="$2.5"
-                  py="$1.5"
+                  gap="$1"
+                  px="$2"
+                  py="$1"
                   borderRadius="$full"
                   bg="$bgStrong"
                   borderWidth="$px"
@@ -1402,14 +1413,14 @@ function SendDataInputContainer() {
                 >
                   <NetworkAvatar
                     networkId={currentAccount.networkId}
-                    size="$5"
+                    size="$4"
                   />
-                  <SizableText size="$bodyMdMedium">
+                  <SizableText size="$bodySmMedium">
                     {network?.shortname || network?.name || ''}
                   </SizableText>
                   <Icon
                     name="ChevronDownSmallOutline"
-                    size="$4"
+                    size="$3.5"
                     color="$iconSubdued"
                   />
                 </XStack>
@@ -1493,9 +1504,11 @@ function SendDataInputContainer() {
 
 const SendDataInputContainerWithProvider = memo(() => (
   <SendConfirmProviderMirror>
-    <HomeTokenListProviderMirror>
-      <SendDataInputContainer />
-    </HomeTokenListProviderMirror>
+    <SignatureConfirmProviderMirror>
+      <HomeTokenListProviderMirror>
+        <SendDataInputContainer />
+      </HomeTokenListProviderMirror>
+    </SignatureConfirmProviderMirror>
   </SendConfirmProviderMirror>
 ));
 SendDataInputContainerWithProvider.displayName =

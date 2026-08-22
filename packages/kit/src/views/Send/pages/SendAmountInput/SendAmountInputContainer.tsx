@@ -61,9 +61,11 @@ import {
   useCurrencyPersistAtom,
   useSettingsPersistAtom,
 } from '@onekeyhq/kit-bg/src/states/jotai/atoms';
+import type { IUnsignedTxPro } from '@onekeyhq/core/src/types';
 import type {
   IAccountDeriveInfo,
   ITransferInfo,
+  ITransferPayload,
 } from '@onekeyhq/kit-bg/src/vaults/types';
 import { POLLING_INTERVAL_FOR_TOKEN } from '@onekeyhq/shared/src/consts/walletConsts';
 import { OneKeyLocalError } from '@onekeyhq/shared/src/errors';
@@ -140,6 +142,7 @@ import {
   type ISendAmountAutoSizeInputRef,
   SendAutoSizeAmountInput,
 } from '../../components/SendAutoSizeAmountInput';
+import { InlineSendConfirmPanel } from '../../components/InlineSendConfirmPanel';
 import { SendConfirmProviderMirror } from '../../components/SendConfirmProvider/SendConfirmProviderMirror';
 
 import { AttentionPulse } from './components/AttentionPulse';
@@ -816,6 +819,14 @@ export function SendAmountInputContainer({
   const [isUseFiat, setIsUseFiat] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isMaxSend, setIsMaxSend] = useState(false);
+  const [inlineConfirm, setInlineConfirm] = useState<{
+    unsignedTxs: IUnsignedTxPro[];
+    transferPayload: ITransferPayload;
+    accountId: string;
+    networkId: string;
+  } | null>(null);
+  const inlinePrepareGenerationRef = useRef(0);
+  const lastInlinePrepareKeyRef = useRef('');
   const [settings] = useSettingsPersistAtom();
   const [{ currencyMap }] = useCurrencyPersistAtom();
   const [selectedUTXOs] = useSelectedUTXOsAtom();
@@ -3020,31 +3031,73 @@ export function SendAmountInputContainer({
               : tokenInfo?.address,
           });
 
+          const transferPayload: ITransferPayload = {
+            amountToSend: realAmount,
+            isMaxSend,
+            isNFT,
+            selectedUtxoTotalAmount,
+            originalRecipient: submitRecipientAddress,
+            isToContract: submitRecipientIsContract,
+            memo: recipientMemo,
+            paymentId: recipientPaymentId,
+            note: recipientNote,
+            tokenInfo: tokenDetails?.info,
+            isCustomHexData: !!(
+              submitRecipientIsContract &&
+              settings.isCustomTxMessageEnabled &&
+              displayTxMessageForm &&
+              tokenInfo?.isNative &&
+              !isEmpty(hexData)
+            ),
+          };
+
+          // Embed fee/sign on the same page for public token sends from TxDataInput.
+          if (embedded && !isNFT && sendMode === ESendMode.PUBLIC) {
+            const prepareGeneration = inlinePrepareGenerationRef.current;
+            const unsignedTx =
+              await backgroundApiProxy.serviceSend.prepareSendConfirmUnsignedTx(
+                {
+                  networkId,
+                  accountId: currentAccountId,
+                  transfersInfo,
+                },
+              );
+            let nextTransferPayload = transferPayload;
+            try {
+              const preActionsBeforeConfirmResult =
+                await backgroundApiProxy.serviceSignatureConfirm.preActionsBeforeConfirm(
+                  {
+                    accountId: currentAccountId,
+                    networkId,
+                    unsignedTxs: [unsignedTx],
+                  },
+                );
+              nextTransferPayload = {
+                ...nextTransferPayload,
+                ...preActionsBeforeConfirmResult,
+              };
+            } catch {
+              // Keep base transferPayload when pre-actions fail.
+            }
+            if (prepareGeneration !== inlinePrepareGenerationRef.current) {
+              return;
+            }
+            setInlineConfirm({
+              unsignedTxs: [unsignedTx],
+              transferPayload: nextTransferPayload,
+              accountId: currentAccountId,
+              networkId,
+            });
+            return;
+          }
+
           await signatureConfirm.navigationToTxConfirm({
             transfersInfo,
             sameModal: true,
             onSuccess,
             onFail,
             onCancel,
-            transferPayload: {
-              amountToSend: realAmount,
-              isMaxSend,
-              isNFT,
-              selectedUtxoTotalAmount,
-              originalRecipient: submitRecipientAddress,
-              isToContract: submitRecipientIsContract,
-              memo: recipientMemo,
-              paymentId: recipientPaymentId,
-              note: recipientNote,
-              tokenInfo: tokenDetails?.info,
-              isCustomHexData: !!(
-                submitRecipientIsContract &&
-                settings.isCustomTxMessageEnabled &&
-                displayTxMessageForm &&
-                tokenInfo?.isNative &&
-                !isEmpty(hexData)
-              ),
-            },
+            transferPayload,
             isInternalTransfer: true,
           });
         } finally {
@@ -3060,6 +3113,7 @@ export function SendAmountInputContainer({
       currentUtxoSelectionStrategy,
       selectedUtxoTotalAmount,
       displayTxMessageForm,
+      embedded,
       form,
       isHexTxMessage,
       isLightningNetwork,
@@ -3069,6 +3123,7 @@ export function SendAmountInputContainer({
       linkedAmount.originalAmount,
       lnUnit,
       network,
+      networkId,
       nft?.collectionAddress,
       nft?.itemId,
       nft?.metadata?.name,
@@ -3162,6 +3217,52 @@ export function SendAmountInputContainer({
 
     await onSubmitRef.current?.();
   }, [form, sendMode]);
+
+  const shouldEmbedInlineConfirm =
+    embedded && sendMode === ESendMode.PUBLIC && !isNFT;
+
+  const inlinePrepareKey = `${currentAccountId}|${networkId}|${recipientAddress}|${amount}|${isMaxSend}|${recipientMemo ?? ''}|${recipientPaymentId ?? ''}|${recipientNote ?? ''}`;
+
+  useEffect(() => {
+    inlinePrepareGenerationRef.current += 1;
+    setInlineConfirm(null);
+  }, [
+    amount,
+    currentAccountId,
+    isMaxSend,
+    networkId,
+    recipientAddress,
+    recipientMemo,
+    recipientNote,
+    recipientPaymentId,
+    sendMode,
+  ]);
+
+  // Auto-prepare unsigned tx so fee/sign UI appears below the form without a
+  // second navigation page. Final Confirm lives in InlineSendConfirmPanel.
+  useEffect(() => {
+    if (!shouldEmbedInlineConfirm) {
+      return;
+    }
+    if (isSubmitDisabled || isSubmitting || inlineConfirm) {
+      return;
+    }
+    if (lastInlinePrepareKeyRef.current === inlinePrepareKey) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      lastInlinePrepareKeyRef.current = inlinePrepareKey;
+      void handleConfirm();
+    }, 450);
+    return () => clearTimeout(timer);
+  }, [
+    handleConfirm,
+    inlineConfirm,
+    inlinePrepareKey,
+    isSubmitDisabled,
+    isSubmitting,
+    shouldEmbedInlineConfirm,
+  ]);
 
   // Keyboard shortcuts for desktop (when input is not focused)
   // M = Max, Enter = confirm
@@ -3548,7 +3649,7 @@ export function SendAmountInputContainer({
         >
           <SendAutoSizeAmountInput
             ref={amountInputRef}
-            boxed
+            boxed={embedded}
             tokenSymbol={isUseFiat ? undefined : tokenSymbol}
             compactTokenSymbol={(tokenSymbol?.length ?? 0) > 4}
             reversible={
@@ -3610,6 +3711,7 @@ export function SendAmountInputContainer({
     [
       amountHint,
       currencySymbol,
+      embedded,
       fiatTokenEquivalentValue,
       handleAmountInputChange,
       handleAmountInputBlur,
@@ -3867,9 +3969,87 @@ export function SendAmountInputContainer({
     tokenSymbol,
   ]);
 
+  const renderCompactBalanceRow = useMemo(() => {
+    if (isNFT) return null;
+    if (
+      (isLoadingAssets && !tokenDetails && !nftDetails) ||
+      balanceAccountId !== currentAccountId
+    ) {
+      return (
+        <XStack
+          justifyContent="flex-end"
+          alignItems="center"
+          gap="$2"
+          mt="$1.5"
+        >
+          <Skeleton h="$3" w="$32" />
+        </XStack>
+      );
+    }
+    if (!maxBalance) return null;
+
+    return (
+      <XStack
+        justifyContent="flex-end"
+        alignItems="center"
+        gap="$2"
+        mt="$1.5"
+        flexWrap="wrap"
+      >
+        <XStack alignItems="center" gap="$1" flexShrink={1} minWidth={0}>
+          <NumberSizeableText
+            size="$bodySm"
+            color="$textSubdued"
+            formatter="balance"
+          >
+            {maxBalance}
+          </NumberSizeableText>
+          {tokenSymbol ? (
+            <SizableText size="$bodySm" color="$textSubdued" numberOfLines={1}>
+              {tokenSymbol}
+            </SizableText>
+          ) : null}
+          <SizableText size="$bodySm" color="$textSubdued">
+            {intl.formatMessage({ id: ETranslations.global_available })}
+          </SizableText>
+        </XStack>
+        <SizableText
+          testID={SendTestIDs.maxButton}
+          size="$bodySmMedium"
+          color="$textInfo"
+          onPress={() => {
+            form.setValue('amount', isUseFiat ? maxBalanceFiat : maxBalance, {
+              shouldValidate: true,
+            });
+            setIsMaxSend(true);
+          }}
+        >
+          {intl.formatMessage({ id: ETranslations.send_max })}
+        </SizableText>
+      </XStack>
+    );
+  }, [
+    balanceAccountId,
+    currentAccountId,
+    form,
+    intl,
+    isLoadingAssets,
+    isNFT,
+    isUseFiat,
+    maxBalance,
+    maxBalanceFiat,
+    nftDetails,
+    tokenDetails,
+    tokenSymbol,
+  ]);
+
   const renderBalanceCard = useMemo(() => {
     if (isNFT) return null;
     if (!isLoadingAssets && !maxBalance) return null;
+    // Embedded send form uses the compact balance + Max row (design mock).
+    if (embedded) {
+      return renderCompactBalanceRow;
+    }
 
     return (
       <XStack
@@ -3883,7 +4063,14 @@ export function SendAmountInputContainer({
         {renderBalanceRowContent()}
       </XStack>
     );
-  }, [isLoadingAssets, isNFT, maxBalance, renderBalanceRowContent]);
+  }, [
+    embedded,
+    isLoadingAssets,
+    isNFT,
+    maxBalance,
+    renderBalanceRowContent,
+    renderCompactBalanceRow,
+  ]);
 
   const renderPrivateSendProviderContent = useCallback(
     ({
@@ -4360,7 +4547,10 @@ export function SendAmountInputContainer({
   );
 
   let renderFooterActions: ReactNode;
-  if (sendMode === ESendMode.PRIVATE) {
+  if (shouldEmbedInlineConfirm && inlineConfirm) {
+    // Fee + Confirm come from InlineSendConfirmPanel (Page.Footer).
+    renderFooterActions = null;
+  } else if (sendMode === ESendMode.PRIVATE) {
     renderFooterActions = (
       <Stack
         p="$5"
@@ -4387,6 +4577,19 @@ export function SendAmountInputContainer({
       <Page.FooterActions
         confirmButton={renderDefaultInsufficientFooterButtons}
       />
+    );
+  } else if (shouldEmbedInlineConfirm) {
+    renderFooterActions = (
+      <Page.Footer disableKeyboardAnimation>
+        <Page.FooterActions
+          onConfirm={handleConfirm}
+          onConfirmText={footerConfirmText}
+          confirmButtonProps={{
+            disabled: isSubmitDisabled,
+            loading: isSubmitting,
+          }}
+        />
+      </Page.Footer>
     );
   } else {
     renderFooterActions = (
@@ -4583,12 +4786,23 @@ export function SendAmountInputContainer({
 
   if (embedded) {
     return (
-      <YStack width="100%" gap="$5" pt="$2">
+      <YStack width="100%" gap="$3" pt="$1">
         {renderPrivateSendModeBand()}
-        <YStack width="100%" gap="$3">
+        <YStack width="100%" gap="$2">
           {renderAmountFormContent}
           {renderBottomInfoContent}
         </YStack>
+        {shouldEmbedInlineConfirm && inlineConfirm ? (
+          <InlineSendConfirmPanel
+            accountId={inlineConfirm.accountId}
+            networkId={inlineConfirm.networkId}
+            unsignedTxs={inlineConfirm.unsignedTxs}
+            transferPayload={inlineConfirm.transferPayload}
+            onSuccess={onSuccess}
+            onFail={onFail}
+            onCancel={onCancel}
+          />
+        ) : null}
         {renderFooterActions}
       </YStack>
     );

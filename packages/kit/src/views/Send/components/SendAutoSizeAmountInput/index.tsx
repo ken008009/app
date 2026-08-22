@@ -247,7 +247,13 @@ function SendAutoSizeAmountInputComponent(
 ) {
   const { md } = useMedia();
   const theme = useTheme();
-  const fontSizeScale = boxed ? (md ? 1 : 1.15) : md ? 1.2 : 1.5;
+  // Boxed send form stays compact (design: single-line field height ~44).
+  let fontSizeScale = 1.5;
+  if (boxed) {
+    fontSizeScale = 0.55;
+  } else if (md) {
+    fontSizeScale = 1.2;
+  }
   const selectionColor =
     normalizeAutoSizeNativeColor(
       boxed
@@ -422,7 +428,8 @@ function SendAutoSizeAmountInputComponent(
   // Default keeps the original full-size ramp; callers can cap it (maxFontSizeProp).
   // Boxed mode uses a denser default so the field reads as an input, not a hero.
   const maxFontSize =
-    maxFontSizeProp ?? Math.round((boxed ? 36 : 56) * fontSizeScale);
+    maxFontSizeProp ??
+    Math.round((boxed ? 20 : 56) * (boxed ? 1 : fontSizeScale));
   const fontSize = Math.min(
     getAmountFontSize(effectiveValue?.length || 0, fontSizeScale),
     maxFontSize,
@@ -517,11 +524,13 @@ function SendAutoSizeAmountInputComponent(
         ? {
             borderWidth: '$px',
             borderColor: isFocused ? '$focusRing' : '$borderStrong',
-            borderRadius: '$3',
+            borderRadius: '$2.5',
             borderCurve: 'continuous',
             bg: '$bg',
-            px: '$3.5',
-            py: '$2.5',
+            px: '$3',
+            py: '$1.5',
+            minHeight: 48,
+            justifyContent: 'center',
             onPress: editable
               ? () => {
                   autoSizeInputRef.current?.focus?.();
@@ -533,13 +542,13 @@ function SendAutoSizeAmountInputComponent(
       onLayout={handleInputLayout}
     >
       {boxed ? (
-        <XStack alignItems="center" width="100%" gap="$3">
+        <XStack alignItems="center" width="100%" gap="$2">
           <Stack flex={1} minWidth={0}>
             {amountInputNode}
           </Stack>
           {boxedUnitLabel ? (
             <SizableText
-              size="$headingLg"
+              size="$bodySmMedium"
               color="$textSubdued"
               fontWeight="500"
               flexShrink={0}
@@ -570,9 +579,9 @@ function SendAutoSizeAmountInputComponent(
       {valueProps || reversible ? (
         <XStack
           alignItems="center"
-          mt={md ? '$0' : '$2'}
-          py="$1.5"
-          px="$1"
+          mt={boxed || md ? '$0' : '$2'}
+          py={boxed ? '$0' : '$1.5'}
+          px={boxed ? '$0' : '$1'}
           borderRadius="$2"
           alignSelf={boxed ? 'flex-start' : 'center'}
           maxWidth="100%"
@@ -600,7 +609,7 @@ function SendAutoSizeAmountInputComponent(
                   currency: valueProps?.currency,
                   tokenSymbol: valueProps?.tokenSymbol,
                 }}
-                size="$headingLg"
+                size={boxed ? '$bodyXs' : '$headingLg'}
                 color={valueProps?.color ?? '$textSubdued'}
                 numberOfLines={1}
                 flexShrink={1}
