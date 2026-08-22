@@ -18,13 +18,48 @@ if (typeof Promise.allSettled !== 'function') {
 }
 
 require('./intlShim');
-const { shim: shimArrayFlatMap } = require('array.prototype.flatmap');
 
-shimArrayFlatMap();
+// Inline Array.prototype shims — do NOT require array.prototype.flatmap /
+// array.prototype.tosorted entrypoints. Their index.js runs callBind(getPolyfill())
+// at load time; under Hermes Release that can throw "Object is not a function"
+// and white-screen the app before UI mounts.
+// MUST use defineProperty(enumerable:false). A plain assignment makes the method
+// show up in for...in walks → assertUtils.isSerializable fails with
+// keyPath ['toSorted'] and Portfolio/assets IPC never completes.
+function ensureNonEnumerableArrayProtoMethod(name, impl) {
+  const desc = Object.getOwnPropertyDescriptor(Array.prototype, name);
+  const needsInstall =
+    typeof Array.prototype[name] !== 'function' || Boolean(desc?.enumerable);
+  if (!needsInstall) {
+    return;
+  }
+  Object.defineProperty(Array.prototype, name, {
+    configurable: true,
+    writable: true,
+    enumerable: false,
+    value: impl,
+  });
+}
 
-const { shim: shimArrayToSorted } = require('array.prototype.tosorted');
+ensureNonEnumerableArrayProtoMethod('flatMap', function flatMap(callback, thisArg) {
+  const mapped = Array.prototype.map.call(this, callback, thisArg);
+  const result = [];
+  for (let i = 0; i < mapped.length; i += 1) {
+    const item = mapped[i];
+    if (Array.isArray(item)) {
+      for (let j = 0; j < item.length; j += 1) {
+        result.push(item[j]);
+      }
+    } else {
+      result.push(item);
+    }
+  }
+  return result;
+});
 
-shimArrayToSorted();
+ensureNonEnumerableArrayProtoMethod('toSorted', function toSorted(compareFn) {
+  return Array.prototype.slice.call(this).sort(compareFn);
+});
 
 require('react-native-url-polyfill/auto');
 const { Base64 } = require('js-base64');

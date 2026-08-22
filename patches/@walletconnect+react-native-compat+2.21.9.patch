@@ -1,0 +1,67 @@
+diff --git a/node_modules/@walletconnect/react-native-compat/index.js b/node_modules/@walletconnect/react-native-compat/index.js
+index ca9a6b2..c4231e3 100644
+--- a/node_modules/@walletconnect/react-native-compat/index.js
++++ b/node_modules/@walletconnect/react-native-compat/index.js
+@@ -7,8 +7,9 @@ import "fast-text-encoding";
+ // Polyfill crypto.getRandomvalues
+ import "react-native-get-random-values";
+ 
+-// Polyfill URL()
+-import "react-native-url-polyfill/auto";
++// OneKey bootstrap installs the URL polyfill before WalletConnect loads.
++// Do not load this package's nested copy here: its iOS-only startup fix imports
++// Platform and crashes during early Android Release bridgeless initialization.
+ 
+ // Polyfill Buffer
+ if (typeof Buffer === "undefined") {
+diff --git a/node_modules/@walletconnect/react-native-compat/module/index.ts b/node_modules/@walletconnect/react-native-compat/module/index.ts
+index c84b7db..56527e9 100644
+--- a/node_modules/@walletconnect/react-native-compat/module/index.ts
++++ b/node_modules/@walletconnect/react-native-compat/module/index.ts
+@@ -1,17 +1,32 @@
+ /* eslint-disable @typescript-eslint/no-require-imports */
+-import { NativeModules } from "react-native";
++import { NativeModules, TurboModuleRegistry } from "react-native";
+ 
+ const LINKING_ERROR =
+   `The package to get the RNWalletConnectModule doesn't seem to be linked. Make sure: \n\n` +
+   "- You rebuilt the app after installing the package\n" +
+   "- If you are using Expo: install expo-application \n";
+ 
+-// @ts-expect-error
+-const isTurboModuleEnabled = global.__turboModuleProxy != null;
++// OneKey patch: never read NativeModules.RNWalletConnectModule at module
++// top-level — in Release bridgeless boots NativeModules can be undefined and
++// throws TypeError → white screen. Resolve lazily / defensively instead.
++function resolveRNWalletConnectModule(): any | undefined {
++  try {
++    // Prefer TurboModule when New Architecture / bridgeless is active.
++    const turbo = TurboModuleRegistry.get("RNWalletConnectModule");
++    if (turbo) {
++      return turbo;
++    }
++  } catch {
++    // ignore
++  }
+ 
+-const RNWalletConnectModule = isTurboModuleEnabled
+-  ? require("../module/NativeRNWalletConnectModule").default
+-  : NativeModules.RNWalletConnectModule;
++  try {
++    // @ts-expect-error NativeModules may be undefined in bridgeless early boot
++    return NativeModules?.RNWalletConnectModule;
++  } catch {
++    return undefined;
++  }
++}
+ 
+ function getExpoModule(): any | undefined {
+   try {
+@@ -27,6 +42,7 @@ function getExpoModule(): any | undefined {
+ 
+ function getRNModule(): any | undefined {
+   try {
++    const RNWalletConnectModule = resolveRNWalletConnectModule();
+     if (!RNWalletConnectModule) throw new Error();
+     return RNWalletConnectModule;
+   } catch {

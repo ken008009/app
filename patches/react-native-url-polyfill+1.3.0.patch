@@ -1,0 +1,61 @@
+diff --git a/node_modules/react-native-url-polyfill/js/ios10Fix.ios.js b/node_modules/react-native-url-polyfill/js/ios10Fix.ios.js
+new file mode 100644
+index 0000000..ef7ba61
+--- /dev/null
++++ b/node_modules/react-native-url-polyfill/js/ios10Fix.ios.js
+@@ -0,0 +1,24 @@
++/**
++ * There's a bug happening on iOS 10 where `ArrayBuffer.prototype.byteLength`
++ * is not defined, but present on the object returned by the function/constructor
++ * See https://github.com/charpeni/react-native-url-polyfill/issues/190
++ * */
++
++import {Platform} from 'react-native';
++
++const majorVersionIOS = parseInt(Platform.Version, 10);
++
++if (majorVersionIOS === 10) {
++  if (
++    Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, 'byteLength') == null
++  ) {
++    // eslint-disable-next-line no-extend-native
++    Object.defineProperty(ArrayBuffer.prototype, 'byteLength', {
++      configurable: true,
++      enumerable: false,
++      get() {
++        return null;
++      },
++    });
++  }
++}
+diff --git a/node_modules/react-native-url-polyfill/js/ios10Fix.js b/node_modules/react-native-url-polyfill/js/ios10Fix.js
+index 4d0e428..57d69ea 100644
+--- a/node_modules/react-native-url-polyfill/js/ios10Fix.js
++++ b/node_modules/react-native-url-polyfill/js/ios10Fix.js
+@@ -1,24 +1,2 @@
+-/**
+- * There's a bug happening on iOS 10 where `ArrayBuffer.prototype.byteLength`
+- * is not defined, but present on the object returned by the function/constructor
+- * See https://github.com/charpeni/react-native-url-polyfill/issues/190
+- * */
+-
+-import {Platform} from 'react-native';
+-
+-const majorVersionIOS = parseInt(Platform.Version, 10);
+-
+-if (Platform.OS === 'ios' && majorVersionIOS === 10) {
+-  if (
+-    Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, 'byteLength') == null
+-  ) {
+-    // eslint-disable-next-line no-extend-native
+-    Object.defineProperty(ArrayBuffer.prototype, 'byteLength', {
+-      configurable: true,
+-      enumerable: false,
+-      get() {
+-        return null;
+-      },
+-    });
+-  }
+-}
++// Intentionally empty on non-iOS platforms. Metro resolves ios10Fix.ios.js on
++// iOS, so Android Release startup never imports Platform for an iOS-only fix.
