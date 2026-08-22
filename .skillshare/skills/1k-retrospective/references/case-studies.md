@@ -54,3 +54,17 @@ Cases are appended by AI after each bug fix. Do NOT reorder or delete entries �
 **Root Cause**: TokenSelector self-fetch called a single `fetchAccountTokens` against All Networks (`onekeyall` + mock address) instead of fan-out via `fetchFilteredTokenSelectorTokens`; failures also never set `tokenSelectorInitialized`, and home `ownerMismatch` could keep the skeleton after init.
 **Fix**: Fan-out with `fetchFilteredTokenSelectorTokens`, always clear skeleton in `finally`, and skip `ownerMismatch` when `isTokenSelector`.
 **Catchable by**: Section 5: No infinite loops / stuck loading — async fetch must clear loading in finally; Section 4: Shared component gates must distinguish home vs selector data path
+
+## Case: Suppress MS upgrade notification dialog on Assets
+**Date**: 2026-08-21 | **Platforms**: Android, iOS, Web, Desktop, Extension
+**Symptom**: Opening wallet / Assets showed a "MS 再升级" update prompt dialog.
+**Root Cause**: AppUpdateForeground called showUpdateDialogUI when a non-force update was available; brand replace turned "OneKey 再升级" into "MS 再升级".
+**Fix**: Made showUpdateDialogUI a no-op so the prompt is never shown.
+**Catchable by**: NEW — product-gated update dialog should be skippable for white-label forks
+
+## Case: Enumerable Array.prototype.toSorted breaks Assets IPC
+**Date**: 2026-08-22 | **Platforms**: Android (native dual runtime; also iOS Release risk)
+**Symptom**: Assets / Portfolio page never loaded data (IPC keep failing).
+**Root Cause**: Inline `Array.prototype.toSorted = fn` made the method enumerable; `assertUtils.isSerializable` walks `for...in` on arrays and rejected payloads with keyPath `["toSorted"]`.
+**Fix**: Install via `Object.defineProperty(..., { enumerable: false })`, and reinstall when an existing descriptor is enumerable.
+**Catchable by**: Section 1: No extend-native via plain assignment — prototype methods must be non-enumerable; Section 5: background API serialization failures surface as stuck loading

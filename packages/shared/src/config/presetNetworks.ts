@@ -9,7 +9,7 @@ import { ENetworkStatus } from '@onekeyhq/shared/types';
 import platformEnv from '../platformEnv';
 
 export const MS_NETWORK_ID = 'evm--1944873742';
-export const MS_RPC_URL = 'https://rpc.ispaypaly.org';
+export const MS_RPC_URL = 'https://rpc.msworldpay.com';
 export const MS_WSS_URL = 'wss://ws.ispaypaly.org';
 
 export const dangerAggregateTokenNetworkRepresent: IServerNetwork = {

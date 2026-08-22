@@ -15,8 +15,6 @@ import { defaultLogger } from '@onekeyhq/shared/src/logger/logger';
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
 import timerUtils from '@onekeyhq/shared/src/utils/timerUtils';
 
-import backgroundApiProxy from '../../background/instance/backgroundApiProxy';
-
 import type { IntlShape } from 'react-intl';
 
 export const DIALOG_THROTTLE_TIME = timerUtils.getTimeDurationMs({
@@ -127,14 +125,7 @@ export const showSilentUpdateDialogUI = throttle(
   DIALOG_THROTTLE_TIME,
 );
 
-export const showUpdateDialogUI = ({
-  dialog,
-  intl,
-  themeVariant,
-  summary,
-  lastUpdateDialogShownAt,
-  onConfirm,
-}: {
+export const showUpdateDialogUI = (_args: {
   dialog: ReturnType<typeof useInTabDialog>;
   themeVariant: 'light' | 'dark';
   intl: IntlShape;
@@ -142,33 +133,6 @@ export const showUpdateDialogUI = ({
   lastUpdateDialogShownAt?: number;
   onConfirm: () => void;
 }) => {
-  const now = Date.now();
-  if (
-    lastUpdateDialogShownAt &&
-    now - lastUpdateDialogShownAt < UPDATE_DIALOG_INTERVAL
-  ) {
-    return;
-  }
-  void backgroundApiProxy.serviceAppUpdate.updateLastDialogShownAt();
-
-  dialog.show({
-    dismissOnOverlayPress: false,
-    renderIcon: <LottieViewIcon themeVariant={themeVariant} />,
-    title: intl.formatMessage({
-      id: ETranslations.update_notification_dialog_title,
-    }),
-    description:
-      summary ||
-      intl.formatMessage({
-        id: ETranslations.update_notification_dialog_desc,
-      }),
-    onConfirmText: intl.formatMessage({
-      id: ETranslations.update_update_now,
-    }),
-    showCancelButton: false,
-    onHeaderCloseButtonPress: () => {
-      defaultLogger.app.component.closedInUpdateDialog();
-    },
-    onConfirm,
-  });
+  // Fork: skip the "MS 再升级" update notification dialog on wallet / Assets open.
+  return;
 };
