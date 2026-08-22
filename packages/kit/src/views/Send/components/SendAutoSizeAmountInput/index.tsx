@@ -207,6 +207,8 @@ type ISendAmountAutoSizeInputProps = {
   // Cap the display font (in px). Defaults to the full 56*scale ramp; pass a
   // smaller value to line the amount up with a sibling hero.
   maxFontSize?: number;
+  /** Render with a bordered input-box chrome so the field is easier to spot. */
+  boxed?: boolean;
   inputProps?: Omit<IInputProps, 'value' | 'onChangeText' | 'onChange'> & {
     loading?: boolean;
   };
@@ -236,6 +238,7 @@ function SendAutoSizeAmountInputComponent(
     compactTokenSymbol,
     inlineTextAlignMode,
     maxFontSize: maxFontSizeProp,
+    boxed = false,
     extraContent,
     onLayout,
     ...rest
@@ -244,15 +247,23 @@ function SendAutoSizeAmountInputComponent(
 ) {
   const { md } = useMedia();
   const theme = useTheme();
-  const fontSizeScale = md ? 1.2 : 1.5;
+  const fontSizeScale = boxed ? (md ? 1 : 1.15) : md ? 1.2 : 1.5;
   const selectionColor =
-    normalizeAutoSizeNativeColor(theme.bgPrimaryActive.val) ??
-    theme.bgPrimaryActive.val;
+    normalizeAutoSizeNativeColor(
+      boxed
+        ? (theme.bgPrimary?.val ?? theme.bgPrimaryActive.val)
+        : theme.bgPrimaryActive.val,
+    ) ?? theme.bgPrimaryActive.val;
   const backgroundColor = normalizeAutoSizeNativeColor(theme.transparent.val);
   const textColor = normalizeAutoSizeNativeColor(theme.text.val);
-  const placeholderColor = normalizeAutoSizeNativeColor(theme.textDisabled.val);
+  const placeholderColor = normalizeAutoSizeNativeColor(
+    boxed
+      ? (theme.textPlaceholder?.val ?? theme.textDisabled.val)
+      : theme.textDisabled.val,
+  );
 
   const [layoutWidth, setLayoutWidth] = useState(0);
+  const [isFocused, setIsFocused] = useState(false);
   const autoSizeInputRef = useRef<IAutoSizeInputRef | null>(null);
   const [forcedNativeText, setForcedNativeText] = useState<string | null>(null);
   const forceWriteBackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -363,14 +374,18 @@ function SendAutoSizeAmountInputComponent(
     () => normalizeTokenSymbol(tokenSymbol),
     [tokenSymbol],
   );
-  const shouldWrapTokenSymbol =
-    compactTokenSymbol ||
-    (normalizedTokenSymbol?.length ?? 0) > INLINE_SYMBOL_MAX_LENGTH;
-  const inlineTokenSymbol = shouldWrapTokenSymbol
-    ? undefined
-    : normalizedTokenSymbol;
-
   const currencyLabel = inputProps?.leftAddOnProps?.label as string | undefined;
+  const shouldWrapTokenSymbol =
+    !boxed &&
+    (compactTokenSymbol ||
+      (normalizedTokenSymbol?.length ?? 0) > INLINE_SYMBOL_MAX_LENGTH);
+  // Boxed layout: unit sits on the far right outside the input; never as suffix.
+  const inlineTokenSymbol =
+    boxed || shouldWrapTokenSymbol ? undefined : normalizedTokenSymbol;
+  // Fiat mode already shows currency as prefix; otherwise show token on the right.
+  const boxedUnitLabel =
+    boxed && !currencyLabel ? normalizedTokenSymbol : undefined;
+
   const isLoading = inputProps?.loading;
   const placeholder = inputProps?.placeholder ?? '0';
   const editable = inputProps?.editable ?? true;
@@ -378,14 +393,43 @@ function SendAutoSizeAmountInputComponent(
   const returnKeyType = inputProps?.returnKeyType;
   const onFocus = inputProps?.onFocus;
   const onBlur = inputProps?.onBlur;
+
+  // Boxed amount field: auto-focus so the caret blinks immediately.
+  useEffect(() => {
+    if (!boxed || !editable) {
+      return undefined;
+    }
+    const timer = setTimeout(() => {
+      autoSizeInputRef.current?.focus?.();
+    }, 280);
+    return () => clearTimeout(timer);
+  }, [boxed, editable]);
+
+  const handleFocus = useCallback(
+    (event: Parameters<NonNullable<typeof onFocus>>[0]) => {
+      setIsFocused(true);
+      onFocus?.(event);
+    },
+    [onFocus],
+  );
+  const handleBlur = useCallback(
+    (event: Parameters<NonNullable<typeof onBlur>>[0]) => {
+      setIsFocused(false);
+      onBlur?.(event);
+    },
+    [onBlur],
+  );
   // Default keeps the original full-size ramp; callers can cap it (maxFontSizeProp).
-  const maxFontSize = maxFontSizeProp ?? Math.round(56 * fontSizeScale);
+  // Boxed mode uses a denser default so the field reads as an input, not a hero.
+  const maxFontSize =
+    maxFontSizeProp ?? Math.round((boxed ? 36 : 56) * fontSizeScale);
   const fontSize = Math.min(
     getAmountFontSize(effectiveValue?.length || 0, fontSizeScale),
     maxFontSize,
   );
   const availableInlineWidth = Math.max(
-    Math.floor(layoutWidth || windowWidth || 0),
+    Math.floor(layoutWidth || windowWidth || 0) -
+      (boxed && boxedUnitLabel ? 96 : 0),
     0,
   );
   const isCompactInlineWidth =
@@ -445,6 +489,8 @@ function SendAutoSizeAmountInputComponent(
       minFontSize={minFontSize}
       availableInlineWidth={availableInlineWidth}
       inlineTextAlignMode={inlineTextAlignMode}
+      textAlign={boxed ? 'left' : undefined}
+      fillWidth={boxed}
       currencyLabel={currencyLabel}
       inlineTokenSymbol={inlineTokenSymbol}
       inlinePrefixGapPx={inlinePrefixGapPx}
@@ -455,8 +501,8 @@ function SendAutoSizeAmountInputComponent(
       editable={editable}
       keyboardType={keyboardType}
       returnKeyType={returnKeyType}
-      onFocus={onFocus}
-      onBlur={onBlur}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
       textColor={textColor}
       placeholderColor={placeholderColor}
       backgroundColor={backgroundColor}
@@ -465,13 +511,49 @@ function SendAutoSizeAmountInputComponent(
 
   return (
     <Stack
-      alignItems="center"
+      alignItems={boxed ? 'stretch' : 'center'}
       width="100%"
+      {...(boxed
+        ? {
+            borderWidth: '$px',
+            borderColor: isFocused ? '$focusRing' : '$borderStrong',
+            borderRadius: '$3',
+            borderCurve: 'continuous',
+            bg: '$bg',
+            px: '$3.5',
+            py: '$2.5',
+            onPress: editable
+              ? () => {
+                  autoSizeInputRef.current?.focus?.();
+                }
+              : undefined,
+          }
+        : null)}
       {...rest}
       onLayout={handleInputLayout}
     >
-      {amountInputNode}
-      {wrappedTokenSymbol ? (
+      {boxed ? (
+        <XStack alignItems="center" width="100%" gap="$3">
+          <Stack flex={1} minWidth={0}>
+            {amountInputNode}
+          </Stack>
+          {boxedUnitLabel ? (
+            <SizableText
+              size="$headingLg"
+              color="$textSubdued"
+              fontWeight="500"
+              flexShrink={0}
+              numberOfLines={1}
+              maxWidth="42%"
+            >
+              {boxedUnitLabel}
+            </SizableText>
+          ) : null}
+        </XStack>
+      ) : (
+        amountInputNode
+      )}
+      {!boxed && wrappedTokenSymbol ? (
         <SizableText
           color="$text"
           fontWeight="500"
@@ -492,7 +574,7 @@ function SendAutoSizeAmountInputComponent(
           py="$1.5"
           px="$1"
           borderRadius="$2"
-          alignSelf="center"
+          alignSelf={boxed ? 'flex-start' : 'center'}
           maxWidth="100%"
           minWidth={0}
           overflow="hidden"

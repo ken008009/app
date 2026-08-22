@@ -3548,6 +3548,7 @@ export function SendAmountInputContainer({
         >
           <SendAutoSizeAmountInput
             ref={amountInputRef}
+            boxed
             tokenSymbol={isUseFiat ? undefined : tokenSymbol}
             compactTokenSymbol={(tokenSymbol?.length ?? 0) > 4}
             reversible={
@@ -4251,7 +4252,7 @@ export function SendAmountInputContainer({
         id: ETranslations.insufficient_funds__action,
       })
     : intl.formatMessage({
-        id: ETranslations.send_preview_button,
+        id: ETranslations.global_confirm,
       });
   const isInsufficientActionAvailable = showSwapButton || showBuyButton;
 

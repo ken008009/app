@@ -45,6 +45,8 @@ export const AutoSizeInput = forwardRef<IAutoSizeInputRef, IAutoSizeInputProps>(
       inlineTokenSymbol,
       inlinePrefixGapPx,
       inlineSuffixGapPx,
+      textAlign: textAlignProp,
+      fillWidth = false,
       onChangeText,
       placeholder,
       editable,
@@ -75,6 +77,9 @@ export const AutoSizeInput = forwardRef<IAutoSizeInputRef, IAutoSizeInputProps>(
     );
 
     const autoSizeTextAlign = useMemo<'center' | 'left' | 'right'>(() => {
+      if (textAlignProp) {
+        return textAlignProp;
+      }
       if (currencyLabel) {
         return 'left';
       }
@@ -82,20 +87,27 @@ export const AutoSizeInput = forwardRef<IAutoSizeInputRef, IAutoSizeInputProps>(
         return 'right';
       }
       return 'center';
-    }, [currencyLabel, inlineTokenSymbol]);
+    }, [currencyLabel, inlineTokenSymbol, textAlignProp]);
+
+    const showInlineSuffix = !fillWidth && !!inlineTokenSymbol;
 
     return (
-      <Stack width="100%" alignItems="center" py="$1" overflow="hidden">
+      <Stack
+        width="100%"
+        alignItems={fillWidth ? 'stretch' : 'center'}
+        py="$1"
+        overflow="hidden"
+      >
         <AutoSizeInputView
-          contentCentered
+          contentCentered={!fillWidth && autoSizeTextAlign === 'center'}
           style={{
             width: '100%',
-            height: 64,
+            height: fillWidth ? 48 : 64,
           }}
           text={value}
           placeholder={placeholder ?? '0'}
           prefix={currencyLabel ?? ''}
-          suffix={inlineTokenSymbol ?? ''}
+          suffix={showInlineSuffix ? inlineTokenSymbol ?? '' : ''}
           fontSize={maxFontSize}
           minFontSize={minFontSize}
           textAlign={autoSizeTextAlign}
@@ -111,10 +123,10 @@ export const AutoSizeInput = forwardRef<IAutoSizeInputRef, IAutoSizeInputProps>(
           placeholderColor={placeholderColor}
           selectionColor={selectionColor}
           prefixMarginRight={currencyLabel ? inlinePrefixGapPx : 0}
-          suffixMarginLeft={inlineTokenSymbol ? inlineSuffixGapPx : 0}
+          suffixMarginLeft={showInlineSuffix ? inlineSuffixGapPx : 0}
           showBorder={false}
           inputBackgroundColor={backgroundColor}
-          contentAutoWidth
+          contentAutoWidth={!fillWidth}
           onChangeText={wrapNitroCallback(onChangeText)}
           onFocus={
             wrapNitroCallback(() => {

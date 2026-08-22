@@ -14,6 +14,10 @@ export type IAutoSizeInputProps = {
   minFontSize: number;
   availableInlineWidth: number;
   inlineTextAlignMode?: 'auto' | 'center';
+  /** Force text alignment (overrides currency/suffix heuristics). */
+  textAlign?: 'left' | 'center' | 'right';
+  /** Stretch the input to full row width (amount left + unit outside). */
+  fillWidth?: boolean;
   currencyLabel?: string;
   inlineTokenSymbol?: string;
   inlinePrefixGapPx: number;

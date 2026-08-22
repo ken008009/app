@@ -178,6 +178,8 @@ export const AutoSizeInput = forwardRef<IAutoSizeInputRef, IAutoSizeInputProps>(
       minFontSize,
       availableInlineWidth,
       inlineTextAlignMode = 'auto',
+      textAlign: textAlignProp,
+      fillWidth = false,
       currencyLabel,
       inlineTokenSymbol,
       inlinePrefixGapPx,
@@ -239,6 +241,9 @@ export const AutoSizeInput = forwardRef<IAutoSizeInputRef, IAutoSizeInputProps>(
       };
     }, []);
 
+    const effectiveInlineTokenSymbol = fillWidth
+      ? undefined
+      : inlineTokenSymbol;
     const inlineMeasureText = value || placeholder || '0';
     const effectiveFontSize = getFittedInlineFontSize({
       text: inlineMeasureText,
@@ -246,7 +251,7 @@ export const AutoSizeInput = forwardRef<IAutoSizeInputRef, IAutoSizeInputProps>(
       minFontSize,
       availableInlineWidth,
       currencyLabel,
-      inlineTokenSymbol,
+      inlineTokenSymbol: effectiveInlineTokenSymbol,
       inlinePrefixGapPx,
       inlineSuffixGapPx,
       measurementRevision: webFontMeasureVersion,
@@ -274,10 +279,10 @@ export const AutoSizeInput = forwardRef<IAutoSizeInputRef, IAutoSizeInputProps>(
           ),
         )
       : 0;
-    const inlineSuffixTextWidthPx = inlineTokenSymbol
+    const inlineSuffixTextWidthPx = effectiveInlineTokenSymbol
       ? Math.ceil(
           measureInlineTextWidthPx(
-            inlineTokenSymbol,
+            effectiveInlineTokenSymbol,
             effectiveFontSize,
             500,
             webFontMeasureVersion,
@@ -296,10 +301,10 @@ export const AutoSizeInput = forwardRef<IAutoSizeInputRef, IAutoSizeInputProps>(
       inlinePrefixTextWidthPx +
       inlineSuffixTextWidthPx +
       (currencyLabel ? inlinePrefixGapPx : 0) +
-      (inlineTokenSymbol ? inlineSuffixGapPx : 0) +
+      (effectiveInlineTokenSymbol ? inlineSuffixGapPx : 0) +
       Math.max(8, Math.round(effectiveFontSize * 0.16));
     const inlineInputMaxWidth =
-      inlineTokenSymbol || currencyLabel
+      effectiveInlineTokenSymbol || currencyLabel
         ? `calc(100% - ${desktopInlineReservedWidthPx}px)`
         : '100%';
     const desktopPrefixOffset = Math.max(
@@ -311,21 +316,26 @@ export const AutoSizeInput = forwardRef<IAutoSizeInputRef, IAutoSizeInputProps>(
       Math.round(effectiveFontSize * 0.04),
     );
     const hasPrefix = !!currencyLabel;
-    const hasSuffix = !!inlineTokenSymbol;
-    let desktopAmountTextAlign: 'center' | 'left' | 'right' = 'center';
-    if (hasPrefix) {
-      desktopAmountTextAlign = 'left';
-    } else if (hasSuffix) {
-      desktopAmountTextAlign = 'right';
+    const hasSuffix = !!effectiveInlineTokenSymbol;
+    let desktopAmountTextAlign: 'center' | 'left' | 'right' =
+      textAlignProp ?? 'center';
+    if (!textAlignProp) {
+      if (hasPrefix) {
+        desktopAmountTextAlign = 'left';
+      } else if (hasSuffix) {
+        desktopAmountTextAlign = 'right';
+      }
     }
 
     let desktopInlineRowOffsetPx = 0;
-    if (inlineTextAlignMode === 'center') {
-      desktopInlineRowOffsetPx = 0;
-    } else if (desktopAmountTextAlign === 'right') {
-      desktopInlineRowOffsetPx = Math.round(-inlineInputSlackPx / 2);
-    } else if (desktopAmountTextAlign === 'left') {
-      desktopInlineRowOffsetPx = Math.round(inlineInputSlackPx / 2);
+    if (!fillWidth) {
+      if (inlineTextAlignMode === 'center') {
+        desktopInlineRowOffsetPx = 0;
+      } else if (desktopAmountTextAlign === 'right') {
+        desktopInlineRowOffsetPx = Math.round(-inlineInputSlackPx / 2);
+      } else if (desktopAmountTextAlign === 'left') {
+        desktopInlineRowOffsetPx = Math.round(inlineInputSlackPx / 2);
+      }
     }
 
     const hasSmallWidth =
@@ -336,10 +346,10 @@ export const AutoSizeInput = forwardRef<IAutoSizeInputRef, IAutoSizeInputProps>(
       <XStack
         width="100%"
         alignItems="center"
-        justifyContent="center"
+        justifyContent={fillWidth ? 'flex-start' : 'center'}
         overflow="hidden"
         style={
-          desktopInlineRowOffsetPx && !hasSmallWidth
+          !fillWidth && desktopInlineRowOffsetPx && !hasSmallWidth
             ? { transform: [{ translateX: desktopInlineRowOffsetPx }] }
             : undefined
         }
@@ -382,10 +392,11 @@ export const AutoSizeInput = forwardRef<IAutoSizeInputRef, IAutoSizeInputProps>(
           onChangeText={onChangeText}
           textAlign={desktopAmountTextAlign}
           containerProps={{
-            width: inlineInputWidthPx,
+            width: fillWidth ? '100%' : inlineInputWidthPx,
+            flex: fillWidth ? 1 : undefined,
             flexShrink: 1,
             minWidth: Math.ceil(effectiveFontSize * 1.2),
-            maxWidth: inlineInputMaxWidth,
+            maxWidth: fillWidth ? '100%' : inlineInputMaxWidth,
             borderWidth: 0,
             bg: 'transparent',
           }}
@@ -422,7 +433,7 @@ export const AutoSizeInput = forwardRef<IAutoSizeInputRef, IAutoSizeInputProps>(
             },
           } as any)}
         />
-        {inlineTokenSymbol ? (
+        {effectiveInlineTokenSymbol ? (
           <SizableText
             color="$text"
             fontWeight="500"
@@ -434,7 +445,7 @@ export const AutoSizeInput = forwardRef<IAutoSizeInputRef, IAutoSizeInputProps>(
             mt={desktopInlineSymbolOffset}
             numberOfLines={1}
           >
-            {inlineTokenSymbol}
+            {effectiveInlineTokenSymbol}
           </SizableText>
         ) : null}
       </XStack>
