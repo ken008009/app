@@ -47,6 +47,7 @@ yarn lint:staged && yarn tsc:staged
 - 安全区：Android 无刘海时 `safeAreaInsets.bottom` 可能为 0，底部 Tab/按钮要测真机
 - 键盘：`KeyboardAvoidingView` 在 Android 上行为与 iOS 不同，改输入页必测
 - 生产环境有 **双 JS 运行时**：`main`（UI）和 `background`（bg），存储/内存分析要区分
+- **ProdRelease 真机白屏**：模拟器 Debug 不能当结论；详见 `.cursor/rules/android-release-boot.mdc`。快验：只打 JS → `apps/mobile/scripts/inject-release-js-into-apk.sh` 注入完整底包，勿半小时全量盲打
 
 ## 二开安全边界（禁止随意改）
 

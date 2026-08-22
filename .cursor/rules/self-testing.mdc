@@ -47,6 +47,8 @@ After completing any non-trivial task (feature, bug fix, refactor), execute this
 - [ ] No memory leaks: subscriptions/listeners cleaned up
 - [ ] No infinite loops from useEffect dependency chains
 - [ ] "Not loaded" (`null`/`undefined`) vs "empty" (`[]`) properly distinguished
+- [ ] Android Release boot: polyfills / Nitro / hybrid modules must not assume `NativeModules` or `NitroModules` are ready at import time (bridgeless); never pass JS Proxy stubs into native `box()` / HybridFunction
+- [ ] After patching `node_modules` for Release: force-rebuild `index.android.bundle` (not only `background.bundle`) and confirm new strings via `strings` before claiming fixed
 
 ## 6. Unit Tests (skip for pure UI styling with no logic)
 

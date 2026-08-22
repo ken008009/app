@@ -1,0 +1,54 @@
+---
+description: Android ProdRelease 白屏/闪退排查与快速验证（Nitro、polyfill、注入 JS）
+globs: patches/**/*,packages/shared/src/polyfills/**/*,apps/mobile/android/**/*,apps/mobile/scripts/inject-release-js-into-apk.sh,node_modules/react-native-nitro-modules/**/*,node_modules/react-native-url-polyfill/**/*
+alwaysApply: false
+---
+
+# Android Release 启动白屏 / 闪退
+
+模拟器 Debug+Metro 能开 ≠ ProdRelease 真机能开。白屏优先用真机 Release + logcat，不要靠全量半小时打包盲猜。
+
+## 已知根因链（2026-08）
+
+1. `url-polyfill`：`NativeModules.BlobModule` 顶层解构 → Release bridgeless 下 `NativeModules` 可能为 `undefined`
+2. Nitro：`NitroModules.createHybridObject` 在 install 完成前被 hybrid 顶层调用 → `createHybridObject of undefined`
+3. 假 stub 危险：JS Proxy stub 骗过 (2) 后，`installWorkletsSupport` 对 stub/`Proxy` 做 `box()` → 原生 **SIGSEGV**
+
+正确方向：`ensureInstalled()` 后转发到 `global.NitroModulesProxy`；`box()` 只 box 原生 proxy，不要造假 HybridObject。
+
+## 定位（秒级）
+
+```bash
+adb logcat -c
+adb shell am start -n so.onekey.app.wallet/.MainActivity
+adb logcat -d | rg -i 'BlobModule|createHybridObject|TypeError|SIGSEGV|ReactNativeJS|Abort message'
+```
+
+好用节点对比：用 `git log` / `git diff` 看 `polyfills/`、`patches/`、启动入口，不必对业务 UI 做 13 提交盲 bisect。
+
+## 快速验证（勿每次 assembleProdRelease）
+
+1. 改 JS / patch / `node_modules` 后，**删掉**再打主包，避免 `createBundle* UP-TO-DATE`：
+   ```bash
+   rm -f apps/mobile/android/app/build/generated/assets/createBundleProdReleaseJsAndAssets/index.android.bundle
+   cd apps/mobile/android && ./gradlew :app:createBundleProdReleaseJsAndAssets -x lint -x test
+   ```
+2. 确认字符串进了 **index**（不是只有 background）：
+   ```bash
+   strings …/index.android.bundle | rg 're-entrant access|ensureInstalled|resolveBlobModule'
+   ```
+3. 注入现有完整 ProdRelease APK（debug.keystore）并安装：
+   ```bash
+   DEVICE=<serial> apps/mobile/scripts/inject-release-js-into-apk.sh /path/to/good-base.apk
+   ```
+4. **禁止**全量解压再重打 zip（会弄坏 binary Manifest，如 expo clipboard meta-data）；脚本须原地 `zip -d/-u` 替换 `assets/*.bundle`。
+
+## 补丁纪律
+
+- 改 `node_modules` 后必须重生成 `patches/<pkg>+<ver>.patch` 并 `git apply --check`
+- patch 不得含 `android/build`、`android/bin`、`.gradle`
+- Metro 对 nitro 走 `"react-native": "src/"`，但 patch 应同步 `src` + `lib/module` + `lib/commonjs`
+
+## 案例
+
+详见 `.claude/skills/1k-retrospective/references/case-studies.md`（BlobModule / createHybridObject / box SIGSEGV）。
