@@ -69,6 +69,7 @@ export type IProgressiveRound = IAllNetworkSnapshotRound & {
 /** Owner key + hideZero inputs the `ingestRound` call reads (written in render). */
 export interface ICellsIngestInputs {
   ownerKey: string;
+  includeMsGasToken: boolean;
   nonZeroInputs: {
     keepDefault?: boolean;
     homeDefaultTokenMap?: Record<string, IHomeDefaultToken>;
@@ -233,6 +234,7 @@ export function useTokenListReactivePipeline(
         smallBalanceTokens: snapshot.smallBalanceTokens,
         tokenListMap: snapshot.mergeTokenListMap,
         catalogTokens: allAggregateTokensRef?.current ?? [],
+        includeMsGasToken: cellsIngestInputsRef.current.includeMsGasToken,
       });
       const orderedTokens = applyHomeTokenLocalLogos(pinnedHomeTokens.tokens);
       const smallBalanceTokens = applyHomeTokenLocalLogos(

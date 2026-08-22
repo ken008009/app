@@ -2,6 +2,7 @@
 yarn test packages/shared/src/utils/tokenUtils.test.ts
 */
 import { ENetworkStatus, type IServerNetwork } from '../../types';
+import { MS_NETWORK_ID } from '../config/presetNetworks';
 
 import {
   HOME_GAS_TOKEN_DISPLAY_SYMBOL,
@@ -20,6 +21,7 @@ import {
   isHomeGasTokenSymbol,
   mergeDeriveTokenListMap,
   nestAggregateTokensMap,
+  shouldIncludeHomeMsGasToken,
   sortTokensByHomeValue,
 } from './tokenUtils';
 
@@ -263,6 +265,127 @@ describe('ensureHomePinnedSymbolTokens', () => {
     expect(out.tokens[0]?.name).toBe('MSUSD');
     expect(out.tokens[0]?.isNative).toBe(true);
     expect(out.tokenListMap['ispay-native']?.balanceParsed).toBe('500000');
+  });
+
+  test('All Networks MSUSD pin balance equals the MS single-chain native row', () => {
+    const msNative: IAccountToken = {
+      $key: 'evm--1944873742_native',
+      symbol: 'ISPAY',
+      name: 'ISPAY',
+      address: '',
+      decimals: 18,
+      isNative: true,
+      networkId: 'evm--1944873742',
+    };
+    const metronomeOnEth: IAccountToken = {
+      $key: 'evm--1_msusd',
+      symbol: 'MSUSD',
+      name: 'Metronome',
+      address: '0xmetronome',
+      decimals: 18,
+      isNative: false,
+      networkId: 'evm--1',
+    };
+    const nativeFiat = {
+      balance: '123000000000000000000',
+      balanceParsed: '123',
+      fiatValue: '0',
+      price: 0,
+    };
+
+    const allNetworks = ensureHomePinnedSymbolTokens({
+      tokens: [metronomeOnEth, msNative],
+      tokenListMap: {
+        'evm--1944873742_native': nativeFiat,
+        'evm--1_msusd': {
+          balance: '999000000000000000000',
+          balanceParsed: '999',
+          fiatValue: '999',
+          price: 1,
+        },
+      },
+    });
+    const singleMs = ensureHomePinnedSymbolTokens({
+      tokens: [msNative],
+      tokenListMap: {
+        'evm--1944873742_native': nativeFiat,
+      },
+    });
+
+    expect(allNetworks.tokens[0]?.$key).toBe(singleMs.tokens[0]?.$key);
+    expect(allNetworks.tokens[0]?.networkId).toBe('evm--1944873742');
+    expect(allNetworks.tokens[0]?.isNative).toBe(true);
+    expect(allNetworks.tokenListMap[allNetworks.tokens[0].$key]?.balanceParsed).toBe(
+      '123',
+    );
+    expect(singleMs.tokenListMap[singleMs.tokens[0].$key]?.balanceParsed).toBe(
+      '123',
+    );
+  });
+
+  test('omits MSUSD entirely when All Networks has ms unchecked', () => {
+    const native: IAccountToken = {
+      $key: 'ms-native',
+      symbol: 'ISPAY',
+      name: 'ISPAY',
+      address: '',
+      decimals: 18,
+      isNative: true,
+      networkId: MS_NETWORK_ID,
+    };
+    const metronome: IAccountToken = {
+      $key: 'metronome-msusd',
+      symbol: 'MSUSD',
+      name: 'Metronome',
+      address: '0xmetronome',
+      decimals: 18,
+      isNative: false,
+      networkId: 'evm--1',
+    };
+    const usdt: IAccountToken = {
+      $key: 'usdt',
+      symbol: 'USDT',
+      name: 'Tether',
+      address: '0xusdt',
+      decimals: 6,
+      isNative: false,
+      networkId: 'evm--1',
+    };
+    const out = ensureHomePinnedSymbolTokens({
+      tokens: [native, metronome, usdt],
+      includeMsGasToken: false,
+    });
+
+    expect(
+      out.tokens.some(
+        (token) =>
+          token.symbol === 'MSUSD' ||
+          token.networkId === MS_NETWORK_ID ||
+          token.$key === 'home_pin_msusd',
+      ),
+    ).toBe(false);
+    expect(out.tokens.some((token) => token.symbol === 'USDT')).toBe(true);
+  });
+});
+
+describe('shouldIncludeHomeMsGasToken', () => {
+  test('stays on for single-network Home views', () => {
+    expect(
+      shouldIncludeHomeMsGasToken({
+        isAllNetworks: false,
+        disabledNetworks: { [MS_NETWORK_ID]: true },
+      }),
+    ).toBe(true);
+  });
+
+  test('is off when All Networks has ms disabled', () => {
+    expect(
+      shouldIncludeHomeMsGasToken({
+        isAllNetworks: true,
+        enabledNetworks: {},
+        disabledNetworks: { [MS_NETWORK_ID]: true },
+      }),
+    ).toBe(false);
   });
 });
 

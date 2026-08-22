@@ -56,7 +56,11 @@ const OWNER = { accountId: 'acc1', networkId: 'evm--1' };
 
 function makeInputsRef(): MutableRefObject<ICellsIngestInputs> {
   return {
-    current: { ownerKey: 'acc1__evm--1', nonZeroInputs: {} },
+    current: {
+      ownerKey: 'acc1__evm--1',
+      includeMsGasToken: true,
+      nonZeroInputs: {},
+    },
   };
 }
 
@@ -353,6 +357,7 @@ describe('useTokenListReactivePipeline', () => {
       act(() => {
         cellsIngestInputsRef.current = {
           ownerKey: 'acc2__evm--1',
+          includeMsGasToken: true,
           nonZeroInputs: {},
         };
       });

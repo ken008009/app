@@ -11,7 +11,7 @@ import { SEARCH_KEY_MIN_LENGTH } from '../consts/walletConsts';
 import { OneKeyInternalError } from '../errors';
 
 import accountUtils from './accountUtils';
-import networkUtils from './networkUtils';
+import networkUtils, { isEnabledNetworksInAllNetworks } from './networkUtils';
 import { isValidNumberValue } from './tokenValueUtils';
 
 import type { IServerNetwork } from '../../types';
@@ -611,6 +611,35 @@ function displaySymbolForHomePin(pinSymbol: string): string {
   return pinSymbol.toUpperCase();
 }
 
+function isHomeMsGasTokenRow(token: IAccountToken): boolean {
+  return (
+    token.networkId === MS_NETWORK_ID ||
+    isHomeGasTokenDisplayAlias(token.symbol) ||
+    isHomeGasTokenDisplayAlias(token.commonSymbol)
+  );
+}
+
+/** Home All Networks: hide MSUSD unless ms is still enabled. */
+export function shouldIncludeHomeMsGasToken({
+  isAllNetworks,
+  enabledNetworks = {},
+  disabledNetworks = {},
+}: {
+  isAllNetworks?: boolean;
+  enabledNetworks?: Record<string, boolean>;
+  disabledNetworks?: Record<string, boolean>;
+}): boolean {
+  if (!isAllNetworks) {
+    return true;
+  }
+  return isEnabledNetworksInAllNetworks({
+    networkId: MS_NETWORK_ID,
+    enabledNetworks,
+    disabledNetworks,
+    isTestnet: false,
+  });
+}
+
 function normalizeHomePinnedTokenDisplay(token: IAccountToken): IAccountToken {
   if (!shouldRewriteAsHomeGasToken(token)) {
     return token;
@@ -634,17 +663,21 @@ function normalizeHomePinnedTokenDisplay(token: IAccountToken): IAccountToken {
  * entries are synthesized from `catalogTokens` (allAggregateTokens) or as
  * zero-balance stubs, then placed at the front in pin order.
  * The MSUSD pin is always the MS chain native coin (`evm--1944873742`).
+ * When `includeMsGasToken` is false (All Networks with ms unchecked), do not
+ * inject or keep any MSUSD / ms-chain row.
  */
 export function ensureHomePinnedSymbolTokens({
   tokens,
   smallBalanceTokens = [],
   tokenListMap = {},
   catalogTokens = [],
+  includeMsGasToken = true,
 }: {
   tokens: IAccountToken[];
   smallBalanceTokens?: IAccountToken[];
   tokenListMap?: Record<string, ITokenFiat>;
   catalogTokens?: IAccountToken[];
+  includeMsGasToken?: boolean;
 }): {
   tokens: IAccountToken[];
   smallBalanceTokens: IAccountToken[];
@@ -675,6 +708,9 @@ export function ensureHomePinnedSymbolTokens({
   };
 
   for (const pin of HOME_TOKEN_SYMBOL_PRIORITY) {
+    if (pin === HOME_GAS_TOKEN_SYMBOL && !includeMsGasToken) {
+      continue;
+    }
     const inMain = findIn(mainTokens, pin);
     if (!inMain) {
       const inSmallIndex = smallTokens.findIndex((token) =>
@@ -751,6 +787,9 @@ export function ensureHomePinnedSymbolTokens({
   const pinned: IAccountToken[] = [];
   const usedKeys = new Set<string>();
   for (const pin of HOME_TOKEN_SYMBOL_PRIORITY) {
+    if (pin === HOME_GAS_TOKEN_SYMBOL && !includeMsGasToken) {
+      continue;
+    }
     const hit = findIn(
       mainTokens.filter((token) => !usedKeys.has(token.$key)),
       pin,
@@ -760,11 +799,16 @@ export function ensureHomePinnedSymbolTokens({
       usedKeys.add(hit.$key);
     }
   }
-  const rest = mainTokens.filter((token) => !usedKeys.has(token.$key));
+  const keepToken = (token: IAccountToken) =>
+    includeMsGasToken || !isHomeMsGasTokenRow(token);
+  const rest = mainTokens.filter(
+    (token) => !usedKeys.has(token.$key) && keepToken(token),
+  );
+  const visiblePinned = pinned.filter(keepToken);
 
   return {
-    tokens: [...pinned, ...rest],
-    smallBalanceTokens: smallTokens,
+    tokens: [...visiblePinned, ...rest],
+    smallBalanceTokens: smallTokens.filter(keepToken),
     tokenListMap: resultMap,
   };
 }

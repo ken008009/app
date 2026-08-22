@@ -20,6 +20,7 @@ import { DiscoveryTestIDs } from '../../testIDs';
 import { DashboardBanner } from './Banner';
 import { BookmarksSection } from './BookmarksSection';
 import { DiveInContent } from './DiveInContent';
+import { MSEcosystemSection } from './MSEcosystemSection';
 import { TrendingSection } from './TrendingSection';
 import { Welcome } from './Welcome';
 
@@ -143,7 +144,12 @@ function DashboardContent({
 
         <Stack alignItems="center">
           {!isInitialLoading && showDiveInDescription ? (
-            <DiveInContent onReload={refresh} />
+            <>
+              <DiveInContent onReload={refresh} />
+              <Stack px="$pagePadding" width="100%" mt="$4">
+                <MSEcosystemSection />
+              </Stack>
+            </>
           ) : (
             <>
               {hasBookmarks ? (
@@ -153,6 +159,7 @@ function DashboardContent({
               ) : null}
 
               <Stack px="$pagePadding" width="100%" mt="$4">
+                <MSEcosystemSection />
                 <ReviewControl>
                   <TrendingSection
                     data={homePageData?.trending || []}

@@ -116,6 +116,7 @@ import {
   calculateAccountTokensValue,
   ensureHomePinnedSymbolTokens,
   getEmptyTokenData,
+  shouldIncludeHomeMsGasToken,
   getMergedDeriveTokenData,
   getMergedTokenData,
 } from '@onekeyhq/shared/src/utils/tokenUtils';
@@ -247,12 +248,13 @@ function TokenListBlock({
   // consts.
   const cellsIngestInputsRef = useRef<{
     ownerKey: string;
+    includeMsGasToken: boolean;
     nonZeroInputs: {
       keepDefault?: boolean;
       homeDefaultTokenMap?: Record<string, IHomeDefaultToken>;
       customTokens?: ICustomTokenItem[];
     };
-  }>({ ownerKey: '', nonZeroInputs: {} });
+  }>({ ownerKey: '', includeMsGasToken: true, nonZeroInputs: {} });
   // The all-network LWW orchestration pipeline (design §2 收口 facade): owns the
   // FloorView (LwwMaterializedView, SWR floor + IVM full-overwrite +
   // intersection-evict + generation guard) + the merge + the `ingestRound` feed.
@@ -480,6 +482,51 @@ function TokenListBlock({
     return r;
   }, []);
 
+  const { result: allNetworksEnabledState, run: refreshAllNetworksEnabledState } =
+    usePromiseResult(
+      async () => {
+        if (!network?.isAllNetworks) {
+          return {
+            disabledNetworks: {},
+            enabledNetworks: {},
+          };
+        }
+        return backgroundApiProxy.serviceAllNetwork.getAllNetworksState();
+      },
+      [network?.isAllNetworks],
+      {
+        initResult: {
+          disabledNetworks: {},
+          enabledNetworks: {},
+        },
+      },
+    );
+
+  useEffect(() => {
+    if (!network?.isAllNetworks) {
+      return;
+    }
+    const onEnabledNetworksChanged = () => {
+      void refreshAllNetworksEnabledState();
+    };
+    appEventBus.on(
+      EAppEventBusNames.EnabledNetworksChanged,
+      onEnabledNetworksChanged,
+    );
+    return () => {
+      appEventBus.off(
+        EAppEventBusNames.EnabledNetworksChanged,
+        onEnabledNetworksChanged,
+      );
+    };
+  }, [network?.isAllNetworks, refreshAllNetworksEnabledState]);
+
+  const includeMsGasToken = shouldIncludeHomeMsGasToken({
+    isAllNetworks: network?.isAllNetworks,
+    enabledNetworks: allNetworksEnabledState.enabledNetworks,
+    disabledNetworks: allNetworksEnabledState.disabledNetworks,
+  });
+
   const { run } = usePromiseResult(
     async () => {
       let accountId = account?.id ?? '';
@@ -665,6 +712,8 @@ function TokenListBlock({
               ...r.smallBalanceTokens.map,
             },
             catalogTokens: allAggregateTokensRef.current,
+            includeMsGasToken:
+              cellsIngestInputsRef.current.includeMsGasToken,
           });
           void backgroundApiProxy.serviceTokenViewModel.ingestRound({
             ownerKey: cellsIngestInputsRef.current.ownerKey,
@@ -946,6 +995,7 @@ function TokenListBlock({
   // (design §5 step 2).
   cellsIngestInputsRef.current = {
     ownerKey: cellsOwnerKey,
+    includeMsGasToken,
     nonZeroInputs: cellsNonZeroInputs,
   };
 
@@ -1755,6 +1805,7 @@ function TokenListBlock({
       smallBalanceTokens: snapshot.smallBalanceTokens,
       tokenListMap: snapshot.mergeTokenListMap,
       catalogTokens: allAggregateTokensRef.current,
+      includeMsGasToken: cellsIngestInputsRef.current.includeMsGasToken,
     });
     commitAuthoritativeIngest({
       ...snapshot,

@@ -4,6 +4,7 @@ export const DiscoveryTestIDs = {
   searchBar: 'explore-index-search', // preserve existing
   bannerCarousel: 'discovery-banner-carousel',
   trendingSection: 'discovery-trending-section',
+  msEcosystemSection: 'discovery-ms-ecosystem-section',
   bookmarksSection: 'discovery-bookmarks-section',
 
   // DApp items

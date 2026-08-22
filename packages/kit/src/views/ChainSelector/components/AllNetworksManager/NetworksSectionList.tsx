@@ -59,11 +59,23 @@ function NetworksSectionList() {
 
   const listRef = useRef<IListViewRef<any> | null>(null);
 
+  const isNetworkEnabled = useCallback(
+    (network: IServerNetworkMatch) =>
+      isEnabledNetworksInAllNetworks({
+        networkId: network.id,
+        enabledNetworks: networksState.enabledNetworks,
+        disabledNetworks: networksState.disabledNetworks,
+        isTestnet: network.isTestnet,
+      }),
+    [networksState.enabledNetworks, networksState.disabledNetworks],
+  );
+
   const { sections } = usePureChainSelectorSections({
     networks: networks.mainNetworks,
     searchKey,
     accountNetworkValues,
     accountDeFiOverview,
+    isNetworkEnabled,
   });
 
   // Check if all networks in a section are enabled

@@ -89,3 +89,17 @@ Cases are appended by AI after each bug fix. Do NOT reorder or delete entries �
 **Root Cause**: `installWorkletsSupport` called `NitroModules.box(NitroModules)` on the JS forwarding Proxy (or early stub). Native `box()` requires a real HybridObject pointer; boxing a plain JS Proxy causes SIGSEGV.
 **Fix**: `ensureInstalled()` then forward to `global.NitroModulesProxy`; `installWorkletsSupport` boxes `global.NitroModulesProxy` only. Verify main `index.android.bundle` was rebuilt (avoid Gradle UP-TO-DATE skipping Nitro patches). Fast iterate via `apps/mobile/scripts/inject-release-js-into-apk.sh`.
 **Catchable by**: Section 5 — NEW: never pass JS Proxy/stub into Nitro native box()/HybridFunction; Section 7 — Release JS changes must force recreate `createBundle*JsAndAssets` / confirm strings in index.android.bundle
+
+## Case: Home All Networks MSUSD not showing ms balance
+**Date**: 2026-08-22 | **Platforms**: All (Home All Networks)
+**Symptom**: Assets → All Networks token list MSUSD was not the ms-chain native balance; All Networks manager left ms unchecked
+**Root Cause**: `getDefaultEnabledNetworksInAllNetworks()` omitted `ms`, so `isEnabledNetworksInAllNetworks` treated ms as opt-in and skipped RPC fetch. The MSUSD pin already binds to `evm--1944873742` native, but received a zero stub without that fetch.
+**Fix**: Add `ms` to the default-enabled All Networks list and set `ms.defaultEnabled = true`.
+**Catchable by**: Section 4 Business Logic — Home pin token vs All Networks enabled-network list must stay aligned
+
+## Case: Disabled ms still pinned MSUSD on All Networks
+**Date**: 2026-08-22 | **Platforms**: All (Home All Networks)
+**Symptom**: Unchecking ms in All Networks still left a pinned MSUSD row (zero stub)
+**Root Cause**: `ensureHomePinnedSymbolTokens` always injected the MSUSD pin, independent of `isEnabledNetworksInAllNetworks(ms)`
+**Fix**: Pass `includeMsGasToken` from All Networks enabled state; when false, skip the pin and drop MSUSD / ms-chain rows
+**Catchable by**: Section 4 — pin-list stubs must honor the same enabled-network gate as the fetch

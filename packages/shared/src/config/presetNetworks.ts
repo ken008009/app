@@ -1268,7 +1268,7 @@ const ms: IServerNetwork = {
     'wssUrls': [MS_WSS_URL],
   },
   'logoURI': '',
-  'defaultEnabled': false,
+  'defaultEnabled': true,
   'backendIndex': false,
   'explorerURL': '',
 };
@@ -2460,25 +2460,15 @@ export const presetNetworksMap = {
 
 export const getDefaultEnabledNetworksInAllNetworks = memoFn(
   (): IServerNetwork[] => [
+    // Home All Networks default checks: screenshot set + ms (MSUSD pin).
+    ms,
     btc,
-    tron,
-    sol,
-    // top 20 tvl evm networks
     eth,
     bsc,
-    base,
-    arbitrum,
-    avalanche,
+    tron,
+    sol,
     polygon,
-    optimism,
-    blast,
-    mantle,
-    cronos,
-    linea,
-    btr,
-    pulse,
-    scr,
-    bob,
+    arbitrum,
   ],
 );
 
