@@ -103,3 +103,11 @@ Cases are appended by AI after each bug fix. Do NOT reorder or delete entries �
 **Root Cause**: `ensureHomePinnedSymbolTokens` always injected the MSUSD pin, independent of `isEnabledNetworksInAllNetworks(ms)`
 **Fix**: Pass `includeMsGasToken` from All Networks enabled state; when false, skip the pin and drop MSUSD / ms-chain rows
 **Catchable by**: Section 4 — pin-list stubs must honor the same enabled-network gate as the fetch
+
+## Case: Native tabs visible but Home/Discover content black on Release APK
+**Date**: 2026-08-23 | **Platforms**: Android Release (injected union JS)
+**Symptom**: Bottom 5 tabs render; the tab scene body is solid black (assets / discovery).
+**Root Cause**: Release JS was built with `ENABLE_NATIVE_BACKGROUND_THREAD=true`, so Home waits on bg IPC (`activeAccount.ready`). The injected APK never started a second JS runtime; `ready` stayed false and Home returned only the header / empty Stack. AndroidScrollContainer also hid children while measured height was 0.
+**Fix**: Keep a spinner in `Page.Body` until account selector/wallet list settle; always mount the Android home ScrollView (`flexGrow: 1` until height is known). Dual-thread inject APKs must include a working background.bundle load, or bundle JS with in-process bg.
+**Catchable by**: Section 4 — "not loaded" vs empty; Section 5 — dual JS runtimes (main/bg); Section 8 — Release APK without Metro is not the same as Debug+Metro
+

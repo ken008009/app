@@ -111,13 +111,10 @@ export function TabStackNavigator<RouteName extends string>({
   const tabBarInactiveTintColor = theme.iconSubdued.val;
   const nativeTabScreenOptions = useMemo(
     () => ({
-      // iOS: disable freezeOnBlur to prevent react-freeze from suspending tab
-      // content when a modal is on top. When frozen, Jotai/React state updates
-      // (e.g. network switch) don't commit until the tab regains focus — but
-      // the unfreeze path on iOS can fail to flush pending commits, leaving
-      // the UI visually stale until a touch forces re-layout.
-      // Android keeps freeze enabled (no observed issue).
-      freezeOnBlur: !platformEnv.isNativeIOS,
+      // Disable freezeOnBlur on native: react-freeze can leave the first
+      // native-tab scene unpainted (shell tabs visible, body black) on
+      // Android Release. iOS already disabled this for stale-commit issues.
+      freezeOnBlur: false,
       preventsDefault: false,
       lazy: true,
       // Native Android BottomNavigation tints from per-item activeTintColor

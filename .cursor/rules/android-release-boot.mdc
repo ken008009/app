@@ -43,6 +43,25 @@ adb logcat -d | rg -i 'BlobModule|createHybridObject|TypeError|SIGSEGV|ReactNati
    ```
 4. **禁止**全量解压再重打 zip（会弄坏 binary Manifest，如 expo clipboard meta-data）；脚本须原地 `zip -d/-u` 替换 `assets/*.bundle`。
 
+## 给用户安装的 APK（禁止再打出打不开 / 白屏 / 中间黑屏）
+
+成品必须是 **ProdRelease**，JS 打进 APK，不依赖电脑 Metro。
+
+| 用户看到 | 原因 | 禁止 |
+|---|---|---|
+| 整页黑、等开发服务器 | 装了 `ProdDebug` / `yarn app:android` | 把 Debug 当用户包 |
+| 白屏 / 秒崩 SIGSEGV | Nitro `createHybridObject`、url-polyfill `BlobModule`、注入时删了 `common.bundle` 却没加回 | 残缺注入；假 Nitro stub |
+| 底栏 5 Tab 正常、中间黑 | 原生 `ENABLE_NATIVE_BACKGROUND_THREAD=true` 但只有一条 JS 线程；或 Home 在 `ready===false` 时只渲染 Header；或 `freezeOnBlur` + 原生底栏 | 双线程 JS 对单线程 so；只看「进程活着/有 Tab」就宣称成功 |
+| Gradle 卡死 / 分段成环 | Expo `createBundleProdReleaseJsAndAssets` + 循环 segment DAG | 每次全量盲打半小时；`prepare-android-build.sh` 里 `gradlew --stop` |
+
+正确打包：
+
+1. Union JS：`UNION_BUILD=true SPLIT_BUNDLE=1`，`common.bundle` 数 MB、`background.bundle` **不能是十几 KB**、带 `segments/` 与 `segments-background/`。
+2. 原生开关必须与 JS 一致：双线程 JS ↔ `ENABLE_NATIVE_BACKGROUND_THREAD=true`（`.env` 默认常为 false，assemble 时要显式 export）。
+3. Expo Metro 分段成环时：先 `node build-bundle.js --platform android`，再 `SKIP_EXPO_JS_BUNDLE=true ./gradlew :app:assembleProdRelease`（见 `app/build.gradle`）。
+4. 注入必须同步 `index` + `common` + `background` + **segments**（`inject-release-js-into-apk.sh`）；`zip -d` 掉 `common.bundle` 必须立刻加回。
+5. 装上后 **force-stop 冷启动**，截图必须看到引导页/资产内容，不能只有 Tab。签名用 `debug.keystore` 时，与旧包冲突先卸载。
+
 ## 补丁纪律
 
 - 改 `node_modules` 后必须重生成 `patches/<pkg>+<ver>.patch` 并 `git apply --check`

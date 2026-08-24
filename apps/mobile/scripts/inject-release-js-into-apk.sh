@@ -32,17 +32,54 @@ cd "$OUT_DIR/work"
 cp -f "$ASSET_DIR/index.android.bundle" assets/index.android.bundle
 [[ -f "$ASSET_DIR/background.bundle" ]] && cp -f "$ASSET_DIR/background.bundle" assets/background.bundle
 [[ -f "$ASSET_DIR/common.bundle" ]] && cp -f "$ASSET_DIR/common.bundle" assets/common.bundle
+[[ -f "$ASSET_DIR/module-id-map.json" ]] && cp -f "$ASSET_DIR/module-id-map.json" assets/module-id-map.json
+if [[ -d "$ASSET_DIR/segments" ]]; then
+  rm -rf assets/segments
+  cp -R "$ASSET_DIR/segments" assets/segments
+fi
+if [[ -d "$ASSET_DIR/segments-background" ]]; then
+  rm -rf assets/segments-background
+  cp -R "$ASSET_DIR/segments-background" assets/segments-background
+fi
 
-# Replace entries without extracting the whole APK
+# Dual-thread union JS is several MB. A ~13KB background.bundle with common.bundle
+# means in-process stub JS injected into a dual-thread native APK → tabs + black body.
+if [[ -f assets/common.bundle ]]; then
+  if [[ ! -f assets/background.bundle ]]; then
+    echo "Refusing inject: common.bundle present but background.bundle missing" >&2
+    exit 1
+  fi
+  bg_size="$(wc -c < assets/background.bundle | tr -d ' ')"
+  if (( bg_size < 1000000 )); then
+    echo "Refusing inject: background.bundle is ${bg_size} bytes (need a real dual-thread bundle, not a stub)" >&2
+    exit 1
+  fi
+fi
+if [[ -d assets/segments && ! -d assets/segments-background ]]; then
+  echo "Refusing inject: segments/ present but segments-background/ missing" >&2
+  exit 1
+fi
+
+# Replace entries without extracting the whole APK (keeps binary Manifest / native libs)
 zip -q -d base.apk \
   assets/index.android.bundle \
   assets/background.bundle \
   assets/common.bundle \
+  assets/module-id-map.json \
+  "assets/segments/*" \
+  "assets/segments-background/*" \
   2>/dev/null || true
 zip -q -0 base.apk \
   assets/index.android.bundle \
   $([ -f assets/background.bundle ] && echo assets/background.bundle) \
-  $([ -f assets/common.bundle ] && echo assets/common.bundle)
+  $([ -f assets/common.bundle ] && echo assets/common.bundle) \
+  $([ -f assets/module-id-map.json ] && echo assets/module-id-map.json)
+if [[ -d assets/segments ]]; then
+  zip -q -0 -r base.apk assets/segments
+fi
+if [[ -d assets/segments-background ]]; then
+  zip -q -0 -r base.apk assets/segments-background
+fi
 
 # Strip old signatures
 zip -q -d base.apk 'META-INF/*.SF' 'META-INF/*.RSA' 'META-INF/*.DSA' 'META-INF/MANIFEST.MF' 2>/dev/null || true

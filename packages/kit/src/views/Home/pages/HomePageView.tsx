@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 
 import { useFocusEffect } from '@react-navigation/core';
 import { CanceledError } from 'axios';
@@ -102,6 +109,12 @@ const HOME_TAB_BAR_WEB_CONTAINER_STYLE = {
   position: 'relative' as const,
 };
 
+const HOME_CONTENT_LOADING = (
+  <Stack flex={1} justifyContent="center" alignItems="center">
+    <Spinner size="large" />
+  </Stack>
+);
+
 interface IAndroidScrollContainerProps {
   children: React.ReactNode;
 }
@@ -116,18 +129,19 @@ const AndroidScrollContainer = platformEnv.isNativeAndroid
           setHeight(h);
         }
       }, []);
-      const contentContainerStyle = useMemo(() => ({ height }), [height]);
+      const contentContainerStyle = useMemo(
+        () => (height > 0 ? { height } : { flexGrow: 1 }),
+        [height],
+      );
       return (
         <YStack flex={1} onLayout={handleLayout}>
-          {height > 0 ? (
-            <ScrollView
-              nestedScrollEnabled
-              refreshControl={<PullToRefresh onRefresh={onHomePageRefresh} />}
-              contentContainerStyle={contentContainerStyle}
-            >
-              {children}
-            </ScrollView>
-          ) : null}
+          <ScrollView
+            nestedScrollEnabled
+            refreshControl={<PullToRefresh onRefresh={onHomePageRefresh} />}
+            contentContainerStyle={contentContainerStyle}
+          >
+            {children}
+          </ScrollView>
         </YStack>
       );
     }
@@ -1054,19 +1068,18 @@ export function HomePageView({
   });
 
   const homePage = useMemo(() => {
-    if (!ready) {
-      return <TabPageHeader sceneName={sceneName} tabRoute={ETabRoutes.Home} />;
-    }
+    // Keep a spinner in Page.Body until account selector / wallet list settle.
+    // Returning only the header (or an empty Stack) leaves the native tab
+    // scene black while background IPC is still pending.
+    let content: ReactNode = HOME_CONTENT_LOADING;
 
-    let content = <Stack flex={1} />;
-
-    if (showNoWalletContent) {
-      content = <NoWalletContent tabBarHeight={tabBarHeight} />;
-    }
-
-    if (!hasNoUsableWallet) {
-      content = walletPageContent;
-      // This is a temporary hack solution, need to fix the layout of headerLeft and headerRight
+    if (ready) {
+      if (showNoWalletContent) {
+        content = <NoWalletContent tabBarHeight={tabBarHeight} />;
+      }
+      if (!hasNoUsableWallet) {
+        content = walletPageContent;
+      }
     }
     return (
       <>
