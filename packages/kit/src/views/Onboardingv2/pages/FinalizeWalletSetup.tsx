@@ -44,14 +44,12 @@ import { ETranslations } from '@onekeyhq/shared/src/locale';
 import { defaultLogger } from '@onekeyhq/shared/src/logger/logger';
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
 import { buildWalletCreatedAtISOString } from '@onekeyhq/shared/src/referralCode/creationRecordUtils';
-import type { ICheckWalletBindStatusResponse } from '@onekeyhq/shared/src/referralCode/type';
 import {
   type EOnboardingPagesV2,
   ERootRoutes,
   type IOnboardingParamListV2,
 } from '@onekeyhq/shared/src/routes';
 import accountUtils from '@onekeyhq/shared/src/utils/accountUtils';
-import { createTimeoutPromise } from '@onekeyhq/shared/src/utils/promiseUtils';
 import { EMnemonicType } from '@onekeyhq/shared/src/utils/secret';
 import timerUtils from '@onekeyhq/shared/src/utils/timerUtils';
 import { EAccountSelectorSceneName } from '@onekeyhq/shared/types';
@@ -75,10 +73,6 @@ import {
   setExistingWalletSwitchToastDeferred,
 } from '../../../utils/toastExistingWalletSwitch';
 import { OnboardingPage } from '../components/Layout';
-import {
-  type IShowOnboardingInviteCodeDialog,
-  useShowOnboardingInviteCodeDialog,
-} from '../components/OnboardingInviteCodeDialog';
 import { OrbShader } from '../components/OrbShader';
 import {
   useConnectDeviceError,
@@ -92,11 +86,6 @@ import {
 } from '../utils';
 
 import type { SearchDevice } from '@onekeyfe/hd-core';
-
-// Tail-cutoff for the bind-status prefetch in `handleLetsGo`. Short enough
-// that an unhealthy referral backend never strands the user on this page;
-// long enough that a healthy backend with a mild blip still gets through.
-const REFERRAL_CHECK_TIMEOUT_MS = 1500;
 
 const POPUP_LAYERED_SHADOW =
   'inset 0 1px 0 0 rgba(255, 255, 255, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.16), 0 1px 1px -0.5px rgba(0, 0, 0, 0.18), 0 3px 3px -1.5px rgba(0, 0, 0, 0.18), 0 6px 6px -3px rgba(0, 0, 0, 0.18), 0 12px 12px -6px rgba(0, 0, 0, 0.18)';
@@ -213,29 +202,6 @@ function StepTextSwap({ text }: { text: string }) {
   );
 }
 
-// Invisible child of `<OnboardingPage>` whose only job is to call
-// `useShowOnboardingInviteCodeDialog()` from a position where `PageContext`
-// is available, so `useInPageDialog` can capture the page's `pagePortalId`.
-// Without this, the hook captures `pagePortalId = undefined` and falls back
-// to `FULL_WINDOW_OVERLAY_PORTAL` on iOS, which is rendered above the
-// signature-confirm modal pushed by Apply.
-function OnboardingInviteCodeDialogBridge({
-  bridgeRef,
-}: {
-  bridgeRef: React.MutableRefObject<IShowOnboardingInviteCodeDialog | null>;
-}) {
-  const show = useShowOnboardingInviteCodeDialog();
-  useEffect(() => {
-    bridgeRef.current = show;
-    return () => {
-      if (bridgeRef.current === show) {
-        bridgeRef.current = null;
-      }
-    };
-  }, [show, bridgeRef]);
-  return null;
-}
-
 function FinalizeWalletSetupPage({
   route,
 }: IPageScreenProps<
@@ -283,13 +249,6 @@ function FinalizeWalletSetupPage({
   const stepQueue = useRef<EFinalizeWalletSetupSteps[]>([]);
 
   const closePageCalled = useRef(false);
-  // Prefetched referral bind-status check started the moment the Ready step
-  // fires. Reading off this ref in `handleLetsGo` avoids paying the network
-  // round-trip after the user clicks Enter wallet — by then it's usually
-  // already resolved, so the button feels instant.
-  const referralCheckPromiseRef = useRef<
-    Promise<ICheckWalletBindStatusResponse | undefined>
-  >(Promise.resolve(undefined));
 
   const closePage = useCallback(() => {
     closePageCalled.current = true;
@@ -303,17 +262,6 @@ function FinalizeWalletSetupPage({
     setPendingKeylessAutoConnectWalletId,
     openKeylessAutoConnectDappModal,
   } = useKeylessWebFlowAutoConnectDapp();
-  // The show function captures `pagePortalId` at hook-call time via
-  // `usePageContext()` inside `useInPageDialog`. This call site sits OUTSIDE
-  // the `<OnboardingPage>` (= `<Page>`) wrapper rendered below, so the
-  // context is empty and the dialog would fall back to
-  // `FULL_WINDOW_OVERLAY_PORTAL` on iOS — which sits above the signature
-  // confirm modal and re-introduces the occlusion that 176b3c556c set out
-  // to fix. Defer the hook to a bridge component mounted inside
-  // `<OnboardingPage>` (Page context is available there); the ref carries
-  // the captured callback back here so `handleLetsGo` can invoke it.
-  const showInviteCodeDialogRef =
-    useRef<IShowOnboardingInviteCodeDialog | null>(null);
   const readyReferralCheckHandledRef = useRef(false);
 
   // Hold the "existing wallet switched" toast until the user confirms with
@@ -332,58 +280,17 @@ function FinalizeWalletSetupPage({
   // Ready state waits for the user's Let's-go press instead of auto-closing.
   // The 600ms delay gives the page-dismiss animation time to finish before
   // the auto-connect dapp modal appears on top of the next (Main) screen.
-  // Before closing, check referral bind status; if the wallet is still
-  // eligible to bind a referral code, show the onboarding invite code dialog
-  // and defer the close flow to its onDone callback.
-  const handleLetsGo = useCallback(async () => {
+  // Do not show the onboarding invite-code dialog here; users can bind later
+  // from Settings if needed.
+  const handleLetsGo = useCallback(() => {
     if (closePageCalled.current) return;
 
-    const createdWallet = createdWalletRef.current;
-
-    const proceedToWallet = () => {
-      closePage();
-      flushPendingExistingWalletSwitchToast();
-      void (async () => {
-        await timerUtils.wait(600);
-        void openKeylessAutoConnectDappModal();
-      })();
-    };
-
-    if (createdWallet) {
-      try {
-        // Await the prefetched promise. If it already resolved while the
-        // user was lingering on the success page, this returns immediately
-        // (instant Enter wallet). The tail-cutoff only kicks in when the
-        // backend is genuinely unhealthy — in which case skipping the
-        // dialog is the right call; the user can still bind from Settings.
-        const checkResp = await createTimeoutPromise<
-          ICheckWalletBindStatusResponse | undefined
-        >({
-          asyncFunc: () => referralCheckPromiseRef.current,
-          timeout: REFERRAL_CHECK_TIMEOUT_MS,
-          timeoutResult: undefined,
-        });
-
-        if (checkResp) {
-          const isBound =
-            checkResp.data || checkResp.reason === 'already_bound';
-          const isExpired = checkResp.reason === 'exceeded_bind_window';
-
-          if (!isBound && !isExpired) {
-            showInviteCodeDialogRef.current?.({
-              wallet: createdWallet,
-              onDone: proceedToWallet,
-            });
-            return;
-          }
-        }
-      } catch {
-        // Server unreachable / unexpected error — skip dialog, fall through
-        // to the original close flow so onboarding still completes.
-      }
-    }
-
-    proceedToWallet();
+    closePage();
+    flushPendingExistingWalletSwitchToast();
+    void (async () => {
+      await timerUtils.wait(600);
+      void openKeylessAutoConnectDappModal();
+    })();
   }, [closePage, openKeylessAutoConnectDappModal]);
 
   const processNextStep = useCallback(() => {
@@ -795,7 +702,6 @@ function FinalizeWalletSetupPage({
     stepQueue.current = [];
     createdWalletRef.current = undefined;
     readyReferralCheckHandledRef.current = false;
-    referralCheckPromiseRef.current = Promise.resolve(undefined);
     setIsWalletCreationReadyForReferralCheck(false);
     setIsWalletCreationRecordHandled(false);
     // Reset the dedup guard so a retry triggered after a late, post-success
@@ -833,8 +739,7 @@ function FinalizeWalletSetupPage({
     const createdWallet = createdWalletRef.current;
     if (!createdWallet) return;
 
-    // Single round-trip shared by the record-write below and the bind-status
-    // prefetch — both want the same { address, networkId } for this wallet.
+    // Wallet address/network for the best-effort creation record write.
     const walletInfoPromise =
       backgroundApiProxy.serviceReferralCode.getReferralCodeWalletInfo({
         walletId: createdWallet.id,
@@ -866,22 +771,6 @@ function FinalizeWalletSetupPage({
       }
     })();
 
-    // Prefetch bind status so the user's Enter wallet click feels instant.
-    // By the time they finish the success animation, this is usually done.
-    referralCheckPromiseRef.current = (async () => {
-      try {
-        const info = await walletInfoPromise;
-        if (!info) return undefined;
-        return await backgroundApiProxy.serviceReferralCode.checkWalletBindStatus(
-          {
-            address: info.address,
-            networkId: info.networkId,
-          },
-        );
-      } catch {
-        return undefined;
-      }
-    })();
   }, [isReady, isWalletCreationReadyForReferralCheck, setupError]);
 
   // Breathe up to 0.8 during active steps; on Ready fade to a faint hold
@@ -991,7 +880,6 @@ function FinalizeWalletSetupPage({
       showLanguageSelector={false}
       enterAnimation={false}
     >
-      <OnboardingInviteCodeDialogBridge bridgeRef={showInviteCodeDialogRef} />
       <YStack flex={1}>
         {platformEnv.isExtension && isExtensionTopRightVisible ? (
           <YStack
