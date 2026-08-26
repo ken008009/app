@@ -141,8 +141,20 @@ android {
         applicationId 'so.onekey.app.wallet'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2
-        versionName "6.5.1"
+        def versionEnv = readRootEnvFile('.env.version')
+        def appVersionName = defEnvStr(versionEnv, 'VERSION', '1.0.0')
+        versionName appVersionName
+        // 1.0.0 -> 10000, 1.0.1 -> 10001 so each named APK can overwrite-install
+        def versionCodeFromName = {
+            def matcher = (appVersionName =~ /^(\d+)\.(\d+)\.(\d+)/)
+            if (matcher.find()) {
+                return matcher.group(1).toInteger() * 10000 +
+                    matcher.group(2).toInteger() * 100 +
+                    matcher.group(3).toInteger()
+            }
+            return 10000
+        }()
+        versionCode versionCodeFromName
 
         // Detox uses Espresso and requires AndroidJUnitRunner (or a subclass).
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -634,19 +646,41 @@ dependencies {
 // Expo createBundle runs Metro with SPLIT_BUNDLE_SEGMENTS and can fail on a
 // circular segment DAG. Production JS is already built by `node build-bundle.js`.
 // StopExecutionException marks the task successful without running Metro / deleting union output.
+// Do not remove the drawable/raw copy below. SKIP_EXPO_JS_BUNDLE skips Expo
+// Metro saveAssets; without this copy the APK has JS but blank wallet-card /
+// tab icons. User packs must keep ENABLE_NATIVE_BACKGROUND_THREAD=true.
 afterEvaluate {
     if (System.getenv("SKIP_EXPO_JS_BUNDLE") == "true") {
-        def skipMetro = {
-            logger.lifecycle("SKIP_EXPO_JS_BUNDLE: not running ${it}")
+        def unionAssetsDir = file("${rootProject.projectDir}/../out-dir-bundle/android/dist/assets")
+        def generatedResDir = file("${project.buildDir}/generated/res/createBundleProdReleaseJsAndAssets")
+        def skipMetro = { taskName, copyDrawables ->
+            if (copyDrawables) {
+                if (!unionAssetsDir.exists()) {
+                    throw new GradleException(
+                        "SKIP_EXPO_JS_BUNDLE: missing ${unionAssetsDir}. " +
+                        "Run `node build-bundle.js --platform android` first."
+                    )
+                }
+                generatedResDir.mkdirs()
+                copy {
+                    from unionAssetsDir
+                    into generatedResDir
+                }
+                logger.lifecycle("SKIP_EXPO_JS_BUNDLE: copied drawables ${unionAssetsDir} -> ${generatedResDir}")
+            }
+            logger.lifecycle("SKIP_EXPO_JS_BUNDLE: not running ${taskName}")
             throw new org.gradle.api.tasks.StopExecutionException("SKIP_EXPO_JS_BUNDLE")
         }
         def createBundle = tasks.findByName("createBundleProdReleaseJsAndAssets")
         if (createBundle != null) {
-            createBundle.doFirst { skipMetro(createBundle.name) }
+            // Force execute so drawable copy runs and resource tasks are not UP-TO-DATE
+            // against an empty generated/res from a previous SKIP.
+            createBundle.outputs.upToDateWhen { false }
+            createBundle.doFirst { skipMetro(createBundle.name, true) }
         }
         def unionBuild = tasks.findByName("unionBuildProdReleaseJsBundle")
         if (unionBuild != null) {
-            unionBuild.doFirst { skipMetro(unionBuild.name) }
+            unionBuild.doFirst { skipMetro(unionBuild.name, false) }
         }
     }
 }

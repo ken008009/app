@@ -13,9 +13,11 @@ import {
   EPendingInstallTaskType,
   EUpdateFileType,
   EUpdateStrategy,
+  getAndroidApkUpdateBaseUrl,
   isAutoUpdateStrategy,
   isFirstLaunchAfterUpdated,
   normalizeFeaturedChangelog,
+  resolveSelfHostedAndroidApkUpdate,
   resolveUpdateDecision,
 } from '@onekeyhq/shared/src/appUpdate';
 import {
@@ -405,12 +407,90 @@ class ServiceAppUpdate extends ServiceBase {
 
   @backgroundMethod()
   async fetchConfig() {
-    const client = await this.getClient(EServiceEndpointEnum.Utility);
-    const response = await client.get<{
-      code: number;
-      data: IResponseAppUpdateInfo;
-    }>('/utility/v1/app-update');
-    const { code, data } = response.data;
+    const selfHostedBaseUrl = getAndroidApkUpdateBaseUrl();
+    const useSelfHostedAndroidApk =
+      platformEnv.isNativeAndroid && Boolean(selfHostedBaseUrl);
+
+    let code = -1;
+    let data: IResponseAppUpdateInfo | undefined;
+
+    if (useSelfHostedAndroidApk && selfHostedBaseUrl) {
+      try {
+        const client = await this.getRawDataClient(
+          EServiceEndpointEnum.Utility,
+        );
+        data = await resolveSelfHostedAndroidApkUpdate({
+          currentVersion: platformEnv.version || '0.0.0',
+          baseUrl: selfHostedBaseUrl,
+          fetchText: async (url) => {
+            try {
+              const response = await client.get<string>(url, {
+                responseType: 'text',
+                transformResponse: [(body: string): string => body],
+              });
+              return typeof response.data === 'string'
+                ? response.data
+                : undefined;
+            } catch {
+              return undefined;
+            }
+          },
+          probeApk: async (url) => {
+            const asFileSize = (value: unknown): number | undefined => {
+              const parsed = Number(value);
+              return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+            };
+            try {
+              const head = await client.head(url, {
+                validateStatus: (status) => status < 500,
+              });
+              if (head.status >= 200 && head.status < 400) {
+                return {
+                  exists: true,
+                  fileSize: asFileSize(head.headers['content-length']),
+                };
+              }
+            } catch {
+              // Some hosts reject HEAD; fall through to a 1-byte GET.
+            }
+            try {
+              const partial = await client.get(url, {
+                headers: { Range: 'bytes=0-0' },
+                validateStatus: (status) => status < 500,
+              });
+              if (partial.status >= 200 && partial.status < 400) {
+                const contentRange = String(
+                  partial.headers['content-range'] || '',
+                );
+                const total = contentRange.split('/')[1];
+                return {
+                  exists: true,
+                  fileSize:
+                    asFileSize(total) ||
+                    asFileSize(partial.headers['content-length']),
+                };
+              }
+            } catch {
+              return { exists: false };
+            }
+            return { exists: false };
+          },
+        });
+        code = data ? 0 : -1;
+      } catch (error) {
+        defaultLogger.app.appUpdate.endInstallPackage(false, error as Error);
+        return this.cachedUpdateInfo;
+      }
+    } else {
+      const client = await this.getClient(EServiceEndpointEnum.Utility);
+      const response = await client.get<{
+        code: number;
+        data: IResponseAppUpdateInfo;
+      }>('/utility/v1/app-update');
+      code = response.data.code;
+      data = response.data.data;
+    }
+
     if (code === 0 && data) {
       const normalizedUpdateStrategy =
         data.updateStrategy === undefined ||
@@ -428,17 +508,22 @@ class ServiceAppUpdate extends ServiceBase {
         downloadUrl: normalizeOptionalString(data.downloadUrl),
         changeLog: normalizeOptionalString(data.changeLog),
         summary: normalizeOptionalString(data.summary),
-        jsBundleVersion: normalizeOptionalString(data.jsBundleVersion),
+        jsBundleVersion: useSelfHostedAndroidApk
+          ? undefined
+          : normalizeOptionalString(data.jsBundleVersion),
         fileSize: normalizeOptionalNumber(data.fileSize),
-        jsBundleCount: normalizeOptionalNumber(data.jsBundleCount),
-        jsBundle: data.jsBundle
-          ? {
-              downloadUrl: normalizeOptionalString(data.jsBundle.downloadUrl),
-              fileSize: normalizeOptionalNumber(data.jsBundle.fileSize),
-              sha256: normalizeOptionalString(data.jsBundle.sha256),
-              signature: normalizeOptionalString(data.jsBundle.signature),
-            }
-          : undefined,
+        jsBundleCount: useSelfHostedAndroidApk
+          ? undefined
+          : normalizeOptionalNumber(data.jsBundleCount),
+        jsBundle:
+          useSelfHostedAndroidApk || !data.jsBundle
+            ? undefined
+            : {
+                downloadUrl: normalizeOptionalString(data.jsBundle.downloadUrl),
+                fileSize: normalizeOptionalNumber(data.jsBundle.fileSize),
+                sha256: normalizeOptionalString(data.jsBundle.sha256),
+                signature: normalizeOptionalString(data.jsBundle.signature),
+              },
         featuredChangelog: normalizeFeaturedChangelog(
           data.featuredChangelog,
           responseVersion,
@@ -497,6 +582,17 @@ class ServiceAppUpdate extends ServiceBase {
           );
           return this.cachedUpdateInfo;
         }
+      }
+      if (
+        useSelfHostedAndroidApk &&
+        (!normalizedData.downloadUrl ||
+          !normalizedData.downloadUrl.startsWith('https://'))
+      ) {
+        defaultLogger.app.appUpdate.endInstallPackage(
+          false,
+          new Error('APK downloadUrl must use HTTPS'),
+        );
+        return this.cachedUpdateInfo;
       }
       this.updateAt = Date.now();
       this.cachedUpdateInfo = normalizedData;

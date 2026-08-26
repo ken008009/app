@@ -12,7 +12,7 @@ function resolveLocalAssetUri(asset: number | string): string {
   return Image.resolveAssetSource(asset).uri;
 }
 
-const MOBLUS_LOGO_URI = resolveLocalAssetUri(
+const MOBIUS_LOGO_URI = resolveLocalAssetUri(
   require('@onekeyhq/kit/assets/discovery/moblus-favicon.png') as
     | number
     | string,
@@ -21,10 +21,10 @@ const MOBLUS_LOGO_URI = resolveLocalAssetUri(
 export const MS_ECOSYSTEM_DAPPS: IDApp[] = [
   {
     dappId: 'ms-ecosystem-moblus',
-    name: 'MOBLUS',
+    name: 'MOBIUS',
     url: 'https://www.strip.boutique',
-    logo: MOBLUS_LOGO_URI,
-    description: 'MOBLUS',
+    logo: MOBIUS_LOGO_URI,
+    description: 'MOBIUS',
     networkIds: [],
     tags: [],
   },

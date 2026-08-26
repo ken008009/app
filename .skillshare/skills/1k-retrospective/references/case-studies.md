@@ -111,3 +111,38 @@ Cases are appended by AI after each bug fix. Do NOT reorder or delete entries �
 **Fix**: Keep a spinner in `Page.Body` until account selector/wallet list settle; always mount the Android home ScrollView (`flexGrow: 1` until height is known). Dual-thread inject APKs must include a working background.bundle load, or bundle JS with in-process bg.
 **Catchable by**: Section 4 — "not loaded" vs empty; Section 5 — dual JS runtimes (main/bg); Section 8 — Release APK without Metro is not the same as Debug+Metro
 
+## Case: ProdRelease APK missing wallet card and tab icons
+**Date**: 2026-08-26 | **Platforms**: Android Release
+**Symptom**: After installing union-built ProdRelease APK, Home wallet background and native tab bar icons were blank.
+**Root Cause**: `SKIP_EXPO_JS_BUNDLE=true` skipped Expo Metro `createBundle*JsAndAssets`, which is the only Gradle step that copies Metro `saveAssets` output (`drawable-*` / `raw/` including PNG + tab SVGs) into `generated/res`. Union sync only copied JS bundles, so `resources.arsc` had no `packages_kit_assets_home_walletcard` or `packages_components_svg_*_wallet4`.
+**Fix**: When skipping Expo Metro, copy `out-dir-bundle/android/dist/assets` into `generated/res/createBundleProdReleaseJsAndAssets` inside that task's `doFirst` (same producer AGP already depends on). Validate packed APK has hundreds of `res/*.png` and `res/*.svg` (AGP shortens filenames).
+**Catchable by**: Section 8 — Release APK check must include images/fonts, not only JS bundles; NEW — SKIP_EXPO_JS_BUNDLE must still package Metro drawable/raw
+
+## Case: Packed res/ still blank wallet card and tab icons
+**Date**: 2026-08-26 | **Platforms**: Android Release
+**Symptom**: ProdRelease APK had `resources.arsc` drawables/raw (wallet-card png, wallet-4 svg) but Home wallet background and native tab icons stayed blank after install.
+**Root Cause**: Non-OTA `polyfillsPlatform.js` rewrote Image URIs from `SourceCode.scriptURL` (`file://` Hermes cache) to `…/assets/drawable-mdpi/<name>.png`. Bridgeless cache has no sibling `assets/`; images live in APK `res/`. expo-image / tab-view never hit resource-identifier lookup.
+**Fix**: Only apply the scriptURL asset patch on iOS non-OTA. Android APK (non-OTA) keeps RN resource-identifier resolution against packed `res/drawable` and `res/raw`.
+**Catchable by**: Section 8 — packed res is not enough; confirm Image URI is scheme-less resource name, not file:// cache; NEW — do not patch Android APK assets from SourceCode.scriptURL
+
+## Case: Skipping Android scriptURL patch still left images blank
+**Date**: 2026-08-26 | **Platforms**: Android Release
+**Symptom**: After a JS inject that only skipped the extra file:// rewrite, Home wallet card and tab icons still blank; user thought uninstall failed because nothing changed.
+**Root Cause**: RN `AssetSourceResolver.defaultAsset()` already uses `drawableFolderInBundle()` when `jsbundleUrl` starts with `file://`. Bridgeless Hermes cache is file:// with no sibling drawables. Not applying our extra patch left this RN default intact — a no-op at runtime.
+**Fix**: On Android non-OTA, wrap `defaultAsset` to always return `resourceIdentifierWithoutScale()` so expo-image / tab-view look up packed `res/drawable` and `res/raw`. Bump VERSION so the installer is not the same 1.0.0.
+**Catchable by**: Section 8 — removing a patch is not a fix if RN default still uses file://; NEW — Android Release must force resource-identifier resolution when scriptURL is a Hermes cache path
+
+## Case: Self-hosted APK install fails after four green checks
+**Date**: 2026-08-26 | **Platforms**: Android Release
+**Symptom**: Download-and-verify showed all four steps OK; tapping Install flashed an error and returned to the same page. Wallet card / tab icons still missing.
+**Root Cause**: `shouldSkipSelfHostedAndroidApkGpg` skipped native `verifyAPK`. `installAPK` requires a hash in `verifiedFiles` and throws `APK must be verified before installation` on Release. The four checkmarks were JS `Promise.resolve()` waits, not real APK verification, so 1.0.1 never installed.
+**Fix**: Always call `AppUpdate.verifyPackage` for app-shell APKs (skip only GPG ASC). Call verify again immediately before `installPackage`. Sideload 1.0.2.
+**Catchable by**: Section 4 — skipped verification must not skip the step the next native API requires; NEW — self-hosted skip-GPG is ASC-only, not verifyAPK/installAPK
+
+## Case: Android ProdRelease wallet card and tab icons blank after packing res/
+**Date**: 2026-08-26 | **Platforms**: Android Release
+**Symptom**: Sideloaded 1.0.0–1.0.2 APKs had packed `res/` PNGs/SVGs (aapt showed `packages_kit_assets_home_walletcard` and `packages_components_svg_solid_wallet4`) but Home wallet background and Tab icons stayed blank.
+**Root Cause**: Union Metro records monorepo assets as `httpServerLocation: "/assets/../../packages/..."`. RN `getAndroidResourceIdentifier` does not collapse `..`, so JS looks up `__packages_kit_assets_home_walletcard`. Metro saveAssets / aapt store `packages_kit_assets_home_walletcard`. Forcing `resourceIdentifierWithoutScale()` still used the `__packages_*` name. Official OTA only rewrites `__packages` → `packages` on file:// URIs.
+**Fix**: Collapse `/assets/../../packages` before building the Android resource name (and keep the `__packages` prefix rewrite). Always apply this on Android even if a leftover JS OTA path exists. Verify keep.xml names against JS assets at pack time.
+**Catchable by**: NEW — Android packed resource names must match the identifier computed from the JS `httpServerLocation`, not only “PNG exists in res/”
+

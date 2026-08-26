@@ -15,6 +15,7 @@ import { Dialog, Toast } from '@onekeyhq/components';
 import {
   EUpdateFileType,
   getUpdateFileType,
+  shouldSkipSelfHostedAndroidApkGpg,
 } from '@onekeyhq/shared/src/appUpdate';
 import { OneKeyError } from '@onekeyhq/shared/src/errors';
 import { resolveErrorI18nMessage } from '@onekeyhq/shared/src/errors/utils/electronIpcError';
@@ -62,7 +63,8 @@ export const useDownloadPackage = () => {
   const getSkipGPGVerification = useCallback(
     async (isJsBundle: boolean): Promise<boolean> => {
       if (!isJsBundle) {
-        return false;
+        // Self-hosted APK has no OneKey GPG sidecar.
+        return shouldSkipSelfHostedAndroidApkGpg();
       }
       const isSkipGpgVerificationAllowed =
         await BundleUpdate.isSkipGpgVerificationAllowed().catch(() => false);
@@ -88,6 +90,16 @@ export const useDownloadPackage = () => {
           }
           await BundleUpdate.installBundle(data.downloadedEvent);
         } else {
+          const downloadUrl =
+            (typeof data.downloadUrl === 'string' && data.downloadUrl.trim()) ||
+            (typeof data.downloadedEvent?.downloadUrl === 'string' &&
+              data.downloadedEvent.downloadUrl.trim()) ||
+            '';
+          if (downloadUrl) {
+            await AppUpdate.verifyPackage({
+              downloadUrl,
+            });
+          }
           await AppUpdate.installPackage(data);
         }
         defaultLogger.app.appUpdate.endInstallPackage(true);
@@ -129,13 +141,20 @@ export const useDownloadPackage = () => {
       );
       defaultLogger.app.appUpdate.startVerifyPackage(params);
       await backgroundApiProxy.serviceAppUpdate.verifyPackage();
+      let verifyPromise: Promise<unknown>;
+      if (fileType === EUpdateFileType.jsBundle) {
+        verifyPromise = BundleUpdate.verifyBundle({
+          ...params,
+          skipGPGVerification,
+        });
+      } else {
+        // Native installAPK refuses to install unless verifyAPK stored a
+        // file hash. Self-hosted APK skips GPG (.asc) but must still parse
+        // the APK and record that hash.
+        verifyPromise = AppUpdate.verifyPackage(params);
+      }
       await Promise.all([
-        fileType === EUpdateFileType.jsBundle
-          ? BundleUpdate.verifyBundle({
-              ...params,
-              skipGPGVerification,
-            })
-          : AppUpdate.verifyPackage(params),
+        verifyPromise,
         timerUtils.wait(MIN_EXECUTION_DURATION),
       ]);
       await backgroundApiProxy.serviceAppUpdate.readyToInstall();
@@ -172,13 +191,19 @@ export const useDownloadPackage = () => {
       );
       defaultLogger.app.appUpdate.startVerifyASC(params);
       await backgroundApiProxy.serviceAppUpdate.verifyASC();
+      let verifyPromise: Promise<unknown>;
+      if (fileType === EUpdateFileType.jsBundle) {
+        verifyPromise = BundleUpdate.verifyBundleASC({
+          ...params,
+          skipGPGVerification,
+        });
+      } else if (skipGPGVerification) {
+        verifyPromise = Promise.resolve();
+      } else {
+        verifyPromise = AppUpdate.verifyASC(params);
+      }
       await Promise.all([
-        fileType === EUpdateFileType.jsBundle
-          ? BundleUpdate.verifyBundleASC({
-              ...params,
-              skipGPGVerification,
-            })
-          : AppUpdate.verifyASC(params),
+        verifyPromise,
         timerUtils.wait(MIN_EXECUTION_DURATION),
       ]);
       defaultLogger.app.appUpdate.endVerifyASC(true);
@@ -217,13 +242,19 @@ export const useDownloadPackage = () => {
       );
       defaultLogger.app.appUpdate.startDownloadASC(params);
       await backgroundApiProxy.serviceAppUpdate.downloadASC();
+      let downloadAscPromise: Promise<unknown>;
+      if (fileType === EUpdateFileType.jsBundle) {
+        downloadAscPromise = BundleUpdate.downloadBundleASC({
+          ...params,
+          skipGPGVerification,
+        });
+      } else if (skipGPGVerification) {
+        downloadAscPromise = Promise.resolve();
+      } else {
+        downloadAscPromise = AppUpdate.downloadASC(params);
+      }
       await Promise.all([
-        fileType === EUpdateFileType.jsBundle
-          ? BundleUpdate.downloadBundleASC({
-              ...params,
-              skipGPGVerification,
-            })
-          : AppUpdate.downloadASC(params),
+        downloadAscPromise,
         timerUtils.wait(MIN_EXECUTION_DURATION),
       ]);
       defaultLogger.app.appUpdate.endDownloadASC(true);

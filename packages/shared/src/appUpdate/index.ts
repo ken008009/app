@@ -10,6 +10,7 @@ import type { IAppUpdateInfo, IResolvedUpdateDecision } from './type';
 
 export * from './utils';
 export * from './type';
+export * from './androidApkUpdate';
 
 /**
  * Strategies that auto-download in the background without user confirmation

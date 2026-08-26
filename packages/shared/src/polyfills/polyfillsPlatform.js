@@ -84,9 +84,18 @@ if (typeof process === 'undefined') {
 }
 
 if (platformEnv.isNative) {
+  const { Platform } = require('react-native');
   const useJsBundle =
     require('@onekeyhq/shared/src/modules3rdParty/auto-update/useJsBundle').useJsBundle();
-  if (useJsBundle) {
+  if (Platform.OS === 'android') {
+    // Always resolve Android images via packed res/ names, even if a leftover
+    // JS OTA path exists. Union Metro records monorepo assets as
+    // `/assets/../../packages/...` → `__packages_*`; saveAssets/aapt store
+    // `packages_*`. Bridgeless file:// scriptURL must not win.
+    require(
+      './assetResolutionPatch',
+    ).patchAndroidApkResourceIdentifierResolution();
+  } else if (useJsBundle) {
     // OTA bundle: use the OTA bundle's local assets directory
     const getJsBundlePath =
       require('@onekeyhq/shared/src/modules3rdParty/auto-update/useJsBundle').getJsBundlePath;
@@ -94,10 +103,16 @@ if (platformEnv.isNative) {
     const assetsPath = `file://${mainBundlePath}/assets/`;
 
     require('./assetResolutionPatch').patchNativeAssetResolution(assetsPath);
-  } else {
-    // Regular release build (including split-bundle): fix the ../→_ path
-    // mismatch between Metro's asset registration and the actual file layout.
-    // Derive assetsPath from SourceCode.scriptURL (e.g. file:///.../app/common.jsbundle → file:///.../app/assets/)
+  } else if (
+      require('./assetResolutionPatch').shouldRewriteAssetsFromScriptUrl({
+        isNativeAndroid: false,
+        isNativeIOS: Platform.OS === 'ios',
+        useJsBundle,
+      })
+    ) {
+    // iOS app bundle / split-bundle: images sit next to the JS file.
+    // Derive assetsPath from SourceCode.scriptURL
+    // (e.g. file:///.../App.app/common.jsbundle → file:///.../App.app/assets/)
     try {
       const { NativeModules } = require('react-native');
       const scriptURL =

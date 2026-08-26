@@ -49,6 +49,24 @@ yarn lint:staged && yarn tsc:staged
 - 生产环境有 **双 JS 运行时**：`main`（UI）和 `background`（bg），存储/内存分析要区分
 - **ProdRelease 真机白屏**：模拟器 Debug 不能当结论；详见 `.cursor/rules/android-release-boot.mdc`。快验：只打 JS → `apps/mobile/scripts/inject-release-js-into-apk.sh` 注入完整底包，勿半小时全量盲打
 
+## 用户包 Android 打包（硬约束）
+
+给用户安装的 APK **只**用这条脚本（改 JS / 图片后必须整包重打）：
+
+```bash
+bash apps/mobile/scripts/build-user-release-apk.sh --bump-patch
+```
+
+**禁止：**
+
+- `yarn app:android`、ProdDebug、等 Metro 的包当用户包
+- 只注入某一个 `.bundle`（必须 `index` + `common` + `background` + segments 一起）
+- 关掉 `ENABLE_NATIVE_BACKGROUND_THREAD`（底栏有、中间黑）
+- 去掉 `SKIP_EXPO_JS_BUNDLE` 在 `app/build.gradle` 里把 Union `drawable-*` / `raw/` 拷进 `generated/res/` 的逻辑（APK 有 JS 但图空白）
+- 删除或绕过 `packages/shared/src/polyfills/assetResolutionPatch.js` 的 `getAndroidPackedResourceName`（钱包背景 / Tab 图标再空白）
+
+成品：`apps/mobile/dist/android/app-{VERSION}.apk`。装完核对设置里的版本号。
+
 ## 二开安全边界（禁止随意改）
 
 - 密码学、助记词、私钥相关 → `packages/core/`、`packages/kit-bg/` 加密模块
