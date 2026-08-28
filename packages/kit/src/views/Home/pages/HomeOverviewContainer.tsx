@@ -500,7 +500,7 @@ function HomeOverviewContainer() {
         icon="RefreshCcwOutline"
         variant="tertiary"
         loading={isLoading}
-        iconProps={{ color: '#D0D0D0' }}
+        iconProps={{ color: '$iconSubdued' }}
         onPress={handleRefreshWorth}
         testID="wallet-refresh-manually"
         trackID="wallet-refresh-manually"

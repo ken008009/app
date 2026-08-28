@@ -47,12 +47,6 @@ import {
   useAllNetworksStateStateAtom,
   useOverviewTokenCacheStateAtom,
 } from '@onekeyhq/kit/src/states/jotai/contexts/accountOverview';
-import {
-  POLLING_DEBOUNCE_INTERVAL,
-  POLLING_INTERVAL_FOR_HISTORY,
-  POLLING_INTERVAL_FOR_TOKEN,
-  SEARCH_DEBOUNCE_INTERVAL,
-} from '@onekeyhq/shared/src/consts/walletConsts';
 import { buildOverviewOwnerKey } from '@onekeyhq/kit/src/states/jotai/contexts/accountOverview/atoms';
 import { useActiveAccount } from '@onekeyhq/kit/src/states/jotai/contexts/accountSelector';
 import {
@@ -73,6 +67,7 @@ import {
   subcell,
 } from '@onekeyhq/kit/src/states/jotai/contexts/tokenList/cells/projection';
 import { buildTapTimeHomeTokenMap } from '@onekeyhq/kit/src/states/jotai/contexts/tokenList/cells/tapTimeHomeMap';
+import { applyHomeTokenLocalLogos } from '@onekeyhq/kit/src/utils/homeTokenLocalLogos';
 import { useTokenManagement } from '@onekeyhq/kit/src/views/AssetList/hooks/useTokenManagement';
 import type { IDBAccount } from '@onekeyhq/kit-bg/src/dbs/local/types';
 import type { ISimpleDBAggregateToken } from '@onekeyhq/kit-bg/src/dbs/simple/entity/SimpleDbEntityAggregateToken';
@@ -88,6 +83,12 @@ import {
 import { isAgg } from '@onekeyhq/kit-bg/src/states/jotai/contexts/tokenList/cellsPure/pure';
 import { getNetworkIdsMap } from '@onekeyhq/shared/src/config/networkIds';
 import { USD_CURRENCY_ID } from '@onekeyhq/shared/src/consts/currencyConsts';
+import {
+  POLLING_DEBOUNCE_INTERVAL,
+  POLLING_INTERVAL_FOR_HISTORY,
+  POLLING_INTERVAL_FOR_TOKEN,
+  SEARCH_DEBOUNCE_INTERVAL,
+} from '@onekeyhq/shared/src/consts/walletConsts';
 import {
   EAppEventBusNames,
   type IAppEventBusPayload,
@@ -116,9 +117,9 @@ import {
   calculateAccountTokensValue,
   ensureHomePinnedSymbolTokens,
   getEmptyTokenData,
-  shouldIncludeHomeMsGasToken,
   getMergedDeriveTokenData,
   getMergedTokenData,
+  shouldIncludeHomeMsGasToken,
 } from '@onekeyhq/shared/src/utils/tokenUtils';
 import { sumTokenGroupsFiatValueIgnoringUnavailable } from '@onekeyhq/shared/src/utils/tokenValueUtils';
 import { EHomeTab } from '@onekeyhq/shared/types';
@@ -129,7 +130,6 @@ import type {
   IHomeDefaultToken,
   ITokenFiat,
 } from '@onekeyhq/shared/types/token';
-import { applyHomeTokenLocalLogos } from '@onekeyhq/kit/src/utils/homeTokenLocalLogos';
 
 import { HomeStickyHeaderContext } from '../HomeStickyHeaderContext';
 import { RichBlock } from '../RichBlock/RichBlock';
@@ -482,25 +482,27 @@ function TokenListBlock({
     return r;
   }, []);
 
-  const { result: allNetworksEnabledState, run: refreshAllNetworksEnabledState } =
-    usePromiseResult(
-      async () => {
-        if (!network?.isAllNetworks) {
-          return {
-            disabledNetworks: {},
-            enabledNetworks: {},
-          };
-        }
-        return backgroundApiProxy.serviceAllNetwork.getAllNetworksState();
-      },
-      [network?.isAllNetworks],
-      {
-        initResult: {
+  const {
+    result: allNetworksEnabledState,
+    run: refreshAllNetworksEnabledState,
+  } = usePromiseResult(
+    async () => {
+      if (!network?.isAllNetworks) {
+        return {
           disabledNetworks: {},
           enabledNetworks: {},
-        },
+        };
+      }
+      return backgroundApiProxy.serviceAllNetwork.getAllNetworksState();
+    },
+    [network?.isAllNetworks],
+    {
+      initResult: {
+        disabledNetworks: {},
+        enabledNetworks: {},
       },
-    );
+    },
+  );
 
   useEffect(() => {
     if (!network?.isAllNetworks) {
@@ -522,6 +524,7 @@ function TokenListBlock({
   }, [network?.isAllNetworks, refreshAllNetworksEnabledState]);
 
   const includeMsGasToken = shouldIncludeHomeMsGasToken({
+    networkId: network?.id,
     isAllNetworks: network?.isAllNetworks,
     enabledNetworks: allNetworksEnabledState.enabledNetworks,
     disabledNetworks: allNetworksEnabledState.disabledNetworks,
@@ -712,8 +715,7 @@ function TokenListBlock({
               ...r.smallBalanceTokens.map,
             },
             catalogTokens: allAggregateTokensRef.current,
-            includeMsGasToken:
-              cellsIngestInputsRef.current.includeMsGasToken,
+            includeMsGasToken: cellsIngestInputsRef.current.includeMsGasToken,
           });
           void backgroundApiProxy.serviceTokenViewModel.ingestRound({
             ownerKey: cellsIngestInputsRef.current.ownerKey,

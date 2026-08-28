@@ -18,6 +18,7 @@ import {
   EDAppConnectionModal,
   EModalRoutes,
   EModalSettingRoutes,
+  type IModalSettingParamList,
 } from '@onekeyhq/shared/src/routes';
 
 import { useOptions } from '../../Setting/pages/AppAutoLock/useOptions';
@@ -69,7 +70,7 @@ export function useMineMenuConfig(): IMineMenuSection[] {
   const currencyLabel = (currencyInfo?.id ?? '').toUpperCase();
 
   const navigateSettingRoute = useCallback(
-    (screen: EModalSettingRoutes) => {
+    (screen: keyof IModalSettingParamList) => {
       navigation.pushModal(EModalRoutes.SettingModal, {
         screen,
       });

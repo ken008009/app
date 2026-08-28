@@ -547,7 +547,7 @@ describe('projectHomeDisplayIds — home symbol pin order (Value)', () => {
     const meta: Record<string, IToken> = {
       eth: makeToken('eth', { symbol: 'ETH', name: 'Ethereum' }),
       usdt: makeToken('usdt', { symbol: 'USDT', name: 'Tether' }),
-      msusd: makeToken('msusd', { symbol: 'MSUSD', name: 'Metronome' }),
+      ms: makeToken('ms', { symbol: 'MS', name: 'MS' }),
       dai: makeToken('dai', { symbol: 'DAI', name: 'Dai' }),
       btc: makeToken('btc', { symbol: 'BTC', name: 'Bitcoin' }),
       usdc: makeToken('usdc', { symbol: 'USDC', name: 'USD Coin' }),
@@ -557,7 +557,7 @@ describe('projectHomeDisplayIds — home symbol pin order (Value)', () => {
     const fiat: Record<string, ITokenFiat> = {
       eth: makeFiat({ fiatValue: '999' }),
       usdt: makeFiat({ fiatValue: '0' }),
-      msusd: makeFiat({ fiatValue: '0' }),
+      ms: makeFiat({ fiatValue: '0' }),
       dai: makeFiat({ fiatValue: '500' }),
       btc: makeFiat({ fiatValue: '0' }),
       usdc: makeFiat({ fiatValue: '0' }),
@@ -569,7 +569,7 @@ describe('projectHomeDisplayIds — home symbol pin order (Value)', () => {
       'usdt',
       'dai',
       'rndr',
-      'msusd',
+      'ms',
       'btc',
       'usdc',
       'bnb',
@@ -589,7 +589,7 @@ describe('projectHomeDisplayIds — home symbol pin order (Value)', () => {
 
     // Pin order first (even when ETH has highest fiat); non-pinned by fiat desc.
     expect(out).toEqual([
-      'msusd',
+      'ms',
       'usdt',
       'usdc',
       'btc',
@@ -600,23 +600,23 @@ describe('projectHomeDisplayIds — home symbol pin order (Value)', () => {
     ]);
   });
 
-  it('pins ISPAY (MS native RPC ticker) as the first Home gas row', () => {
+  it('pins MS Mainnet native token as the first Home gas row', () => {
     const meta: Record<string, IToken> = {
       usdt: makeToken('usdt', { symbol: 'USDT', name: 'Tether' }),
-      ispay: makeToken('ispay', {
-        symbol: 'ISPAY',
-        name: 'ISPAY',
+      ms: makeToken('ms', {
+        symbol: 'MS',
+        name: 'MS',
         isNative: true,
-        networkId: 'evm--1944873742',
+        networkId: 'evm--1049763712',
       }),
       btc: makeToken('btc', { symbol: 'BTC', name: 'Bitcoin' }),
     };
     const fiat: Record<string, ITokenFiat> = {
       usdt: makeFiat({ fiatValue: '0' }),
-      ispay: makeFiat({ fiatValue: '0' }),
+      ms: makeFiat({ fiatValue: '0' }),
       btc: makeFiat({ fiatValue: '0' }),
     };
-    const orderedIds = ['usdt', 'btc', 'ispay'];
+    const orderedIds = ['usdt', 'btc', 'ms'];
 
     const out = projectHomeDisplayIds({
       orderedIds,
@@ -630,7 +630,7 @@ describe('projectHomeDisplayIds — home symbol pin order (Value)', () => {
       getMeta: (k) => meta[k],
     });
 
-    expect(out).toEqual(['ispay', 'usdt', 'btc']);
+    expect(out).toEqual(['ms', 'usdt', 'btc']);
   });
 
   it('sorts non-pinned tokens by fiatValue when no whitelist hits', () => {

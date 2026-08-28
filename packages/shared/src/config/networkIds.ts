@@ -65,7 +65,7 @@ export type INetworkShortCode =
   | 'bob'
   | 'taiko'
   | 'hsk'
-  | 'ispay'
+  | 'ms'
   | 'hyperevm'
   | 'neon3'
   | 'linea'

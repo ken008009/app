@@ -223,7 +223,7 @@ export function computeNonZeroIds(params: IComputeNonZeroIdsParams): string[] {
     }
 
     if (keepDefault && meta) {
-      // Home pin list (MSUSD/USDT/…/BNB) must stay visible at zero balance,
+      // Home pin list (MS/USDT/…/BNB) must stay visible at zero balance,
       // including synthesized cross-network stubs on single-chain views.
       if (
         isHomePinnedTokenSymbol(meta.commonSymbol ?? meta.symbol) &&

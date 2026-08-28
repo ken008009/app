@@ -5,19 +5,21 @@ import { useIntl } from 'react-intl';
 import { useMarketSelectedTabAtom } from '@onekeyhq/kit-bg/src/states/jotai/atoms';
 import { ETranslations } from '@onekeyhq/shared/src/locale';
 
-import {
-  type INativeMarketHomeTab,
-  resolveNativeMarketHomeTabs,
-} from '../../nativeMarketHomeTabs';
+import { resolveNativeMarketHomeTabs } from '../../nativeMarketHomeTabs';
 import { EMarketHomeTab } from '../../types';
 
 import type { IMarketCategoryItem, IMarketHomeTabValue } from '../../types';
 
-export type INativeMarketHomeResolvedTab = {
-  id: INativeMarketHomeTab['id'];
-  tabName: string;
-  categoryId?: string;
-};
+export type INativeMarketHomeResolvedTab =
+  | {
+      id: 'watchlist' | 'defi' | 'lending';
+      tabName: string;
+    }
+  | {
+      id: 'hot' | 'stock';
+      tabName: string;
+      categoryId: string;
+    };
 
 interface IUseNativeMarketHomeTabsLogicOptions {
   spotCategories?: IMarketCategoryItem[];
@@ -121,7 +123,8 @@ export function useNativeMarketHomeTabsLogic(
         tabValue = EMarketHomeTab.Lending;
       }
 
-      const categoryId = meta.categoryId;
+      const categoryId =
+        meta.id === 'hot' || meta.id === 'stock' ? meta.categoryId : undefined;
       const isSelectionUnchanged =
         tabValue === selectedTab &&
         (!categoryId || categoryId === selectedSpotCategory);

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 
 import { StyleSheet } from 'react-native';
 
@@ -23,7 +23,7 @@ export function MineSettingsRow({
   icon: IKeyOfIcons;
   title: string;
   subtitle?: string;
-  onPress?: () => void;
+  onPress?: ComponentProps<typeof XStack>['onPress'];
   showDivider?: boolean;
 }) {
   return (

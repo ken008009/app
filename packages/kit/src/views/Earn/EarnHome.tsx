@@ -548,7 +548,7 @@ function BasicEarnHome({
       return (
         <YStack flex={1}>
           <BorrowHome
-            isActive={isBorrowMode ? showContent !== false : null}
+            isActive={isBorrowMode ? showContent !== false : false}
             pendingTxs={borrowPendingTxs}
             onRegisterBorrowRefresh={handleRegisterBorrowRefresh}
             onBorrowNetworksChange={handleBorrowNetworksChange}

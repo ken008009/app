@@ -62,7 +62,7 @@ export function useMarketTabsLogic(
     // undefined = config not ready yet → keep a temporary trending tab.
     // empty array = intentionally no visible spot tabs.
     if (!spotCategories) {
-      return [{ id: 'trending', name: spotTabName }];
+      return [{ categoryId: 'trending', tabName: spotTabName }];
     }
 
     return spotCategories.map((category) => ({

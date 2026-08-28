@@ -110,7 +110,7 @@ function BasicTokenListItem(props: ITokenListItemProps) {
   const renderFirstColumn = useCallback(() => {
     if (!tableLayout && !isTokenSelector) {
       return (
-        <XStack alignItems="center" gap="$3" flex={1}>
+        <XStack alignItems="center" gap="$3" flex={1} minWidth={0}>
           <Stack {...(homeCardStyle ? HOME_TOKEN_ICON_RING_PROPS : undefined)}>
             <TokenIconView
               $key={token.$key}
@@ -121,8 +121,10 @@ function BasicTokenListItem(props: ITokenListItemProps) {
               showNetworkIcon={showNetworkIcon}
             />
           </Stack>
-          <YStack flex={1}>
+          <YStack flex={1} minWidth={0}>
             <TokenNameView
+              flex={1}
+              minWidth={0}
               withAggregateBadge={withAggregateBadge}
               $key={token.$key}
               name={
@@ -143,7 +145,8 @@ function BasicTokenListItem(props: ITokenListItemProps) {
               showDeFiReceiptTokenBadge={showDeFiReceiptTokenBadge}
               textProps={{
                 size: '$bodyLgMedium',
-                flexShrink: 0,
+                flex: 1,
+                flexShrink: 1,
               }}
             />
             <XStack alignItems="center" gap="$1.5">
@@ -175,8 +178,10 @@ function BasicTokenListItem(props: ITokenListItemProps) {
           showNetworkIcon={showNetworkIcon}
           isAllNetworks={isAllNetworks}
         />
-        <YStack flex={1}>
+        <YStack flex={1} minWidth={0}>
           <TokenNameView
+            flex={1}
+            minWidth={0}
             $key={token.$key}
             withAggregateBadge={withAggregateBadge ?? isTokenSelector}
             name={
@@ -197,10 +202,13 @@ function BasicTokenListItem(props: ITokenListItemProps) {
             showDeFiReceiptTokenBadge={showDeFiReceiptTokenBadge}
             textProps={{
               size: '$bodyLgMedium',
-              flexShrink: 0,
+              flex: 1,
+              flexShrink: 1,
             }}
           />
           <TokenNameView
+            flex={1}
+            minWidth={0}
             $key={token.$key}
             name={token.name}
             // name={token.accountId || ''}

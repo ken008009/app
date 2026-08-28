@@ -32,7 +32,7 @@ export function WalletRenameButton({
   editable: boolean | undefined;
   textSize?: '$bodyLgMedium' | '$heading2xl' | '$headingXl' | '$headingLg';
   textColor?: string;
-  iconColor?: string;
+  iconColor?: ComponentProps<typeof Icon>['color'];
 }) {
   const { serviceAccount } = backgroundApiProxy;
   const intl = useIntl();

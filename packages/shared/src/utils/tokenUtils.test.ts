@@ -29,16 +29,15 @@ import type { IAccountToken, ITokenFiat } from '../../types/token';
 
 describe('getHomeTokenSymbolPriority', () => {
   test('returns ascending index for whitelist symbols (case-insensitive)', () => {
-    expect(getHomeTokenSymbolPriority('MSUSD')).toBe(0);
-    expect(getHomeTokenSymbolPriority('msUSD')).toBe(0);
+    expect(getHomeTokenSymbolPriority('MS')).toBe(0);
+    expect(getHomeTokenSymbolPriority('ms')).toBe(0);
     expect(getHomeTokenSymbolPriority('USDT')).toBe(1);
     expect(getHomeTokenSymbolPriority('usdc')).toBe(2);
     expect(getHomeTokenSymbolPriority('BTC')).toBe(3);
     expect(getHomeTokenSymbolPriority('eth')).toBe(4);
     expect(getHomeTokenSymbolPriority('BNB')).toBe(5);
-    expect(getHomeTokenSymbolPriority('ISPAY')).toBe(0);
-    expect(getHomeTokenSymbolPriority('ispay')).toBe(0);
-    expect(getHomeTokenSymbolPriority('MS')).toBe(0);
+    expect(getHomeTokenSymbolPriority('ISPAY')).toBe(Number.POSITIVE_INFINITY);
+    expect(getHomeTokenSymbolPriority('MSUSD')).toBe(Number.POSITIVE_INFINITY);
     expect(HOME_TOKEN_SYMBOL_PRIORITY).toHaveLength(6);
     expect(HOME_TOKEN_SYMBOL_PRIORITY[0]).toBe(HOME_GAS_TOKEN_SYMBOL);
   });
@@ -51,12 +50,12 @@ describe('getHomeTokenSymbolPriority', () => {
     );
   });
 
-  test('MS chain native ISPAY ranks as pin #1 even before symbol rewrite', () => {
+  test('MS Mainnet native token ranks as pin #1', () => {
     expect(
       getHomeTokenListPinPriority({
-        symbol: 'ISPAY',
+        symbol: 'MS',
         isNative: true,
-        networkId: 'evm--1944873742',
+        networkId: MS_NETWORK_ID,
       }),
     ).toBe(0);
     expect(getHomeTokenListPinPriority({ symbol: 'USDT' })).toBe(1);
@@ -64,7 +63,7 @@ describe('getHomeTokenSymbolPriority', () => {
 });
 
 describe('sortTokensByHomeValue', () => {
-  test('places ISPAY native before other pin symbols', () => {
+  test('places MS native before other pin symbols', () => {
     const usdt: IAccountToken = {
       $key: 'usdt',
       symbol: 'USDT',
@@ -75,17 +74,17 @@ describe('sortTokensByHomeValue', () => {
       isAggregateToken: true,
       networkId: 'aggregate--0',
     };
-    const ispay: IAccountToken = {
-      $key: 'ispay-native',
-      symbol: 'ISPAY',
-      name: 'ISPAY',
+    const ms: IAccountToken = {
+      $key: 'ms-native',
+      symbol: 'MS',
+      name: 'MS',
       address: '',
       decimals: 18,
       isNative: true,
-      networkId: 'evm--1944873742',
+      networkId: MS_NETWORK_ID,
     };
     const out = sortTokensByHomeValue({
-      tokens: [usdt, ispay],
+      tokens: [usdt, ms],
       map: {
         usdt: {
           balance: '0',
@@ -93,7 +92,7 @@ describe('sortTokensByHomeValue', () => {
           fiatValue: '0',
           price: 1,
         },
-        'ispay-native': {
+        'ms-native': {
           balance: '500000',
           balanceParsed: '500000',
           fiatValue: '0',
@@ -101,39 +100,29 @@ describe('sortTokensByHomeValue', () => {
         },
       },
     });
-    expect(out.map((t) => t.$key)).toEqual(['ispay-native', 'usdt']);
+    expect(out.map((t) => t.$key)).toEqual(['ms-native', 'usdt']);
   });
 });
 
 describe('isHomeGasTokenSymbol / formatHomeTokenSymbolForDisplay', () => {
-  test('matches MSUSD and ms native aliases as the same gas token', () => {
-    expect(isHomeGasTokenSymbol('msUSD')).toBe(true);
-    expect(isHomeGasTokenSymbol('MSUSD')).toBe(true);
+  test('matches the MS Mainnet native ticker', () => {
     expect(isHomeGasTokenSymbol('MS')).toBe(true);
     expect(isHomeGasTokenSymbol('ms')).toBe(true);
+    expect(isHomeGasTokenSymbol('MSUSD')).toBe(false);
     expect(isHomeGasTokenSymbol('ispay')).toBe(false);
     expect(isHomeGasTokenSymbol('ETH')).toBe(false);
     expect(isHomeGasTokenSymbol(undefined)).toBe(false);
-    expect(isHomeGasTokenDisplayAlias('ispay')).toBe(true);
-    expect(isHomeGasTokenDisplayAlias('ISPAY')).toBe(true);
-    expect(formatHomeTokenSymbolForDisplay('msUSD')).toBe(
-      HOME_GAS_TOKEN_DISPLAY_SYMBOL,
-    );
+    expect(isHomeGasTokenDisplayAlias('MSUSD')).toBe(false);
     expect(formatHomeTokenSymbolForDisplay('ms')).toBe(
       HOME_GAS_TOKEN_DISPLAY_SYMBOL,
     );
-    expect(formatHomeTokenSymbolForDisplay('ispay')).toBe(
-      HOME_GAS_TOKEN_DISPLAY_SYMBOL,
-    );
-    expect(formatHomeTokenSymbolForDisplay('ISPAY')).toBe(
-      HOME_GAS_TOKEN_DISPLAY_SYMBOL,
-    );
+    expect(formatHomeTokenSymbolForDisplay('MSUSD')).toBe('MSUSD');
     expect(formatHomeTokenSymbolForDisplay('USDT')).toBe('USDT');
   });
 });
 
 describe('ensureHomePinnedSymbolTokens', () => {
-  test('injects missing pin symbols and orders MSUSD→…→BNB first', () => {
+  test('injects missing pin symbols and orders MS→…→BNB first', () => {
     const eth: IAccountToken = {
       $key: 'eth-native',
       symbol: 'ETH',
@@ -171,7 +160,7 @@ describe('ensureHomePinnedSymbolTokens', () => {
     });
 
     expect(out.tokens.map((t) => t.symbol)).toEqual([
-      'MSUSD',
+      'MS',
       'USDT',
       'USDC',
       'BTC',
@@ -179,12 +168,12 @@ describe('ensureHomePinnedSymbolTokens', () => {
       'BNB',
       'DAI',
     ]);
-    expect(out.tokens[0]?.networkId).toBe('evm--1944873742');
+    expect(out.tokens[0]?.networkId).toBe(MS_NETWORK_ID);
     expect(out.tokens[0]?.isNative).toBe(true);
     expect(out.tokenListMap[out.tokens[0].$key]?.fiatValue).toBe('0');
   });
 
-  test('binds MSUSD pin to MS chain native and ignores catalog Metronome', () => {
+  test('binds MS pin to MS Mainnet native and ignores catalog Metronome', () => {
     const native: IAccountToken = {
       $key: 'ms-native',
       symbol: 'MS',
@@ -192,7 +181,7 @@ describe('ensureHomePinnedSymbolTokens', () => {
       address: '',
       decimals: 18,
       isNative: true,
-      networkId: 'evm--1944873742',
+      networkId: MS_NETWORK_ID,
     };
     const metronome: IAccountToken = {
       $key: 'metronome-msusd',
@@ -216,35 +205,30 @@ describe('ensureHomePinnedSymbolTokens', () => {
       catalogTokens: [metronome],
     });
 
-    const gasRows = out.tokens.filter(
-      (token) =>
-        token.symbol === 'MSUSD' ||
-        token.symbol === 'MS' ||
-        token.symbol === 'ms',
-    );
+    const gasRows = out.tokens.filter((token) => token.symbol === 'MS');
     expect(gasRows).toHaveLength(1);
-    expect(gasRows[0]?.symbol).toBe('MSUSD');
-    expect(gasRows[0]?.name).toBe('MSUSD');
+    expect(gasRows[0]?.symbol).toBe('MS');
+    expect(gasRows[0]?.name).toBe('MS');
     expect(gasRows[0]?.isNative).toBe(true);
-    expect(gasRows[0]?.networkId).toBe('evm--1944873742');
+    expect(gasRows[0]?.networkId).toBe(MS_NETWORK_ID);
     expect(gasRows[0]?.$key).toBe('ms-native');
     expect(out.tokenListMap['ms-native']?.balanceParsed).toBe('90');
   });
 
-  test('rewrites MS chain native ISPAY ticker to MSUSD and pins it first', () => {
+  test('keeps the MS Mainnet native ticker and pins it first', () => {
     const native: IAccountToken = {
-      $key: 'ispay-native',
-      symbol: 'ISPAY',
-      name: 'ISPAY',
+      $key: 'ms-native',
+      symbol: 'MS',
+      name: 'MS',
       address: '',
       decimals: 18,
       isNative: true,
-      networkId: 'evm--1944873742',
+      networkId: MS_NETWORK_ID,
     };
     const out = ensureHomePinnedSymbolTokens({
       tokens: [native],
       tokenListMap: {
-        'ispay-native': {
+        'ms-native': {
           balance: '500000000000000000000000',
           balanceParsed: '500000',
           fiatValue: '0',
@@ -254,28 +238,28 @@ describe('ensureHomePinnedSymbolTokens', () => {
     });
 
     expect(out.tokens.map((t) => t.symbol).slice(0, 6)).toEqual([
-      'MSUSD',
+      'MS',
       'USDT',
       'USDC',
       'BTC',
       'ETH',
       'BNB',
     ]);
-    expect(out.tokens[0]?.$key).toBe('ispay-native');
-    expect(out.tokens[0]?.name).toBe('MSUSD');
+    expect(out.tokens[0]?.$key).toBe('ms-native');
+    expect(out.tokens[0]?.name).toBe('MS');
     expect(out.tokens[0]?.isNative).toBe(true);
-    expect(out.tokenListMap['ispay-native']?.balanceParsed).toBe('500000');
+    expect(out.tokenListMap['ms-native']?.balanceParsed).toBe('500000');
   });
 
-  test('All Networks MSUSD pin balance equals the MS single-chain native row', () => {
+  test('All Networks MS pin balance equals the MS single-chain native row', () => {
     const msNative: IAccountToken = {
-      $key: 'evm--1944873742_native',
-      symbol: 'ISPAY',
-      name: 'ISPAY',
+      $key: 'evm--1049763712_native',
+      symbol: 'MS',
+      name: 'MS',
       address: '',
       decimals: 18,
       isNative: true,
-      networkId: 'evm--1944873742',
+      networkId: MS_NETWORK_ID,
     };
     const metronomeOnEth: IAccountToken = {
       $key: 'evm--1_msusd',
@@ -296,7 +280,7 @@ describe('ensureHomePinnedSymbolTokens', () => {
     const allNetworks = ensureHomePinnedSymbolTokens({
       tokens: [metronomeOnEth, msNative],
       tokenListMap: {
-        'evm--1944873742_native': nativeFiat,
+        'evm--1049763712_native': nativeFiat,
         'evm--1_msusd': {
           balance: '999000000000000000000',
           balanceParsed: '999',
@@ -308,26 +292,26 @@ describe('ensureHomePinnedSymbolTokens', () => {
     const singleMs = ensureHomePinnedSymbolTokens({
       tokens: [msNative],
       tokenListMap: {
-        'evm--1944873742_native': nativeFiat,
+        'evm--1049763712_native': nativeFiat,
       },
     });
 
     expect(allNetworks.tokens[0]?.$key).toBe(singleMs.tokens[0]?.$key);
-    expect(allNetworks.tokens[0]?.networkId).toBe('evm--1944873742');
+    expect(allNetworks.tokens[0]?.networkId).toBe(MS_NETWORK_ID);
     expect(allNetworks.tokens[0]?.isNative).toBe(true);
-    expect(allNetworks.tokenListMap[allNetworks.tokens[0].$key]?.balanceParsed).toBe(
-      '123',
-    );
+    expect(
+      allNetworks.tokenListMap[allNetworks.tokens[0].$key]?.balanceParsed,
+    ).toBe('123');
     expect(singleMs.tokenListMap[singleMs.tokens[0].$key]?.balanceParsed).toBe(
       '123',
     );
   });
 
-  test('omits MSUSD entirely when All Networks has ms unchecked', () => {
+  test('omits MS entirely when All Networks has MS Mainnet unchecked', () => {
     const native: IAccountToken = {
       $key: 'ms-native',
-      symbol: 'ISPAY',
-      name: 'ISPAY',
+      symbol: 'MS',
+      name: 'MS',
       address: '',
       decimals: 18,
       isNative: true,
@@ -359,9 +343,9 @@ describe('ensureHomePinnedSymbolTokens', () => {
     expect(
       out.tokens.some(
         (token) =>
-          token.symbol === 'MSUSD' ||
+          token.symbol === 'MS' ||
           token.networkId === MS_NETWORK_ID ||
-          token.$key === 'home_pin_msusd',
+          token.$key === 'home_pin_ms',
       ),
     ).toBe(false);
     expect(out.tokens.some((token) => token.symbol === 'USDT')).toBe(true);
@@ -369,13 +353,20 @@ describe('ensureHomePinnedSymbolTokens', () => {
 });
 
 describe('shouldIncludeHomeMsGasToken', () => {
-  test('stays on for single-network Home views', () => {
+  test('is on only for the MS Mainnet single-network Home view', () => {
     expect(
       shouldIncludeHomeMsGasToken({
+        networkId: MS_NETWORK_ID,
         isAllNetworks: false,
         disabledNetworks: { [MS_NETWORK_ID]: true },
       }),
     ).toBe(true);
+    expect(
+      shouldIncludeHomeMsGasToken({
+        networkId: 'evm--56',
+        isAllNetworks: false,
+      }),
+    ).toBe(false);
   });
 
   test('is off when All Networks has ms disabled', () => {

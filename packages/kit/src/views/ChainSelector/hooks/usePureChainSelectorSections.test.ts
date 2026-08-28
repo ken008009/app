@@ -41,7 +41,7 @@ const titles = {
 
 describe('buildPureChainSelectorSections', () => {
   test('puts enabled networks in the first section and does not repeat them', () => {
-    const ms = makeNetwork('evm--1944873742', 'ms');
+    const ms = makeNetwork('evm--1049763712', 'MS Mainnet');
     const btc = makeNetwork('btc--0', 'Bitcoin');
     const base = makeNetwork('evm--8453', 'Base');
     const sections = buildPureChainSelectorSections({
@@ -56,9 +56,9 @@ describe('buildPureChainSelectorSections', () => {
       ms.id,
       btc.id,
     ]);
-    const laterIds = sections.slice(1).flatMap((section) =>
-      section.data.map((network) => network.id),
-    );
+    const laterIds = sections
+      .slice(1)
+      .flatMap((section) => section.data.map((network) => network.id));
     expect(laterIds).toEqual([base.id]);
     expect(laterIds).not.toContain(ms.id);
     expect(laterIds).not.toContain(btc.id);
@@ -71,8 +71,7 @@ describe('buildPureChainSelectorSections', () => {
     const sections = buildPureChainSelectorSections({
       networks: [rich, enabled],
       isNetworkEnabled: (network) => network.id === enabled.id,
-      getNetworkValue: (networkId) =>
-        networkId === rich.id ? richValue : '0',
+      getNetworkValue: (networkId) => (networkId === rich.id ? richValue : '0'),
       ...titles,
     });
 
@@ -86,7 +85,7 @@ describe('buildPureChainSelectorSections', () => {
   test('pins ms first among enabled networks', () => {
     const eth = makeNetwork('evm--1', 'Ethereum');
     const btc = makeNetwork('btc--0', 'Bitcoin');
-    const ms = makeNetwork('evm--1944873742', 'ms');
+    const ms = makeNetwork('evm--1049763712', 'MS Mainnet');
     const sections = buildPureChainSelectorSections({
       networks: [eth, btc, ms],
       isNetworkEnabled: () => true,

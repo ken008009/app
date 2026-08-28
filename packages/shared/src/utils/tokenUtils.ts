@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { forEach, isEmpty, isNil, isUndefined, uniqBy } from 'lodash';
 
-// cspell:ignore MSUSD msusd
+// cspell:ignore msworldpay
 
 import { wrappedTokens } from '../../types/swap/SwapProvider.constants';
 import { getNetworkIdsMap } from '../config/networkIds';
@@ -434,30 +434,24 @@ export function sortTokensByOrder({ tokens }: { tokens: IAccountToken[] }) {
 
 /**
  * Home Assets pin list match key (lowercase). Display ticker for the gas token
- * is `HOME_GAS_TOKEN_DISPLAY_SYMBOL` (`MSUSD`).
+ * is `HOME_GAS_TOKEN_DISPLAY_SYMBOL` (`MS`).
  */
-export const HOME_GAS_TOKEN_SYMBOL = 'msusd';
+export const HOME_GAS_TOKEN_SYMBOL = 'ms';
 
 /** Canonical display ticker for the Home gas / pin-#1 token. */
-export const HOME_GAS_TOKEN_DISPLAY_SYMBOL = 'MSUSD';
+export const HOME_GAS_TOKEN_DISPLAY_SYMBOL = 'MS';
 
 /**
  * On-chain aliases of the Home gas token (compared lowercase).
- *   msusd — canonical pin key / display ticker MSUSD
- *   ms    — current chain / native name
- * `ispay` is intentionally NOT a global gas alias (would rename any ISPAY
- * ticker on other chains). It is a Home display alias only.
+ * The canonical network configuration and native ticker are both `MS`.
  */
 const HOME_GAS_TOKEN_SYMBOL_ALIASES: ReadonlySet<string> = new Set([
   HOME_GAS_TOKEN_SYMBOL,
-  'ms',
 ]);
 
-/** Tickers rewritten to MSUSD in Home UI (includes historical RPC ticker). */
+/** Tickers rewritten to MS in Home UI. */
 const HOME_GAS_TOKEN_DISPLAY_ALIASES: ReadonlySet<string> = new Set([
   HOME_GAS_TOKEN_SYMBOL,
-  'ms',
-  'ispay',
 ]);
 
 /** Home Assets token list: preferred symbol pin order (case-insensitive). */
@@ -474,7 +468,7 @@ export function isHomeGasTokenSymbol(symbol?: string): boolean {
   return !!symbol && HOME_GAS_TOKEN_SYMBOL_ALIASES.has(symbol.toLowerCase());
 }
 
-/** True for Home display tickers that should render as MSUSD (incl. ISPAY). */
+/** True for Home display tickers that should render as MS. */
 export function isHomeGasTokenDisplayAlias(symbol?: string): boolean {
   return !!symbol && HOME_GAS_TOKEN_DISPLAY_ALIASES.has(symbol.toLowerCase());
 }
@@ -491,7 +485,7 @@ function shouldRewriteAsHomeGasToken(token: IAccountToken): boolean {
   );
 }
 
-/** Normalize pin-list tickers for UI (msUSD / ISPAY / ms → MSUSD). */
+/** Normalize the MS Mainnet native ticker for Home UI. */
 export function formatHomeTokenSymbolForDisplay(symbol?: string): string {
   if (!symbol) {
     return '';
@@ -513,8 +507,7 @@ const HOME_TOKEN_SYMBOL_PRIORITY_INDEX: ReadonlyMap<string, number> = new Map(
 /**
  * Lower index = higher pin priority. Symbols not in the whitelist return
  * +Infinity so they sort after pinned tokens.
- * ISPAY / MS display aliases share the MSUSD pin rank so the Home list
- * keeps the gas token first even when cell meta still has the RPC ticker.
+ * The MS native ticker has the first Home pin rank.
  */
 export function getHomeTokenSymbolPriority(symbol?: string): number {
   if (!symbol) {
@@ -585,8 +578,8 @@ function tokenMatchesHomePinSymbol(
 ): boolean {
   const pin = pinSymbol.toLowerCase();
   if (pin === HOME_GAS_TOKEN_SYMBOL) {
-    // MSUSD pin is the MS chain native coin (chainId 1944873742), not
-    // catalog Metronome MSUSD on other networks.
+    // MS pin is the MS Mainnet native coin, not a same-symbol token on
+    // another network.
     if (isMsChainNativeToken(token)) {
       return true;
     }
@@ -619,18 +612,20 @@ function isHomeMsGasTokenRow(token: IAccountToken): boolean {
   );
 }
 
-/** Home All Networks: hide MSUSD unless ms is still enabled. */
+/** Home All Networks: hide MS unless MS Mainnet is still enabled. */
 export function shouldIncludeHomeMsGasToken({
+  networkId,
   isAllNetworks,
   enabledNetworks = {},
   disabledNetworks = {},
 }: {
+  networkId?: string;
   isAllNetworks?: boolean;
   enabledNetworks?: Record<string, boolean>;
   disabledNetworks?: Record<string, boolean>;
 }): boolean {
   if (!isAllNetworks) {
-    return true;
+    return networkId === MS_NETWORK_ID;
   }
   return isEnabledNetworksInAllNetworks({
     networkId: MS_NETWORK_ID,
@@ -658,13 +653,13 @@ function normalizeHomePinnedTokenDisplay(token: IAccountToken): IAccountToken {
 }
 
 /**
- * Ensure Home pin symbols (MSUSD → … → BNB) exist in the token list even when
+ * Ensure Home pin symbols (MS → … → BNB) exist in the token list even when
  * the current network response omits them (e.g. BTC/BNB on Ethereum). Missing
  * entries are synthesized from `catalogTokens` (allAggregateTokens) or as
  * zero-balance stubs, then placed at the front in pin order.
- * The MSUSD pin is always the MS chain native coin (`evm--1944873742`).
+ * The MS pin is always the MS Mainnet native coin (`evm--1049763712`).
  * When `includeMsGasToken` is false (All Networks with ms unchecked), do not
- * inject or keep any MSUSD / ms-chain row.
+ * inject or keep any MS Mainnet row.
  */
 export function ensureHomePinnedSymbolTokens({
   tokens,
@@ -696,6 +691,9 @@ export function ensureHomePinnedSymbolTokens({
   const resultMap: Record<string, ITokenFiat> = { ...tokenListMap };
   const mainTokens = tokens.map(normalizeHomePinnedTokenDisplay);
   const smallTokens = smallBalanceTokens.map(normalizeHomePinnedTokenDisplay);
+  const homeTokenSymbolPriority = includeMsGasToken
+    ? HOME_TOKEN_SYMBOL_PRIORITY
+    : HOME_TOKEN_SYMBOL_PRIORITY.filter((pin) => pin !== HOME_GAS_TOKEN_SYMBOL);
 
   const findIn = (list: IAccountToken[], pin: string) => {
     if (pin === HOME_GAS_TOKEN_SYMBOL) {
@@ -707,10 +705,7 @@ export function ensureHomePinnedSymbolTokens({
     return list.find((token) => tokenMatchesHomePinSymbol(token, pin));
   };
 
-  for (const pin of HOME_TOKEN_SYMBOL_PRIORITY) {
-    if (pin === HOME_GAS_TOKEN_SYMBOL && !includeMsGasToken) {
-      continue;
-    }
+  for (const pin of homeTokenSymbolPriority) {
     const inMain = findIn(mainTokens, pin);
     if (!inMain) {
       const inSmallIndex = smallTokens.findIndex((token) =>
@@ -724,8 +719,8 @@ export function ensureHomePinnedSymbolTokens({
       } else {
         const displaySymbol = displaySymbolForHomePin(pin);
         const catalogCandidate = catalogBySymbol.get(pin);
-        // Never bind the MSUSD pin to catalog Metronome (or any other-chain
-        // MSUSD). That row is always the MS chain native coin.
+        // Never bind the MS pin to a same-symbol token on another network.
+        // That row is always the MS Mainnet native coin.
         const catalog =
           pin === HOME_GAS_TOKEN_SYMBOL &&
           catalogCandidate?.networkId !== MS_NETWORK_ID
@@ -786,10 +781,7 @@ export function ensureHomePinnedSymbolTokens({
 
   const pinned: IAccountToken[] = [];
   const usedKeys = new Set<string>();
-  for (const pin of HOME_TOKEN_SYMBOL_PRIORITY) {
-    if (pin === HOME_GAS_TOKEN_SYMBOL && !includeMsGasToken) {
-      continue;
-    }
+  for (const pin of homeTokenSymbolPriority) {
     const hit = findIn(
       mainTokens.filter((token) => !usedKeys.has(token.$key)),
       pin,

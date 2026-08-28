@@ -26,7 +26,7 @@ import { useTokenListViewContext } from './TokenListViewContext';
 type IProps = {
   $key: string;
   name: string;
-  /** Token ticker; used for Home Gas icon (MSUSD). Falls back to `name`. */
+  /** Token ticker; used for Home Gas icon (MS). Falls back to `name`. */
   symbol?: string;
   isNative?: boolean;
   isAggregateToken?: boolean;
@@ -113,7 +113,7 @@ function TokenNameView(props: IProps) {
     return networksMap?.[id] ?? networkUtils.getLocalNetworkInfo(id);
   }, [networksMap, tokenHasBalance?.networkId]);
 
-  // Only rewrite the ticker row (msUSD → MSUSD). The subtitle `name` line keeps
+  // Only rewrite the ticker row (ms → MS). The subtitle `name` line keeps
   // the API full name when `showNetworkName` is set.
   const displayName = showNetworkName
     ? name

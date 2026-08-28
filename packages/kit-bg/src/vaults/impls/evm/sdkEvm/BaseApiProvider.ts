@@ -114,11 +114,10 @@ class BaseApiProvider {
     const isMsNetwork = this.networkId === MS_NETWORK_ID;
     return {
       info: {
-        // Always show MSUSD to users. Ignore stale DB network.symbol (ISPAY).
-        name: isMsNetwork ? 'MSUSD' : (token?.info?.name ?? network?.name),
-        symbol: isMsNetwork
-          ? 'MSUSD'
-          : (token?.info?.symbol ?? network?.symbol),
+        // Keep the MS Mainnet native-asset identity authoritative over stale
+        // cached metadata from the previous network configuration.
+        name: isMsNetwork ? 'MS' : (token?.info?.name ?? network?.name),
+        symbol: isMsNetwork ? 'MS' : (token?.info?.symbol ?? network?.symbol),
         address: this.nativeTokenAddress,
         sendAddress: undefined,
         logoURI: '',
@@ -394,8 +393,8 @@ class BaseApiProvider {
           }
         }
         if (this.networkId === MS_NETWORK_ID && t.info?.isNative) {
-          t.info.symbol = 'MSUSD';
-          t.info.name = 'MSUSD';
+          t.info.symbol = 'MS';
+          t.info.name = 'MS';
         }
 
         return t;

@@ -8,9 +8,13 @@ import { ENetworkStatus } from '@onekeyhq/shared/types';
 
 import platformEnv from '../platformEnv';
 
-export const MS_NETWORK_ID = 'evm--1944873742';
+export const MS_NETWORK_ID = 'evm--1049763712';
 export const MS_RPC_URL = 'https://rpc.msworldpay.com';
-export const MS_WSS_URL = 'wss://ws.ispaypaly.org';
+export const MS_WSS_URL = 'wss://ws.msworldpay.com';
+export const MS_WEBSITE_URL = 'https://msworldpay.com';
+export const MS_PORTAL_URL = 'https://www.msworldpay.com';
+export const MS_NETWORK_CONFIG_URL = 'https://network.msworldpay.com';
+export const MS_CHECKPOINT_URL = 'https://checkpoint.msworldpay.com';
 
 export const dangerAggregateTokenNetworkRepresent: IServerNetwork = {
   'chainId': '0',
@@ -1241,15 +1245,13 @@ const hyperEvm: IServerNetwork = {
 
 const ms: IServerNetwork = {
   'impl': 'evm',
-  'chainId': '1944873742',
+  'chainId': '1049763712',
   'id': MS_NETWORK_ID,
-  // User-facing chain name. RPC identity stays `evm--1944873742`.
-  'name': 'ms',
-  // Native gas ticker shown in TokenListBlock (MSUSD).
-  'symbol': 'MSUSD',
-  'code': 'ispay',
-  'shortcode': 'ispay',
-  'shortname': 'ms',
+  'name': 'MS Mainnet',
+  'symbol': 'MS',
+  'code': 'ms',
+  'shortcode': 'ms',
+  'shortname': 'MS',
   'decimals': 18,
   'feeMeta': {
     'decimals': 9,
@@ -1266,6 +1268,10 @@ const ms: IServerNetwork = {
     'isRpcOnlyNetwork': true,
     'rpcUrls': [MS_RPC_URL],
     'wssUrls': [MS_WSS_URL],
+    'websiteUrl': MS_WEBSITE_URL,
+    'portalUrl': MS_PORTAL_URL,
+    'networkConfigUrl': MS_NETWORK_CONFIG_URL,
+    'checkpointUrl': MS_CHECKPOINT_URL,
   },
   'logoURI': '',
   'defaultEnabled': true,
@@ -2460,7 +2466,7 @@ export const presetNetworksMap = {
 
 export const getDefaultEnabledNetworksInAllNetworks = memoFn(
   (): IServerNetwork[] => [
-    // Home All Networks default checks: screenshot set + ms (MSUSD pin).
+    // Home All Networks default checks: screenshot set + MS Mainnet.
     ms,
     btc,
     eth,

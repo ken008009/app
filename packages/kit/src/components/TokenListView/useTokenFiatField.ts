@@ -118,12 +118,14 @@ export interface ITokenValueSlice {
   has: boolean;
   fiatValue: string | undefined;
   balanceParsed: string | undefined;
+  price: number | undefined;
   currency: string | undefined;
 }
 const selectValueSlice = (f: ITokenFiat | undefined): ITokenValueSlice => ({
   has: !!f,
   fiatValue: f?.fiatValue,
   balanceParsed: f?.balanceParsed,
+  price: f?.price,
   currency: f?.currency,
 });
 
@@ -144,7 +146,7 @@ export function useTokenPriceSlice($key: string): ITokenPriceSlice {
   return useTokenFiatField($key, selectPriceSlice, shallowEqualSlice);
 }
 
-/** `{ has, fiatValue, balanceParsed, currency }` for the holding-value leaf. */
+/** `{ has, fiatValue, balanceParsed, price, currency }` for the value leaf. */
 export function useTokenValueSlice($key: string): ITokenValueSlice {
   return useTokenFiatField($key, selectValueSlice, shallowEqualSlice);
 }

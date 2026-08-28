@@ -5,6 +5,7 @@ import {
   SizableText,
   XStack,
 } from '@onekeyhq/components';
+import { MS_NETWORK_ID } from '@onekeyhq/shared/src/config/presetNetworks';
 import { displayFiatValueOrUnavailable } from '@onekeyhq/shared/src/utils/tokenValueUtils';
 
 import { Currency } from '../Currency';
@@ -19,11 +20,18 @@ type IProps = {
 
 function TokenValueView(props: IProps) {
   const { $key, showApproxPrefix, ...rest } = props;
-  const { has, fiatValue, balanceParsed, currency } = useTokenValueSlice($key);
+  const { has, fiatValue, balanceParsed, price, currency } =
+    useTokenValueSlice($key);
 
   if (!has) {
     return <SizableText {...rest}>-</SizableText>;
   }
+
+  // MS Mainnet currently has no fiat quote. Keep the native balance visible
+  // and reserve the value-row layout space without painting a fiat value.
+  const isMsFiatQuoteUnavailable =
+    $key.startsWith(`${MS_NETWORK_ID}_`) &&
+    (price === undefined || price === 0);
 
   const value = (
     <Currency
@@ -34,6 +42,10 @@ function TokenValueView(props: IProps) {
       {displayFiatValueOrUnavailable(fiatValue, balanceParsed)}
     </Currency>
   );
+
+  if (isMsFiatQuoteUnavailable) {
+    return <XStack opacity={0}>{value}</XStack>;
+  }
 
   if (!showApproxPrefix) {
     return value;

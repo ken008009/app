@@ -686,7 +686,7 @@ function MobileLayoutComponent({
                 showContent={
                   isFocused
                     ? activeTabName === tab.tabName || !activeTabName
-                    : null
+                    : false
                 }
                 lockedMode="earn"
               />
@@ -702,7 +702,7 @@ function MobileLayoutComponent({
                 showContent={
                   isFocused
                     ? activeTabName === tab.tabName || !activeTabName
-                    : null
+                    : false
                 }
                 lockedMode="borrow"
               />

@@ -58,7 +58,7 @@ function TokenPriceChangeView(props: IProps) {
   }
 
   return (
-    <Stack px="$1.5" py="$0.5" borderRadius="$1.5" bg={badgeBg}>
+    <Stack px="$1.5" py="$0.5" borderRadius={6} bg={badgeBg}>
       {text}
     </Stack>
   );

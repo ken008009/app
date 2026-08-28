@@ -67,7 +67,7 @@ import type {
 const defaultPinnedNetworkIds = [
   // MS stays at the top of the single-network list for this fork.
   // cspell:disable-next-line
-  getNetworkIdsMap().ispay,
+  getNetworkIdsMap().ms,
   getNetworkIdsMap().btc,
   getNetworkIdsMap().lightning,
   getNetworkIdsMap().eth,

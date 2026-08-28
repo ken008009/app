@@ -13,7 +13,7 @@ import { useMineMenuConfig } from '../hooks/useMineMenuConfig';
 
 export function MinePage() {
   const sections = useMineMenuConfig();
-  const tabBarOffset = useScrollContentTabBarOffset();
+  const tabBarOffset = useScrollContentTabBarOffset() ?? 0;
   const { top } = useSafeAreaInsets();
 
   return (
