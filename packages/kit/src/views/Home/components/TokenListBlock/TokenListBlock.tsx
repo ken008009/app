@@ -14,9 +14,7 @@ import { debounce, isEmpty, isNil, uniqBy } from 'lodash';
 import { useIntl } from 'react-intl';
 
 import {
-  IconButton,
   SearchBar,
-  Skeleton,
   Stack,
   XStack,
   onVisibilityStateChange,
@@ -24,11 +22,9 @@ import {
   useTabIsRefreshingFocused,
 } from '@onekeyhq/components';
 import backgroundApiProxy from '@onekeyhq/kit/src/background/instance/backgroundApiProxy';
-import { Currency } from '@onekeyhq/kit/src/components/Currency';
 import { EmptyAccount } from '@onekeyhq/kit/src/components/Empty';
 import { TokenListView } from '@onekeyhq/kit/src/components/TokenListView';
 import { perfTokenListView } from '@onekeyhq/kit/src/components/TokenListView/perfTokenListView';
-import { TokenSelectorLpTokenSwitch } from '@onekeyhq/kit/src/components/TokenSelectorFilter';
 import {
   type IScopedActiveTokenList,
   type IScopedActiveTokenListState,
@@ -43,7 +39,6 @@ import { usePromiseResult } from '@onekeyhq/kit/src/hooks/usePromiseResult';
 import { useRouteIsFocused } from '@onekeyhq/kit/src/hooks/useRouteIsFocused';
 import {
   useAccountOverviewActions,
-  useAccountWorthAtom,
   useAllNetworksStateStateAtom,
   useOverviewTokenCacheStateAtom,
 } from '@onekeyhq/kit/src/states/jotai/contexts/accountOverview';
@@ -114,7 +109,6 @@ import {
 } from '@onekeyhq/shared/src/utils/tokenSelectorFilterUtils';
 import {
   buildAggregateTokenListData,
-  calculateAccountTokensValue,
   ensureHomePinnedSymbolTokens,
   getEmptyTokenData,
   getMergedDeriveTokenData,
@@ -282,8 +276,7 @@ function TokenListBlock({
     buildAuthoritativeSnapshot,
     commitAuthoritativeIngest,
   } = pipeline;
-  const [tokenSelectorFilter, setTokenSelectorFilter] =
-    useTokenSelectorFilterPersistAtom();
+  const [tokenSelectorFilter] = useTokenSelectorFilterPersistAtom();
   const isDeFiEnabled = useIsDeFiEnabled(network?.id);
   const showLpTokenFilterSwitch =
     isTokenSelectorDappTokenFilterSupportedNetwork({
@@ -306,7 +299,6 @@ function TokenListBlock({
       isRefreshing: false,
       initialized: false,
     });
-  const [isLpTokenSwitchLoading, setIsLpTokenSwitchLoading] = useState(false);
   const [tokenListState] = useTokenListStateAtom();
   const [allNetworkAccounts, setAllNetworkAccounts] = useState<
     IAllNetworkAccountInfo[] | undefined
@@ -318,7 +310,6 @@ function TokenListBlock({
     !accountUtils.isOthersWallet({ walletId: wallet?.id ?? '' }) &&
     deriveInfoItems.length > 1;
 
-  const [accountTokensWorth] = useAccountWorthAtom();
   const [, setOverviewTokenCacheState] = useOverviewTokenCacheStateAtom();
 
   const walletTokenFilterParams = useMemo(
@@ -357,22 +348,6 @@ function TokenListBlock({
   };
   const refreshWalletTokenListRef = useRef<(() => void) | undefined>(undefined);
   const syncTokenFilterToOverview = true;
-
-  const accountTokensValue = useMemo(
-    () =>
-      calculateAccountTokensValue({
-        accountId: account?.id ?? '',
-        networkId: network?.id ?? '',
-        tokensWorth: accountTokensWorth,
-        mergeDeriveAssetsEnabled: !!vaultSettings?.mergeDeriveAssetsEnabled,
-      }),
-    [
-      account?.id,
-      network?.id,
-      accountTokensWorth,
-      vaultSettings?.mergeDeriveAssetsEnabled,
-    ],
-  );
 
   const riskTokenManagementRawData = useRef<IRiskTokenManagementDBStruct>({
     unblockedTokens: {},
@@ -445,37 +420,6 @@ function TokenListBlock({
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const tokenListStore = useTokenListContextData().store!;
   const [listStructure] = useListStructureAtom();
-
-  const handleLpTokenFilterChange = useCallback(
-    (value: boolean) => {
-      if (value === showLpTokensOnly) {
-        return;
-      }
-      setIsLpTokenSwitchLoading(!!value && !!account?.id && !!network?.id);
-      if (value && account?.id && network?.id) {
-        setScopedLpTokenListState({
-          initialized: false,
-          isRefreshing: true,
-        });
-        setScopedLpTokenList({
-          tokens: [],
-          keys: '',
-        });
-        setScopedLpTokenListMap({});
-      } else {
-        setScopedLpTokenListState({
-          initialized: true,
-          isRefreshing: false,
-        });
-        setIsLpTokenSwitchLoading(false);
-      }
-      setTokenSelectorFilter((prev) => ({
-        ...prev,
-        homeShowLpTokensOnly: value,
-      }));
-    },
-    [account?.id, network?.id, setTokenSelectorFilter, showLpTokensOnly],
-  );
 
   const { result: homeDefaultTokenMap } = usePromiseResult(async () => {
     const r = await backgroundApiProxy.serviceToken.getHomeDefaultTokenMap();
@@ -803,7 +747,6 @@ function TokenListBlock({
   const { run: runLpTokenList } = usePromiseResult(
     async () => {
       if (!showLpTokensOnly || !account?.id || !network?.id) {
-        setIsLpTokenSwitchLoading(false);
         return;
       }
 
@@ -825,9 +768,6 @@ function TokenListBlock({
         requestContext.tokenSelectorFilterMode !== 'lp-dapp-token' ||
         !isLatestRequest()
       ) {
-        if (requestContext.tokenSelectorFilterMode !== 'lp-dapp-token') {
-          setIsLpTokenSwitchLoading(false);
-        }
         return;
       }
 
@@ -874,7 +814,6 @@ function TokenListBlock({
             initialized: true,
             isRefreshing: false,
           });
-          setIsLpTokenSwitchLoading(false);
         }
         setIsHeaderRefreshing(false);
       }
@@ -901,7 +840,6 @@ function TokenListBlock({
 
   useLayoutEffect(() => {
     if (!showLpTokensOnly || !account?.id || !network?.id) {
-      setIsLpTokenSwitchLoading(false);
       return;
     }
 
@@ -2533,73 +2471,6 @@ function TokenListBlock({
     return false;
   }, [allNetworksState.visibleCount, network?.isAllNetworks]);
 
-  const renderSubTitle = useCallback(() => {
-    if (tableLayout) {
-      if (!tokenListState.initialized && tokenListState.isRefreshing) {
-        return <Skeleton.HeadingLg />;
-      }
-
-      return (
-        <Currency
-          hideValue
-          size="$headingXl"
-          color="$textSubdued"
-          formatter="value"
-          sourceCurrency={accountTokensWorth.currency}
-        >
-          {accountTokensValue}
-        </Currency>
-      );
-    }
-
-    return null;
-  }, [
-    tableLayout,
-    accountTokensWorth.currency,
-    accountTokensValue,
-    tokenListState.initialized,
-    tokenListState.isRefreshing,
-  ]);
-
-  const renderHeaderActions = useCallback(() => {
-    const filterSwitch = showLpTokenFilterSwitch ? (
-      <TokenSelectorLpTokenSwitch
-        value={showLpTokensOnly}
-        onChange={handleLpTokenFilterChange}
-        loading={isLpTokenSwitchLoading}
-      />
-    ) : null;
-
-    if (manageTokenEnabled && tableLayout) {
-      return (
-        <XStack alignItems="center" gap="$2">
-          {filterSwitch}
-          <IconButton
-            testID="home-render-header-actions-icon-btn"
-            title={intl.formatMessage({
-              id: ETranslations.manage_token_title,
-            })}
-            variant="tertiary"
-            icon="SliderHorOutline"
-            onPress={handleOnManageToken}
-            size="medium"
-          />
-        </XStack>
-      );
-    }
-
-    return filterSwitch;
-  }, [
-    tableLayout,
-    intl,
-    manageTokenEnabled,
-    handleOnManageToken,
-    showLpTokensOnly,
-    showLpTokenFilterSwitch,
-    handleLpTokenFilterChange,
-    isLpTokenSwitchLoading,
-  ]);
-
   // Mobile: search current token list + manage-token entry (moved off the tab bar).
   const handleSearchTextChange = useMemo(
     () =>
@@ -2758,8 +2629,6 @@ function TokenListBlock({
         // title={intl.formatMessage({
         //   id: ETranslations.global_universal_search_tabs_tokens,
         // })}
-        // subTitle={renderSubTitle()}
-        // headerActions={renderHeaderActions()}
         // headerContainerProps={{ px: '$pagePadding' }}
         content={renderContent()}
         plainContentContainer
