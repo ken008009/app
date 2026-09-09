@@ -181,4 +181,5 @@ export enum EAppEventBusNames {
   NavigateModalFromBackgroundThread = 'NavigateModalFromBackgroundThread',
   TrayActionWillNavigate = 'TrayActionWillNavigate',
   MemoryPressureWarning = 'MemoryPressureWarning',
+  CloudChatUpdated = 'CloudChatUpdated',
 }

@@ -627,6 +627,9 @@ export interface IAppEventBusPayload {
     /** Wall-clock timestamp (ms since unix epoch). */
     timestamp: number;
   };
+  [EAppEventBusNames.CloudChatUpdated]: {
+    conversationId?: string;
+  };
 }
 
 /**

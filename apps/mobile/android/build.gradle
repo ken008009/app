@@ -82,6 +82,10 @@ allprojects {
         }
         google()
         mavenCentral()
+        maven {
+            url 'https://storage.googleapis.com/build-artifacts.signal.org/libraries/maven'
+            content { includeGroup 'org.signal' }
+        }
         maven { url 'https://www.jitpack.io' }
     }
     // Pin app.notifee:core to the version bundled in node_modules to avoid

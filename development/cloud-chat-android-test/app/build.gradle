@@ -1,0 +1,39 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'so.onekey.cloudchat.tests'
+    compileSdk 36
+    defaultConfig {
+        applicationId 'so.onekey.cloudchat.tests'
+        minSdk 24
+        targetSdk 36
+        versionCode 1
+        versionName '1'
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+        ndk { abiFilters 'arm64-v8a' }
+    }
+    compileOptions {
+        coreLibraryDesugaringEnabled true
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    packagingOptions {
+        exclude 'libsignal_jni*.dylib'
+        exclude 'signal_jni*.dll'
+        exclude 'libsignal_jni_testing.so'
+        exclude 'libsignal_jni_*.so'
+    }
+    sourceSets.main.java.srcDir layout.buildDirectory.dir('generated/cloudchat')
+}
+tasks.register('syncCloudChatSources', Sync) {
+    from('../../../apps/mobile/android/app/src/main/java/so/onekey/app/wallet/cloudchat') {
+        include 'CloudChatVault.java', 'CloudChatSignalStore.java', 'CloudChatEngine.java'
+    }
+    into layout.buildDirectory.dir('generated/cloudchat')
+}
+tasks.named('preBuild').configure { dependsOn 'syncCloudChatSources' }
+dependencies {
+    implementation 'org.signal:libsignal-android:0.102.1'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
+    androidTestImplementation 'androidx.test:runner:1.5.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+}

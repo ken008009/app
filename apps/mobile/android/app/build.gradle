@@ -132,6 +132,11 @@ static def readRootEnvFile(fileName = ".env") {
 
 apply from: new File(["node", "--print", "require.resolve('@sentry/react-native/package.json')"].execute().text.trim(), "../sentry.gradle")
 android {
+    compileOptions {
+        coreLibraryDesugaringEnabled true
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
     ndkVersion rootProject.ext.ndkVersion
 
     compileSdk rootProject.ext.compileSdkVersion
@@ -238,6 +243,9 @@ android {
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'
         exclude 'META-INF/INDEX.LIST'
+        exclude 'libsignal_jni*.dylib'
+        exclude 'signal_jni*.dll'
+        exclude 'libsignal_jni_testing.so'
     }
     androidResources {
         ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~'
@@ -569,6 +577,8 @@ def registerUnionBuildTask(variant, appProjectRootDir) {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
+    implementation("org.signal:libsignal-android:0.102.1")
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
 
     // MMKV — used by RecoveryActivity to clear pending install tasks
     implementation("io.github.zhongwuzw:mmkv:2.2.4")

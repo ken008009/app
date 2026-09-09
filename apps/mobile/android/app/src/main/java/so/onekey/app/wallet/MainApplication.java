@@ -58,6 +58,7 @@ public class MainApplication extends Application implements ReactApplication {
         @SuppressWarnings("UnnecessaryLocalVariable")
 
         List<ReactPackage> packages = new PackageList(this).getPackages();
+        packages.add(new so.onekey.app.wallet.cloudchat.CloudChatPackage());
         return packages;
       }
 
@@ -223,7 +224,9 @@ public class MainApplication extends Application implements ReactApplication {
             (ReactApplicationContext) context;
           BackgroundThreadManager manager = BackgroundThreadManager.getInstance();
           long tBeforeBgStart = System.currentTimeMillis();
-          manager.setReactPackages(new PackageList(MainApplication.this).getPackages());
+          List<ReactPackage> backgroundPackages = new PackageList(MainApplication.this).getPackages();
+          backgroundPackages.add(new so.onekey.app.wallet.cloudchat.CloudChatPackage());
+          manager.setReactPackages(backgroundPackages);
           manager.installSharedBridgeInMainRuntime(reactApplicationContext);
 
           String entryUrl = getBackgroundRunnerEntryUrl();

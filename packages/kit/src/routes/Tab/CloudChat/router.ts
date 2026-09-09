@@ -5,12 +5,19 @@ import {
   type ITabCloudChatParamList,
 } from '@onekeyhq/shared/src/routes';
 
-import { LazyLoadRootTabPage } from '../../../components/LazyLoadPage';
+import {
+  LazyLoadPage,
+  LazyLoadRootTabPage,
+} from '../../../components/LazyLoadPage';
 
 const CloudChat = LazyLoadRootTabPage(() =>
   import('../../../views/CloudChat/pages/CloudChatPage').then((module) => ({
     default: module.CloudChatPage,
   })),
+);
+
+const CloudChatRoom = LazyLoadPage(
+  () => import('../../../views/CloudChat/pages/CloudChatRoomPage'),
 );
 
 export const cloudChatRouters: ITabSubNavigatorConfig<
@@ -21,6 +28,11 @@ export const cloudChatRouters: ITabSubNavigatorConfig<
     name: ETabCloudChatRoutes.TabCloudChat,
     component: CloudChat,
     rewrite: '/',
+    headerShown: !platformEnv.isNative,
+  },
+  {
+    name: ETabCloudChatRoutes.Conversation,
+    component: CloudChatRoom,
     headerShown: !platformEnv.isNative,
   },
 ];

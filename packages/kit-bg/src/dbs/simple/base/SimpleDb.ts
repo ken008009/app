@@ -566,4 +566,13 @@ export class SimpleDb {
     Object.defineProperty(this, 'rookieGuide', { value });
     return value;
   }
+
+  get cloudChat() {
+    const SimpleDbEntityCloudChat = (
+      require('../entity/SimpleDbEntityCloudChat') as unknown as typeof import('../entity/SimpleDbEntityCloudChat')
+    ).SimpleDbEntityCloudChat;
+    const value = new SimpleDbEntityCloudChat();
+    Object.defineProperty(this, 'cloudChat', { value });
+    return value;
+  }
 }

@@ -22,6 +22,7 @@ import type ServiceBatchCreateAccount from '../services/ServiceBatchCreateAccoun
 import type ServiceBootstrap from '../services/ServiceBootstrap';
 import type ServiceCloudBackup from '../services/ServiceCloudBackup';
 import type ServiceCloudBackupV2 from '../services/ServiceCloudBackupV2';
+import type ServiceCloudChat from '../services/ServiceCloudChat';
 import type ServiceContextMenu from '../services/ServiceContextMenu';
 import type ServiceCustomRpc from '../services/ServiceCustomRpc';
 import type ServiceCustomToken from '../services/ServiceCustomToken';
@@ -509,6 +510,10 @@ class BackgroundApiProxy
 
   get serviceRookieGuide(): ServiceRookieGuide {
     return this.getProxyService<ServiceRookieGuide>('serviceRookieGuide');
+  }
+
+  get serviceCloudChat(): ServiceCloudChat {
+    return this.getProxyService<ServiceCloudChat>('serviceCloudChat');
   }
 }
 

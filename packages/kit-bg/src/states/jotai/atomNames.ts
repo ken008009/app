@@ -138,6 +138,7 @@ export enum EAtomNames {
   // account selector values (async loaded)
   accountSelectorValuesMapAtom = 'accountSelectorValuesMapAtom',
   accountSelectorDeFiMapAtom = 'accountSelectorDeFiMapAtom',
+  cloudChatAtom = 'cloudChatAtom',
 }
 export type IAtomNameKeys = keyof typeof EAtomNames;
 export const atomsConfig: Partial<

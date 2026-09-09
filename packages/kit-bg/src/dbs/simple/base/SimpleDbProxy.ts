@@ -23,6 +23,7 @@ import type { SimpleDbEntityBTCFreshAddress } from '../entity/SimpleDbEntityBTCF
 import type { SimpleDbEntityBTCFreshAddressMeta } from '../entity/SimpleDbEntityBTCFreshAddressMeta';
 import type { SimpleDbEntityChainResource } from '../entity/SimpleDbEntityChainResource';
 import type { SimpleDbEntityChangeHistory } from '../entity/SimpleDbEntityChangeHistory';
+import type { SimpleDbEntityCloudChat } from '../entity/SimpleDbEntityCloudChat';
 import type { SimpleDbEntityCustomNetwork } from '../entity/SimpleDbEntityCustomNetwork';
 import type { SimpleDbEntityCustomRpc } from '../entity/SimpleDbEntityCustomRPC';
 import type { SimpleDbEntityCustomTokens } from '../entity/SimpleDbEntityCustomTokens';
@@ -309,4 +310,6 @@ export class SimpleDbProxy
   rookieGuide = this._createProxyService(
     'rookieGuide',
   ) as SimpleDbEntityRookieGuide;
+
+  cloudChat = this._createProxyService('cloudChat') as SimpleDbEntityCloudChat;
 }
