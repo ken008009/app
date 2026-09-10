@@ -65,10 +65,12 @@ const PasswordVerifyPromptMount = () => {
       id,
       dialogProps,
       skipPostVerifyBackgroundTasks,
+      passwordOnly,
     }: {
       id: number;
       dialogProps?: IDialogShowProps;
       skipPostVerifyBackgroundTasks?: boolean;
+      passwordOnly?: boolean;
     }) => {
       dialogRef.current = Dialog.show({
         ...dialogProps,
@@ -88,6 +90,7 @@ const PasswordVerifyPromptMount = () => {
         },
         renderContent: (
           <PasswordVerifyContainer
+            passwordOnly={passwordOnly}
             skipPostVerifyBackgroundTasks={skipPostVerifyBackgroundTasks}
             onVerifyRes={async (data) => {
               await backgroundApiProxy.servicePassword.resolvePasswordPromptDialog(
@@ -125,6 +128,7 @@ const PasswordVerifyPromptMount = () => {
         showPasswordVerifyPromptRef.current?.({
           id: passwordPromptPromiseTriggerData.idNumber,
           dialogProps: passwordPromptPromiseTriggerData.dialogProps,
+          passwordOnly: passwordPromptPromiseTriggerData.passwordOnly,
           skipPostVerifyBackgroundTasks:
             passwordPromptPromiseTriggerData.skipPostVerifyBackgroundTasks,
         });

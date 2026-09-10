@@ -62,6 +62,7 @@ interface IPasswordVerifyProps {
   name?: 'lock';
   pageMode?: boolean;
   skipPostVerifyBackgroundTasks?: boolean;
+  passwordOnly?: boolean;
 }
 
 const PasswordVerifyContainer = ({
@@ -69,6 +70,7 @@ const PasswordVerifyContainer = ({
   name,
   pageMode,
   skipPostVerifyBackgroundTasks,
+  passwordOnly = false,
 }: IPasswordVerifyProps) => {
   const intl = useIntl();
   const [{ authType, isEnable, isSupport: biologyAuthIsSupport }] =
@@ -170,6 +172,9 @@ const PasswordVerifyContainer = ({
   const isBiologyAuthEnable = useMemo(
     // both webAuth or biologyAuth are enabled
     () => {
+      if (passwordOnly) {
+        return false;
+      }
       if (isExtLockAndNoCachePassword) {
         return (
           isBiologyAuthSwitchOn &&
@@ -186,6 +191,7 @@ const PasswordVerifyContainer = ({
     },
     [
       isExtLockAndNoCachePassword,
+      passwordOnly,
       isBiologyAuthSwitchOn,
       verifyPeriodBiologyEnable,
       isEnable,
@@ -295,6 +301,7 @@ const PasswordVerifyContainer = ({
   const onBiologyAuthenticate = useCallback(
     async (isExtLockNoCachePassword: boolean) => {
       if (
+        passwordOnly ||
         passwordVerifyStatus.value === EPasswordVerifyStatus.VERIFYING ||
         (!pageMode &&
           passwordVerifyStatus.value === EPasswordVerifyStatus.VERIFIED)
@@ -467,6 +474,7 @@ const PasswordVerifyContainer = ({
       isBiologyAuthEnable,
       isEnable,
       passwordMode,
+      passwordOnly,
       passwordVerifyStatus.value,
       pageMode,
       skipPostVerifyBackgroundTasks,

@@ -37,6 +37,7 @@ export type IPasswordPromptPromiseTriggerAtom = {
     | {
         idNumber: number;
         type: EPasswordPromptType;
+        passwordOnly?: boolean;
         dialogProps?: IDialogShowProps;
         skipPostVerifyBackgroundTasks?: boolean;
       }

@@ -39,6 +39,7 @@ import {
 import { ETranslations } from '@onekeyhq/shared/src/locale';
 import { appLocale } from '@onekeyhq/shared/src/locale/appLocale';
 import { defaultLogger } from '@onekeyhq/shared/src/logger/logger';
+import platformEnv from '@onekeyhq/shared/src/platformEnv';
 import accountUtils from '@onekeyhq/shared/src/utils/accountUtils';
 import { getValidUnsignedMessage } from '@onekeyhq/shared/src/utils/messageUtils';
 import { generateUUID } from '@onekeyhq/shared/src/utils/miscUtils';
@@ -325,7 +326,11 @@ class ServiceSend extends ServiceBase {
     const { password, deviceParams } =
       await this.backgroundApi.servicePassword.promptPasswordVerifyByAccount({
         accountId,
-        reason: EReasonForNeedPassword.CreateTransaction,
+        // Android transactions require fresh authorization, even when unlocked.
+        reason: platformEnv.isNativeAndroid
+          ? EReasonForNeedPassword.Security
+          : EReasonForNeedPassword.CreateTransaction,
+        passwordOnly: platformEnv.isNativeAndroid,
       });
     // signTransaction
     const tx =

@@ -64,9 +64,10 @@ function CreateNewWallet() {
     const hasCachedPassword =
       await backgroundApiProxy.servicePassword.hasCachedPassword();
     if (hasCachedPassword) {
-      navigation.push(EOnboardingPagesV2.FinalizeWalletSetup, {
+      navigation.push(EOnboardingPagesV2.BackupWalletReminder, {
         mnemonic: encodedMnemonic,
-        isWalletBackedUp: false,
+        walletId: '',
+        isCreatingWallet: true,
       });
       defaultLogger.account.wallet.onboard({ onboardMethod: 'createWallet' });
       return;
@@ -74,6 +75,7 @@ function CreateNewWallet() {
     navigation.push(EOnboardingPagesV2.CreatePasscode, {
       mnemonic: encodedMnemonic,
       isWalletBackedUp: false,
+      isCreatingWallet: true,
     });
   }, [navigation]);
 

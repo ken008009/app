@@ -19,10 +19,8 @@ import {
 import { ANIMATE_ONLY_OPACITY_TRANSFORM } from '@onekeyhq/components/src/utils/animationConstants';
 import useAppNavigation from '@onekeyhq/kit/src/hooks/useAppNavigation';
 import { ETranslations } from '@onekeyhq/shared/src/locale';
-import type {
-  EOnboardingPagesV2,
-  IOnboardingParamListV2,
-} from '@onekeyhq/shared/src/routes';
+import { EOnboardingPagesV2 } from '@onekeyhq/shared/src/routes';
+import type { IOnboardingParamListV2 } from '@onekeyhq/shared/src/routes';
 import { ensureSensitiveTextEncoded } from '@onekeyhq/shared/src/utils/sensitiveTextUtils';
 
 import backgroundApiProxy from '../../../background/instance/backgroundApiProxy';
@@ -204,6 +202,11 @@ export default function BackupWalletReminder() {
   }, [copyText, intl, mnemonic]);
 
   const handleSavedPhrase = useCallback(async () => {
+    if (route.params?.isCreatingWallet) {
+      if (!showingPhrase || recoveryPhrase.length < 12) return;
+      navigation.push(EOnboardingPagesV2.VerifyRecoveryPhrase, route.params);
+      return;
+    }
     if (route.params?.walletId) {
       await backgroundApiProxy.serviceAccount.updateWalletBackupStatus({
         walletId: route.params.walletId,
@@ -216,7 +219,7 @@ export default function BackupWalletReminder() {
       }),
     });
     navigation.popStack();
-  }, [intl, navigation, route.params?.walletId]);
+  }, [intl, navigation, recoveryPhrase.length, route.params, showingPhrase]);
 
   const bullets = useMemo<{ text: string; icon: IKeyOfIcons }[]>(
     () => [
@@ -341,7 +344,9 @@ export default function BackupWalletReminder() {
                     onPress={handleSavedPhrase}
                   >
                     {intl.formatMessage({
-                      id: ETranslations.global_i_saved_the_phrase,
+                      id: route.params?.isCreatingWallet
+                        ? ETranslations.global_continue
+                        : ETranslations.global_i_saved_the_phrase,
                     })}
                   </Button>
                 </YStack>

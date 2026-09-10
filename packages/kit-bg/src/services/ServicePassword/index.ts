@@ -786,6 +786,7 @@ export default class ServicePassword extends ServiceBase {
   @backgroundMethod()
   async promptPasswordVerify(options?: {
     reason?: EReasonForNeedPassword;
+    passwordOnly?: boolean;
     dialogProps?: IDialogShowProps;
     skipPostVerifyBackgroundTasks?: boolean;
   }): Promise<IPasswordRes> {
@@ -793,7 +794,7 @@ export default class ServicePassword extends ServiceBase {
     return this.promptPasswordVerifyMutex.runExclusive(async () => {
       // TODO mutex
       const v4migrationData = await v4migrationAtom.get();
-      if (v4migrationData?.isProcessing) {
+      if (v4migrationData?.isProcessing && !options?.passwordOnly) {
         const v4migrationPassword =
           await this.backgroundApi.serviceV4Migration.getMigrationPasswordV5();
         if (v4migrationPassword) {
@@ -814,7 +815,7 @@ export default class ServicePassword extends ServiceBase {
       }
 
       const needReenterPassword = await this.isAlwaysReenterPassword(reason);
-      if (!needReenterPassword) {
+      if (!needReenterPassword && !options?.passwordOnly) {
         const cachedPassword = await this.getCachedPassword();
         if (cachedPassword) {
           ensureSensitiveTextEncoded(cachedPassword);
@@ -842,6 +843,7 @@ export default class ServicePassword extends ServiceBase {
               ? EPasswordPromptType.PASSWORD_VERIFY
               : EPasswordPromptType.PASSWORD_SETUP,
             dialogProps: options?.dialogProps,
+            passwordOnly: options?.passwordOnly,
             skipPostVerifyBackgroundTasks:
               options?.skipPostVerifyBackgroundTasks,
           });
@@ -861,10 +863,12 @@ export default class ServicePassword extends ServiceBase {
   @backgroundMethod()
   async promptPasswordVerifyByWallet({
     walletId,
+    passwordOnly,
     reason = EReasonForNeedPassword.CreateOrRemoveWallet,
     hardwareCallContext = EHardwareCallContext.USER_INTERACTION,
   }: {
     walletId: string;
+    passwordOnly?: boolean;
     reason?: EReasonForNeedPassword;
     hardwareCallContext?: EHardwareCallContext;
   }) {
@@ -899,7 +903,10 @@ export default class ServicePassword extends ServiceBase {
       // || isPasswordSet // Do not prompt password for external,watching account action
     ) {
       defaultLogger.account.accountCreatePerf.ignoreDurationBegin();
-      ({ password } = await this.promptPasswordVerify({ reason }));
+      ({ password } = await this.promptPasswordVerify({
+        reason,
+        passwordOnly,
+      }));
       defaultLogger.account.accountCreatePerf.ignoreDurationEnd();
     }
     return {
@@ -914,12 +921,18 @@ export default class ServicePassword extends ServiceBase {
   async promptPasswordVerifyByAccount({
     accountId,
     reason,
+    passwordOnly,
   }: {
     accountId: string;
     reason?: EReasonForNeedPassword;
+    passwordOnly?: boolean;
   }) {
     const walletId = accountUtils.getWalletIdFromAccountId({ accountId });
-    return this.promptPasswordVerifyByWallet({ walletId, reason });
+    return this.promptPasswordVerifyByWallet({
+      walletId,
+      reason,
+      passwordOnly,
+    });
   }
 
   @backgroundMethod()
@@ -933,6 +946,7 @@ export default class ServicePassword extends ServiceBase {
   async showPasswordPromptDialog(params: {
     idNumber: number;
     type: EPasswordPromptType;
+    passwordOnly?: boolean;
     dialogProps?: IDialogShowProps;
     skipPostVerifyBackgroundTasks?: boolean;
   }) {

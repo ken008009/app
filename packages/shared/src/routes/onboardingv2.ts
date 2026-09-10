@@ -56,6 +56,7 @@ export enum EOnboardingPagesV2 {
 }
 interface IVerifyRecoveryPhraseParams {
   mnemonic: string;
+  isCreatingWallet?: boolean;
   isWalletBackedUp?: boolean;
   walletId: string;
   accountName?: string;
@@ -140,6 +141,7 @@ export type IOnboardingParamListV2 = {
     action?: EKeylessFinalizeAction;
   };
   [EOnboardingPagesV2.CreatePasscode]: {
+    isCreatingWallet?: boolean;
     action?: EKeylessFinalizeAction;
     mnemonic?: string;
     isWalletBackedUp?: boolean;

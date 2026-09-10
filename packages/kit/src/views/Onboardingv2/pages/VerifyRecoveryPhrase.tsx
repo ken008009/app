@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 import { useRoute } from '@react-navigation/core';
 import bip39Wordlists from 'bip39/src/wordlists/english.json';
@@ -14,15 +14,14 @@ import {
   YStack,
 } from '@onekeyhq/components';
 import { ETranslations } from '@onekeyhq/shared/src/locale';
-import type {
-  EOnboardingPagesV2,
-  IOnboardingParamListV2,
-} from '@onekeyhq/shared/src/routes/onboardingv2';
+import { EOnboardingPagesV2 } from '@onekeyhq/shared/src/routes/onboardingv2';
+import type { IOnboardingParamListV2 } from '@onekeyhq/shared/src/routes/onboardingv2';
 import { ensureSensitiveTextEncoded } from '@onekeyhq/shared/src/utils/sensitiveTextUtils';
 
 import backgroundApiProxy from '../../../background/instance/backgroundApiProxy';
 import useAppNavigation from '../../../hooks/useAppNavigation';
 import { usePromiseResult } from '../../../hooks/usePromiseResult';
+import { useRecoveryPhraseProtected } from '../../../hooks/useRecoveryPhraseProtected/useRecoveryPhraseProtected';
 import { OnboardingLayout } from '../components/OnboardingLayout';
 import { OnboardingTestIDs } from '../testIDs';
 import { shuffleWordsIndices } from '../utils';
@@ -45,15 +44,20 @@ export default function VerifyRecoveryPhrase() {
         encodedText: routeMnemonic,
       });
     }
-    return backgroundApiProxy.serviceAccount.generateMnemonic();
+    // Missing input must never produce a different wallet's recovery phrase.
+    return '';
   }, [route.params?.mnemonic]);
   const recoveryPhrase = useMemo(
     () => mnemonic.split(' ').filter(Boolean),
     [mnemonic],
   );
+  useRecoveryPhraseProtected({ enabled: Boolean(mnemonic) });
+  const submittingRef = useRef(false);
+  const completedRef = useRef(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const answerIndices = useMemo(() => {
-    if (recoveryPhrase.length === 0) return [];
+    if (![12, 15, 18, 21, 24].includes(recoveryPhrase.length)) return [];
     return shuffleWordsIndices(recoveryPhrase.length);
   }, [recoveryPhrase]);
 
@@ -91,12 +95,20 @@ export default function VerifyRecoveryPhrase() {
   }, [answerIndices, recoveryPhrase]);
 
   const handleWordSelect = useCallback(
-    (questionIndex: number, word: string) => {
+    async (questionIndex: number, word: string) => {
+      if (
+        submittingRef.current ||
+        completedRef.current ||
+        answerIndices.length !== 3
+      )
+        return;
       const newSelectedWords = { ...selectedWords };
       newSelectedWords[questionIndex] = word;
       setSelectedWords(newSelectedWords);
 
-      setTimeout(async () => {
+      submittingRef.current = true;
+      setSubmitting(true);
+      try {
         if (Object.values(newSelectedWords).every((w) => w !== null)) {
           const verifyResult = answerIndices.every(
             (recoveryPhraseIndex, index) => {
@@ -110,6 +122,14 @@ export default function VerifyRecoveryPhrase() {
           );
 
           if (verifyResult) {
+            if (route.params?.isCreatingWallet) {
+              navigation.replace(EOnboardingPagesV2.FinalizeWalletSetup, {
+                mnemonic: route.params.mnemonic,
+                isWalletBackedUp: true,
+              });
+              completedRef.current = true;
+              return;
+            }
             if (route.params?.walletId) {
               await backgroundApiProxy.serviceAccount.updateWalletBackupStatus({
                 walletId: route.params?.walletId,
@@ -122,6 +142,7 @@ export default function VerifyRecoveryPhrase() {
               }),
             });
             navigation.popStack();
+            completedRef.current = true;
           } else {
             setSelectedWords({
               0: null,
@@ -135,7 +156,10 @@ export default function VerifyRecoveryPhrase() {
             });
           }
         }
-      });
+      } finally {
+        submittingRef.current = false;
+        setSubmitting(false);
+      }
     },
     [
       answerIndices,
@@ -143,6 +167,8 @@ export default function VerifyRecoveryPhrase() {
       navigation,
       recoveryPhrase,
       route.params?.walletId,
+      route.params?.isCreatingWallet,
+      route.params?.mnemonic,
       selectedWords,
     ],
   );
@@ -174,6 +200,7 @@ export default function VerifyRecoveryPhrase() {
                       testID="onboardingv2-btn"
                       key={wordIndex}
                       size="large"
+                      disabled={submitting}
                       flex={1}
                       variant={
                         selectedWords[questionIndex] === word

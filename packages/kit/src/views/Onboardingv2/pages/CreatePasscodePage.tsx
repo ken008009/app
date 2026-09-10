@@ -41,6 +41,14 @@ function PasscodeFormView() {
     async (_passcode: string) => {
       const mnemonic = route?.params?.mnemonic;
       if (mnemonic) {
+        if (route.params?.isCreatingWallet) {
+          navigation.replace(EOnboardingPagesV2.BackupWalletReminder, {
+            mnemonic,
+            walletId: '',
+            isCreatingWallet: true,
+          });
+          return;
+        }
         navigation.push(EOnboardingPagesV2.FinalizeWalletSetup, {
           mnemonic,
           isWalletBackedUp: route?.params?.isWalletBackedUp ?? false,
@@ -56,6 +64,7 @@ function PasscodeFormView() {
       route?.params?.action,
       route?.params?.mnemonic,
       route?.params?.isWalletBackedUp,
+      route?.params?.isCreatingWallet,
     ],
   );
 
