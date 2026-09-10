@@ -35,4 +35,11 @@ export const cloudChatRouters: ITabSubNavigatorConfig<
     component: CloudChatRoom,
     headerShown: !platformEnv.isNative,
   },
+  {
+    name: ETabCloudChatRoutes.ChatSettings,
+    component: LazyLoadPage(
+      () => import('../../../views/CloudChat/pages/CloudChatSettingsPage'),
+    ),
+    headerShown: !platformEnv.isNative,
+  },
 ];

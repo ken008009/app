@@ -1,5 +1,7 @@
 import backgroundApiProxy from '@onekeyhq/kit/src/background/instance/backgroundApiProxy';
+import { useAccountAddressRefresh } from '@onekeyhq/kit/src/hooks/useAccountAddressRefresh';
 import { usePromiseResult } from '@onekeyhq/kit/src/hooks/usePromiseResult';
+import { getAccountAddressErrorMessage } from '@onekeyhq/kit/src/utils/accountAddressResult';
 import { getNetworkIdsMap } from '@onekeyhq/shared/src/config/networkIds';
 import {
   normalizeCloudChatUserId,
@@ -37,6 +39,7 @@ export function useCloudChatEvmAccount({
   address: string;
   indexedAccountId?: string;
 }): ICloudChatEvmAccountResult {
+  const revision = useAccountAddressRefresh();
   const { result } = usePromiseResult(
     async (): Promise<ICloudChatEvmAccountResult> => {
       if (!accountId || !networkId || !address) {
@@ -83,7 +86,7 @@ export function useCloudChatEvmAccount({
         if (!resolvedAddress) {
           return {
             status: 'error',
-            message: '云聊需要 EVM 钱包账户',
+            message: '账户地址尚未生成，请进入 Ethereum 网络完成地址创建',
           };
         }
         return {
@@ -92,15 +95,17 @@ export function useCloudChatEvmAccount({
           networkId: ethNetworkId,
           address: resolvedAddress,
         };
-      } catch {
+      } catch (error) {
         return {
           status: 'error',
-          message: '云聊需要 EVM 钱包账户',
+          message: getAccountAddressErrorMessage(error),
         };
       }
     },
-    [accountId, indexedAccountId, networkId, address],
-    { initResult: CLOUD_CHAT_EVM_IDLE, checkIsFocused: false },
+    // Account events must invalidate a lookup even when the placeholder is unchanged.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [accountId, indexedAccountId, networkId, address, revision],
+    { initResult: CLOUD_CHAT_EVM_IDLE, revalidateOnFocus: true },
   );
 
   return result ?? CLOUD_CHAT_EVM_IDLE;

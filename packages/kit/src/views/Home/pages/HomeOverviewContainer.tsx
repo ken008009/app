@@ -44,7 +44,7 @@ import { AllNetworksManagerTrigger } from '../../../components/AccountSelector/A
 import { NetworkSelectorTriggerHome } from '../../../components/AccountSelector/NetworkSelectorTrigger';
 import NumberSizeableTextWrapper from '../../../components/NumberSizeableTextWrapper';
 import { showResourceDetailsDialog } from '../../../components/Resource';
-import { useWebDappRealAddress } from '../../../components/TabPageHeader/components/WebAccountPanel/useWebDappRealAddress';
+import { useWebDappRealAddressResult } from '../../../components/TabPageHeader/components/WebAccountPanel/useWebDappRealAddress';
 import { useDebounce } from '../../../hooks/useDebounce';
 import {
   useAccountDeFiOverviewAtom,
@@ -928,11 +928,12 @@ function HomeOverviewContainer() {
   // All-networks activeAccount.address is a mock sentinel — resolve a real
   // EVM address (shared across EVM chains) so the card can show a shortened
   // address instead of the "Copy address" fallback label.
-  const displayAddress = useWebDappRealAddress({
+  const addressResult = useWebDappRealAddressResult({
     address: account?.address,
     indexedAccountId: indexedAccount?.id ?? account?.indexedAccountId,
   });
 
+  const displayAddress = addressResult?.address;
   const shortenedAddress = useMemo(() => {
     if (!displayAddress) {
       return undefined;
@@ -1019,6 +1020,11 @@ function HomeOverviewContainer() {
             </SizableText>
             <Icon name="Copy1Outline" size="$5" color="$iconSubdued" />
           </XStack>
+        ) : null}
+        {!shortenedAddress && addressResult?.error ? (
+          <SizableText size="$bodySm" color="$textSubdued">
+            {addressResult.error}
+          </SizableText>
         ) : null}
         {vaultSettings?.hasFrozenBalance ? (
           <Button

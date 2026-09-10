@@ -7,6 +7,7 @@ export const cloudChatAtomInitialValue: ICloudChatAtomState = {
   connected: false,
   connecting: false,
   loggedIn: false,
+  authenticationRequired: false,
   signalReady: false,
   apiBaseUrl: '',
   relayUrl: '',

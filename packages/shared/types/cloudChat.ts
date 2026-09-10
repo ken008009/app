@@ -56,6 +56,7 @@ export type ICloudChatSnapshot = {
 };
 
 export type ICloudChatAtomState = {
+  authenticationRequired?: boolean;
   connected: boolean;
   connecting: boolean;
   loggedIn: boolean;

@@ -1,9 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { IPageScreenProps, IScrollViewRef } from '@onekeyhq/components';
+import type {
+  IPageNavigationProp,
+  IPageScreenProps,
+  IScrollViewRef,
+} from '@onekeyhq/components';
 import {
   Button,
   Dialog,
+  Icon,
+  IconButton,
   Input,
   Page,
   ScrollView,
@@ -13,18 +19,22 @@ import {
   YStack,
 } from '@onekeyhq/components';
 import backgroundApiProxy from '@onekeyhq/kit/src/background/instance/backgroundApiProxy';
+import useAppNavigation from '@onekeyhq/kit/src/hooks/useAppNavigation';
 import { usePromiseResult } from '@onekeyhq/kit/src/hooks/usePromiseResult';
 import { useCloudChatAtom } from '@onekeyhq/kit-bg/src/states/jotai/atoms';
 import {
   EAppEventBusNames,
   appEventBus,
 } from '@onekeyhq/shared/src/eventBus/appEventBus';
-import type {
+import {
   ETabCloudChatRoutes,
-  ITabCloudChatParamList,
+  type ITabCloudChatParamList,
 } from '@onekeyhq/shared/src/routes';
 import accountUtils from '@onekeyhq/shared/src/utils/accountUtils';
+import { formatDate } from '@onekeyhq/shared/src/utils/dateUtils';
 import type { ICloudChatMessage } from '@onekeyhq/shared/types/cloudChat';
+
+import { useCloudChatAutoConnect } from '../hooks/useCloudChatAutoConnect';
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message) {
@@ -37,6 +47,23 @@ export function CloudChatRoomPage({
   route,
 }: IPageScreenProps<ITabCloudChatParamList, ETabCloudChatRoutes.Conversation>) {
   const { peerUserId } = route.params;
+  useCloudChatAutoConnect();
+  const navigation =
+    useAppNavigation<IPageNavigationProp<ITabCloudChatParamList>>();
+  const renderSettings = useCallback(
+    () => (
+      <IconButton
+        icon="MenuOutline"
+        variant="tertiary"
+        title="聊天设置"
+        testID="cloud-chat-room-settings"
+        onPress={() =>
+          navigation.push(ETabCloudChatRoutes.ChatSettings, { peerUserId })
+        }
+      />
+    ),
+    [navigation, peerUserId],
+  );
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [chatState] = useCloudChatAtom();
@@ -114,9 +141,20 @@ export function CloudChatRoomPage({
     <Page>
       <Page.Header
         title={accountUtils.shortenAddress({ address: peerUserId })}
+        headerRight={renderSettings}
       />
-      <Page.Body>
-        <YStack px="$4" gap="$2">
+      <Page.Body bg="$bgSubdued">
+        <YStack px="$4" py="$3" gap="$2">
+          {!chatState.loggedIn ? (
+            <Button
+              size="small"
+              testID="cloud-chat-room-connect"
+              disabled={chatState.connecting}
+              onPress={() => navigation.pop()}
+            >
+              {chatState.connecting ? '正在连接云聊' : '返回连接云聊'}
+            </Button>
+          ) : null}
           <SizableText size="$bodySm" color="$textSubdued">
             {chatState.signalReady
               ? '端对端加密 · 首次联系请通过其他可信渠道核对安全指纹'
@@ -180,40 +218,81 @@ export function CloudChatRoomPage({
                 还没有消息，发一条试试
               </SizableText>
             ) : (
-              messages.map((item: ICloudChatMessage) => {
+              messages.map((item: ICloudChatMessage, index) => {
                 const isSelf = item.from === chatState.selfUserId;
                 return (
-                  <XStack
-                    key={item.id}
-                    justifyContent={isSelf ? 'flex-end' : 'flex-start'}
-                  >
-                    <YStack
-                      maxWidth="80%"
-                      px="$3"
-                      py="$2"
-                      borderRadius="$3"
-                      bg={isSelf ? '$bgAccent' : '$bgSubdued'}
-                    >
+                  <YStack key={item.id}>
+                    {index === 0 ||
+                    item.createdAt - messages[index - 1].createdAt > 300_000 ? (
                       <SizableText
-                        size="$bodyMd"
-                        color={isSelf ? '$textInverse' : '$text'}
+                        textAlign="center"
+                        color="$textSubdued"
+                        size="$bodySm"
+                        py="$3"
                       >
-                        {item.text}
+                        {formatDate(new Date(item.createdAt), {
+                          hideSeconds: true,
+                          hideTheYear: true,
+                        })}
                       </SizableText>
-                      {isSelf ? (
-                        <SizableText size="$bodySm" color="$textInverse">
-                          {
-                            {
-                              local: '待发送（会自动重试）',
-                              failed: '发送被拒绝，请检查后重试',
-                              sent: '已提交服务器',
-                              received: '已接收',
-                            }[item.status]
-                          }
-                        </SizableText>
+                    ) : null}
+                    <XStack
+                      gap="$2"
+                      py="$2"
+                      justifyContent={isSelf ? 'flex-end' : 'flex-start'}
+                    >
+                      {!isSelf ? (
+                        <YStack
+                          width="$10"
+                          height="$10"
+                          borderRadius="$2"
+                          bg="$bgInfo"
+                          alignItems="center"
+                          justifyContent="center"
+                        >
+                          <Icon name="PeopleOutline" />
+                        </YStack>
                       ) : null}
-                    </YStack>
-                  </XStack>
+                      <YStack
+                        maxWidth="72%"
+                        px="$3"
+                        py="$2"
+                        borderRadius="$3"
+                        bg={isSelf ? '#95EC69' : '$bg'}
+                      >
+                        <SizableText
+                          size="$bodyMd"
+                          color={isSelf ? '#182414' : '$text'}
+                        >
+                          {item.text}
+                        </SizableText>
+                        {isSelf ? (
+                          <SizableText size="$bodySm" color="#364D2D">
+                            {
+                              {
+                                local: '待发送（会自动重试）',
+                                failed: '发送被拒绝，请检查后重试',
+                                sent: '已提交服务器',
+                                received: '已接收',
+                              }[item.status]
+                            }
+                          </SizableText>
+                        ) : null}
+                      </YStack>
+                      {isSelf ? (
+                        <YStack
+                          width="$10"
+                          height="$10"
+                          borderRadius="$2"
+                          bg="$bgInfo"
+                          alignItems="center"
+                          justifyContent="center"
+                        >
+                          <Icon name="PeopleOutline" />
+                        </YStack>
+                      ) : null}
+                    </XStack>
+                  </YStack>
                 );
               })
             )}
@@ -222,6 +301,13 @@ export function CloudChatRoomPage({
       </Page.Body>
       <Page.Footer>
         <XStack p="$3" gap="$2" alignItems="center">
+          <IconButton
+            icon="MicOutline"
+            variant="tertiary"
+            title="语音"
+            testID="cloud-chat-voice-placeholder"
+            onPress={() => Toast.message({ title: '语音消息即将开放' })}
+          />
           <Input
             flex={1}
             value={draft}
@@ -232,21 +318,40 @@ export function CloudChatRoomPage({
               void handleSend();
             }}
           />
-          <Button
-            variant="primary"
-            testID="cloud-chat-send-btn"
-            disabled={
-              sending ||
-              !draft.trim() ||
-              !chatState.signalReady ||
-              !chatState.loggedIn
+          <IconButton
+            icon="FaceSmileOutline"
+            variant="tertiary"
+            title="表情"
+            testID="cloud-chat-emoji-placeholder"
+            onPress={() =>
+              Toast.message({ title: '表情面板即将开放，可使用键盘输入表情' })
             }
-            onPress={() => {
-              void handleSend();
-            }}
-          >
-            发送
-          </Button>
+          />
+          {!draft.trim() ? (
+            <IconButton
+              icon="PlusCircleOutline"
+              variant="tertiary"
+              title="更多消息类型"
+              testID="cloud-chat-attachment-placeholder"
+              onPress={() => Toast.message({ title: '图片和附件即将开放' })}
+            />
+          ) : (
+            <Button
+              variant="primary"
+              testID="cloud-chat-send-btn"
+              disabled={
+                sending ||
+                !draft.trim() ||
+                !chatState.signalReady ||
+                !chatState.loggedIn
+              }
+              onPress={() => {
+                void handleSend();
+              }}
+            >
+              发送
+            </Button>
+          )}
         </XStack>
       </Page.Footer>
     </Page>

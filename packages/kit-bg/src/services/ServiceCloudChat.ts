@@ -64,13 +64,21 @@ type IContext = {
 @backgroundClass()
 class ServiceCloudChat extends ServiceBase {
   private readonly queue = new CloudChatSerialQueue();
+
   private version = 0;
+
   private active: IContext | undefined;
+
   private selected: IAccount | undefined;
+
   private viewScope: { scope: string; version: number } | undefined;
+
   private blockedScopes = new Set<string>();
+
   private timer: ReturnType<typeof setTimeout> | undefined;
+
   private pollFailures = 0;
+
   private keysCheckedAt = 0;
 
   private check(version: number) {
@@ -165,6 +173,7 @@ class ServiceCloudChat extends ServiceBase {
         connected: false,
         loggedIn: false,
         connecting: false,
+        authenticationRequired: false,
         signalReady: false,
         selfUserId: '',
         serviceId: '',
@@ -223,7 +232,14 @@ class ServiceCloudChat extends ServiceBase {
 
   @backgroundMethod()
   async login(params: IAccount): Promise<void> {
-    return this.select(params, true, true);
+    return this.select(params, false, true, true);
+  }
+
+  @backgroundMethod()
+  async connectCurrentWallet(): Promise<void> {
+    const state = await cloudChatAtom.get();
+    if (!this.selected || this.active || state.connecting) return;
+    return this.select(this.selected, false, true);
   }
 
   @backgroundMethod()
@@ -244,7 +260,12 @@ class ServiceCloudChat extends ServiceBase {
     );
   }
 
-  private async select(params: IAccount, force: boolean, autoLogin: boolean) {
+  private async select(
+    params: IAccount,
+    force: boolean,
+    autoLogin: boolean,
+    reconnect = false,
+  ) {
     this.version += 1;
     const version = this.version;
     this.stop();
@@ -253,6 +274,7 @@ class ServiceCloudChat extends ServiceBase {
     await this.sync(
       {
         connecting: true,
+        authenticationRequired: false,
         connected: false,
         loggedIn: false,
         signalReady: false,
@@ -272,7 +294,7 @@ class ServiceCloudChat extends ServiceBase {
         const scope = `${baseUrl}\n${account.address}`;
         this.check(version);
         this.viewScope = { scope, version };
-        if (force) this.blockedScopes.delete(scope);
+        if (force || reconnect) this.blockedScopes.delete(scope);
         await this.sync(
           {
             selfUserId: account.address,
@@ -306,7 +328,7 @@ class ServiceCloudChat extends ServiceBase {
         if (!session || force) {
           if (!autoLogin || this.blockedScopes.has(scope)) {
             await this.sync(
-              { connecting: false, lastError: '请签名登录云聊' },
+              { connecting: false, lastError: '请连接云聊' },
               version,
             );
             return;
@@ -452,6 +474,7 @@ class ServiceCloudChat extends ServiceBase {
         connecting: false,
         connected: false,
         loggedIn: false,
+        authenticationRequired: false,
         signalReady: false,
         serviceId: '',
         lastError: undefined,
@@ -472,10 +495,10 @@ class ServiceCloudChat extends ServiceBase {
   private context(): IContext {
     const context = this.active;
     if (!context || context.version !== this.version)
-      throw new OneKeyLocalError('请先登录云聊');
+      throw new OneKeyLocalError('请先连接云聊');
     if (isCloudChatJwtExpired(context.session.expiresAt))
       throw new OneKeyLocalError({
-        message: '登录已过期，请重新签名登录',
+        message: '云聊连接已过期，请连接云聊',
         httpStatusCode: 401,
       });
     return context;
@@ -660,6 +683,10 @@ class ServiceCloudChat extends ServiceBase {
 
   @backgroundMethod()
   async refresh(): Promise<void> {
+    const state = await cloudChatAtom.get();
+    // A focus/network refresh must not supersede a pending wallet authorization
+    // or consume the foreground UI's request to restore authentication.
+    if (state.connecting || state.authenticationRequired) return;
     if (!this.active) {
       if (this.selected) await this.select(this.selected, false, false);
       return;
@@ -752,7 +779,8 @@ class ServiceCloudChat extends ServiceBase {
           connected: false,
           loggedIn: false,
           signalReady: false,
-          lastError: '登录已过期，请重新签名登录',
+          authenticationRequired: true,
+          lastError: '云聊连接已过期，请连接云聊',
         },
         context.version,
       );

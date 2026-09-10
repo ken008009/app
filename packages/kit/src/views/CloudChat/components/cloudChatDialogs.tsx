@@ -12,16 +12,21 @@ function getErrorMessage(error: unknown): string {
 
 export function showCloudChatAddPeerDialog({
   onAdded,
+  initialAddress = '',
 }: {
   onAdded?: () => void;
+  initialAddress?: string;
 }) {
-  let draft = '';
+  let draft = initialAddress;
   const dialog = Dialog.show({
-    title: '添加好友',
+    title: '添加朋友',
     description: '输入对方已注册云聊的钱包地址',
     renderContent: (
       <Input
         autoFocus
+        defaultValue={initialAddress}
+        autoCapitalize="none"
+        autoCorrect={false}
         testID="cloud-chat-add-peer-input"
         placeholder="0x..."
         onChangeText={(value) => {

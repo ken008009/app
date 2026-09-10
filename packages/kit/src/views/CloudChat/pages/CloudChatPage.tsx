@@ -1,11 +1,13 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { useFocusEffect } from '@react-navigation/core';
 
 import {
   Button,
   Empty,
+  Icon,
   IconButton,
+  Input,
   ListView,
   Page,
   SizableText,
@@ -24,7 +26,9 @@ import { useHandleAppStateActive } from '@onekeyhq/kit/src/hooks/useHandleAppSta
 import { useNetworkRestore } from '@onekeyhq/kit/src/hooks/useNetworkRestore';
 import { usePromiseResult } from '@onekeyhq/kit/src/hooks/usePromiseResult';
 import { useActiveAccount } from '@onekeyhq/kit/src/states/jotai/contexts/accountSelector';
+import useScanQrCodeLazy from '@onekeyhq/kit/src/views/ScanQrCode/hooks/useScanQrCodeLazy';
 import { useCloudChatAtom } from '@onekeyhq/kit-bg/src/states/jotai/atoms';
+import { OneKeyErrorScanQrCodeCancel } from '@onekeyhq/shared/src/errors';
 import {
   EAppEventBusNames,
   appEventBus,
@@ -36,10 +40,12 @@ import { formatTime } from '@onekeyhq/shared/src/utils/dateUtils';
 import { EAccountSelectorSceneName } from '@onekeyhq/shared/types';
 import type { ICloudChatConversation } from '@onekeyhq/shared/types/cloudChat';
 
+import { CloudChatActionsMenu } from '../components/CloudChatActionsMenu';
 import {
   showCloudChatAddPeerDialog,
   showCloudChatRelayDialog,
 } from '../components/cloudChatDialogs';
+import { useCloudChatAutoConnect } from '../hooks/useCloudChatAutoConnect';
 import { useCloudChatEvmAccount } from '../hooks/useCloudChatEvmAccount';
 
 const CLOUD_CHAT_TITLE = '云聊';
@@ -128,7 +134,7 @@ function getCloudChatEmptyCopy({
   }
   if (!hasEvmAddress) {
     return {
-      title: '需要 EVM 账户',
+      title: error || '需要 EVM 账户',
       description: error || '请切换到 Ethereum 或 BSC 账户',
     };
   }
@@ -141,7 +147,7 @@ function getCloudChatEmptyCopy({
   if (connecting) {
     return {
       title: '正在连接钱包',
-      description: '首次连接时可能需要在钱包里确认一次签名',
+      description: '正在使用当前钱包连接，请完成必要的钱包授权',
     };
   }
   return {
@@ -176,7 +182,7 @@ function getCloudChatEmptyButtonProps({
     return undefined;
   }
   return {
-    children: '重新连接',
+    children: '连接云聊',
     onPress: () => {
       void onReconnect();
     },
@@ -184,6 +190,7 @@ function getCloudChatEmptyButtonProps({
 }
 
 function CloudChatPageContent() {
+  useCloudChatAutoConnect();
   const tabBarOffset = useScrollContentTabBarOffset();
   const navigation = useAppNavigation();
   const { copyText } = useClipboard();
@@ -339,6 +346,33 @@ function CloudChatPageContent() {
     });
   }, [run]);
 
+  const [activeFilter, setActiveFilter] = useState<'all' | 'private'>('all');
+  const [showDetails, setShowDetails] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [search, setSearch] = useState('');
+  const scanQrCode = useScanQrCodeLazy();
+  const handleScan = useCallback(async () => {
+    try {
+      const scanned = await scanQrCode.start({
+        handlers: [],
+        autoExecuteParsedAction: false,
+      });
+      if (scanned?.raw) {
+        showCloudChatAddPeerDialog({
+          initialAddress: scanned.raw.trim(),
+          onAdded: () => {
+            void run();
+          },
+        });
+      }
+    } catch (error) {
+      if (error instanceof OneKeyErrorScanQrCodeCancel) {
+        return;
+      }
+      Toast.error({ title: '未完成扫码，请重试或手动输入地址' });
+    }
+  }, [run, scanQrCode]);
+
   const handleRelay = useCallback(() => {
     showCloudChatRelayDialog({
       currentUrl: result?.apiBaseUrl || chatState.apiBaseUrl,
@@ -400,92 +434,213 @@ function CloudChatPageContent() {
           <XStack gap="$2">
             <IconButton
               variant="tertiary"
-              icon="PlusLargeOutline"
-              testID="cloud-chat-add-peer-btn"
-              onPress={handleAddPeer}
+              icon="SearchOutline"
+              title="搜索会话"
+              testID="cloud-chat-search-btn"
+              onPress={() => {
+                setShowSearch((value) => !value);
+                setSearch('');
+              }}
             />
-            <IconButton
-              variant="tertiary"
-              icon="SettingsOutline"
-              testID="cloud-chat-relay-btn"
-              onPress={handleRelay}
+            <CloudChatActionsMenu
+              items={[
+                {
+                  label: '发起群聊 · 即将开放',
+                  icon: 'ChatOutline',
+                  onPress: (close) => {
+                    close();
+                    Toast.message({ title: '群聊功能即将开放' });
+                  },
+                },
+                {
+                  label: '发起直播 · 即将开放',
+                  icon: 'MicOutline',
+                  onPress: (close) => {
+                    close();
+                    Toast.message({ title: '直播功能即将开放' });
+                  },
+                },
+                {
+                  label: '添加朋友',
+                  icon: 'PeopleOutline',
+                  testID: 'cloud-chat-add-peer-btn',
+                  onPress: (close) => {
+                    close();
+                    handleAddPeer();
+                  },
+                },
+                {
+                  label: '扫一扫',
+                  icon: 'ScanOutline',
+                  testID: 'cloud-chat-scan-btn',
+                  onPress: (close) => {
+                    close();
+                    void handleScan();
+                  },
+                },
+              ]}
             />
           </XStack>
         }
       />
       <Page.Body>
         <YStack flex={1} pb={tabBarOffset}>
-          <YStack px="$5" py="$3" gap="$2">
-            <XStack justifyContent="space-between" alignItems="center">
-              <SizableText size="$bodyMd" color="$textSubdued">
-                {statusLabel}
-              </SizableText>
-              {loggedIn ? (
-                <Button
-                  size="small"
-                  variant="tertiary"
-                  testID="cloud-chat-logout-btn"
-                  onPress={() => {
-                    void handleLogout();
-                  }}
-                >
-                  退出
-                </Button>
-              ) : null}
-            </XStack>
-            <Button
-              size="small"
+          <XStack
+            px="$5"
+            py="$3"
+            gap="$3"
+            alignItems="center"
+            borderBottomWidth="$px"
+            borderColor="$borderSubdued"
+          >
+            <IconButton
+              icon="SettingsOutline"
               variant="tertiary"
-              testID="cloud-chat-relay-url"
-              onPress={handleRelay}
+              title="账户与连接详情"
+              testID="cloud-chat-details-btn"
+              onPress={() => setShowDetails((value) => !value)}
+            />
+            {(['all', 'private'] as const).map((filter) => (
+              <Button
+                key={filter}
+                size="small"
+                borderRadius="$full"
+                minWidth="$20"
+                variant={activeFilter === filter ? 'primary' : 'secondary'}
+                testID={`cloud-chat-filter-${filter}`}
+                onPress={() => setActiveFilter(filter)}
+              >
+                {filter === 'all' ? '全部' : '私信'}
+              </Button>
+            ))}
+          </XStack>
+          {showSearch ? (
+            <YStack px="$5" py="$3">
+              <Input
+                autoFocus
+                value={search}
+                onChangeText={setSearch}
+                placeholder="搜索钱包地址或消息"
+                testID="cloud-chat-search-input"
+              />
+            </YStack>
+          ) : null}
+          {!showDetails && (!loggedIn || lastError) ? (
+            <SizableText px="$5" py="$2" size="$bodySm" color="$textSubdued">
+              {statusLabel}
+            </SizableText>
+          ) : null}
+          {!loggedIn ? (
+            <Button
+              mx="$5"
+              mb="$2"
+              size="small"
+              testID="cloud-chat-connect-btn"
+              loading={connecting}
+              disabled={connecting || !selfAddress}
+              onPress={() => {
+                void handleReconnect();
+              }}
             >
-              {apiBaseUrl || '未设置服务地址'}
+              {connecting ? '正在连接云聊' : '连接云聊'}
             </Button>
-            <XStack alignItems="center" gap="$2">
-              <SizableText size="$bodyMd" flex={1} numberOfLines={1}>
-                我的地址：{addressLabel}
-              </SizableText>
+          ) : null}
+          {showDetails ? (
+            <YStack px="$5" py="$3" gap="$2" bg="$bgSubdued">
+              <XStack justifyContent="space-between" alignItems="center">
+                <SizableText size="$bodyMd" color="$textSubdued">
+                  {statusLabel}
+                </SizableText>
+                {loggedIn ? (
+                  <Button
+                    size="small"
+                    variant="tertiary"
+                    testID="cloud-chat-logout-btn"
+                    onPress={() => {
+                      void handleLogout();
+                    }}
+                  >
+                    退出
+                  </Button>
+                ) : null}
+              </XStack>
               <Button
                 size="small"
                 variant="tertiary"
-                testID="cloud-chat-copy-id"
-                disabled={!selfAddress}
-                onPress={handleCopyId}
+                testID="cloud-chat-relay-url"
+                onPress={handleRelay}
               >
-                复制
+                {apiBaseUrl || '未设置服务地址'}
               </Button>
-            </XStack>
-            {loggedIn ? (
-              <SizableText size="$bodySm" color="$textSubdued">
-                {chatState.signalReady
-                  ? '加密私聊已就绪。首次联系请在会话中核对安全指纹。消息保存在本机，清除应用数据后无法恢复。'
-                  : '钱包已登录，正在准备加密设备；如遇错误请检查提示并重新连接。'}
-              </SizableText>
-            ) : (
-              <SizableText size="$bodySm" color="$textSubdued">
-                进入本页会自动连接当前钱包，首次可能需要确认一次签名。
-              </SizableText>
-            )}
-          </YStack>
+              <XStack alignItems="center" gap="$2">
+                <SizableText size="$bodyMd" flex={1} numberOfLines={1}>
+                  我的地址：{addressLabel}
+                </SizableText>
+                <Button
+                  size="small"
+                  variant="tertiary"
+                  testID="cloud-chat-copy-id"
+                  disabled={!selfAddress}
+                  onPress={handleCopyId}
+                >
+                  复制
+                </Button>
+              </XStack>
+              {loggedIn ? (
+                <SizableText size="$bodySm" color="$textSubdued">
+                  {chatState.signalReady
+                    ? '加密私聊已就绪。首次联系请在会话中核对安全指纹。消息保存在本机，清除应用数据后无法恢复。'
+                    : '钱包已登录，正在准备加密设备；如遇错误请检查提示并重新连接。'}
+                </SizableText>
+              ) : (
+                <SizableText size="$bodySm" color="$textSubdued">
+                  自动使用当前钱包连接，必要时请完成钱包授权。
+                </SizableText>
+              )}
+            </YStack>
+          ) : null}
           <ListView
-            data={conversations}
+            data={conversations.filter(
+              (item) =>
+                !search.trim() ||
+                `${item.peerUserId} ${item.lastMessagePreview}`
+                  .toLowerCase()
+                  .includes(search.trim().toLowerCase()),
+            )}
             estimatedItemSize={72}
             keyExtractor={(item) => item.id}
             contentContainerStyle={{ pb: '$6' }}
             ListEmptyComponent={
               <Empty
                 icon="ChatOutline"
-                title={emptyCopy.title}
-                description={emptyCopy.description}
-                buttonProps={emptyButtonProps}
+                title={search.trim() ? '没有找到会话' : emptyCopy.title}
+                description={
+                  search.trim()
+                    ? '试试其他地址或消息关键词'
+                    : emptyCopy.description
+                }
+                buttonProps={search.trim() ? undefined : emptyButtonProps}
               />
             }
             renderItem={({ item }) => (
               <ListItem
+                minHeight="$20"
+                renderAvatar={
+                  <YStack
+                    width="$12"
+                    height="$12"
+                    borderRadius="$3"
+                    bg="$bgStrong"
+                    alignItems="center"
+                    justifyContent="center"
+                  >
+                    <Icon name="ChatOutline" size="$6" color="$iconActive" />
+                  </YStack>
+                }
                 title={accountUtils.shortenAddress({
                   address: item.peerUserId,
                 })}
-                subtitle={item.lastMessagePreview || '还没有消息'}
+                subtitle={item.lastMessagePreview || '端对端加密私聊'}
                 onPress={() => handleOpenConversation(item)}
               >
                 <YStack alignItems="flex-end" gap="$1">
@@ -493,8 +648,14 @@ function CloudChatPageContent() {
                     {formatMessageTime(item.lastMessageAt)}
                   </SizableText>
                   {item.unreadCount > 0 ? (
-                    <SizableText size="$bodySmMedium" color="$textCritical">
-                      {item.unreadCount}
+                    <SizableText
+                      size="$bodySmMedium"
+                      color="$textOnColor"
+                      bg="$bgCriticalStrong"
+                      px="$1.5"
+                      borderRadius="$full"
+                    >
+                      {item.unreadCount > 99 ? '99+' : item.unreadCount}
                     </SizableText>
                   ) : null}
                 </YStack>

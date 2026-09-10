@@ -11,6 +11,7 @@ import { CommonDeviceLoading } from '@onekeyhq/kit/src/components/Hardware/Hardw
 import type useAppNavigation from '@onekeyhq/kit/src/hooks/useAppNavigation';
 import { shouldContinueLedgerAutoCreateForCoreAppsCheckResult } from '@onekeyhq/kit/src/provider/Container/ThirdPartyHardwareUiStateContainer/ledgerCoreAppsReadyUtils';
 import { ensureLedgerCoreAppsReady } from '@onekeyhq/kit/src/provider/Container/ThirdPartyHardwareUiStateContainer/LedgerInstallCoreAppsDialog';
+import { hasIncompleteAddressGeneration } from '@onekeyhq/kit/src/utils/accountAddressResult';
 import { toastExistingWalletSwitch } from '@onekeyhq/kit/src/utils/toastExistingWalletSwitch';
 import qrHiddenCreateGuideDialog from '@onekeyhq/kit/src/views/Onboarding/pages/ConnectHardwareWallet/qrHiddenCreateGuideDialog';
 import type {
@@ -1514,11 +1515,16 @@ class AccountSelectorActions extends ContextJotaiActionsBase {
         },
         generatingAccountsFn: async ({ wallet, indexedAccount }) => {
           if (indexedAccount?.id) {
-            await this.addDefaultNetworkAccounts.call(set, {
+            const result = await this.addDefaultNetworkAccounts.call(set, {
               wallet,
               indexedAccount,
               isCreateWallet: true,
             });
+            if (!wallet.isMocked && hasIncompleteAddressGeneration(result)) {
+              throw new OneKeyLocalError(
+                '钱包已保存，但部分账户地址未生成，请进入对应网络完成地址创建',
+              );
+            }
           }
           if (wallet.isKeyless) {
             void backgroundApiProxy.serviceKeylessCloudSync.autoEnableCloudSyncKeyless();
