@@ -7,8 +7,18 @@ import stringUtils from '../utils/stringUtils';
 import type { ICloudChatNativeOperations } from '../../types/cloudChat';
 
 type ICloudChatNativeModule = {
+  localApiBaseUrl?: string;
   execute(scope: string, operation: string, args: string): Promise<string>;
 };
+
+export function getCloudChatLocalApiBaseUrl(): string | undefined {
+  const module = NativeModules.CloudChatSignal as
+    | ICloudChatNativeModule
+    | undefined;
+  return platformEnv.isNativeAndroid
+    ? module?.localApiBaseUrl || undefined
+    : undefined;
+}
 
 export async function cloudChatNative<
   K extends keyof ICloudChatNativeOperations,

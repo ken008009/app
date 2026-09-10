@@ -11,6 +11,27 @@ import {
 } from './cloudChatUtils';
 
 describe('cloudChatUtils conversation helpers', () => {
+  it('migrates loopback defaults only in a local integration build', () => {
+    const localIntegrationUrl = 'http://192.168.3.44:8000';
+    for (const savedUrl of [
+      undefined,
+      'http://10.0.2.2:8000',
+      'http://127.0.0.1:8000/',
+    ]) {
+      expect(
+        resolveCloudChatApiBaseUrl({ savedUrl, localIntegrationUrl }),
+      ).toBe(localIntegrationUrl);
+    }
+    expect(
+      resolveCloudChatApiBaseUrl({
+        savedUrl: 'https://chat.example/',
+        localIntegrationUrl,
+      }),
+    ).toBe('https://chat.example');
+    expect(
+      resolveCloudChatApiBaseUrl({ savedUrl: 'http://10.0.2.2:8000' }),
+    ).toBe('http://10.0.2.2:8000');
+  });
   it('builds a stable conversation id regardless of order', () => {
     const a = buildCloudChatConversationId({
       selfUserId: '0xAAA',

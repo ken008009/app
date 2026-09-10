@@ -58,4 +58,45 @@ describe('CloudChatHttpClient', () => {
     });
     expect(request).toHaveBeenCalledTimes(1);
   });
+
+  it.each(['5', new Date(5000).toUTCString()])(
+    'respects Retry-After %s before retrying',
+    async (retryAfter) => {
+      jest.setSystemTime(0);
+      request
+        .mockRejectedValueOnce({
+          response: { status: 429, headers: { 'retry-after': retryAfter } },
+        })
+        .mockResolvedValue({ data: { messages: [] } });
+      const client = new CloudChatHttpClient(
+        async () => 'https://chat.example',
+        async () => undefined,
+      );
+      const result = client.listInbox();
+      await jest.advanceTimersByTimeAsync(4999);
+      expect(request).toHaveBeenCalledTimes(1);
+      await jest.advanceTimersByTimeAsync(1);
+      await expect(result).resolves.toEqual([]);
+      expect(request).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it('cools down subsequent operations after a non-retried 429 without a header', async () => {
+    jest.setSystemTime(0);
+    request
+      .mockRejectedValueOnce({ response: { status: 429 } })
+      .mockResolvedValue({ data: { messages: [] } });
+    const client = new CloudChatHttpClient(
+      async () => 'https://chat.example',
+      async () => undefined,
+    );
+    await expect(
+      client.challenge({ address: 'test', chainId: 1, purpose: 'register' }),
+    ).rejects.toMatchObject({ httpStatusCode: 429 });
+    const result = client.listInbox();
+    await jest.advanceTimersByTimeAsync(59_999);
+    expect(request).toHaveBeenCalledTimes(1);
+    await jest.advanceTimersByTimeAsync(1);
+    await expect(result).resolves.toEqual([]);
+  });
 });

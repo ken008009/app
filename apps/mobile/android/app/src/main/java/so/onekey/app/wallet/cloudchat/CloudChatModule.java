@@ -7,12 +7,16 @@ import com.facebook.react.bridge.ReactMethod;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.json.JSONObject;
+import so.onekey.app.wallet.BuildConfig;
 
 public final class CloudChatModule extends ReactContextBaseJavaModule {
   // Shared by main/bg module instances, including during React context recreation.
   private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
   public CloudChatModule(ReactApplicationContext context) { super(context); }
   @Override public String getName() { return "CloudChatSignal"; }
+  @Override public java.util.Map<String, Object> getConstants() {
+    return java.util.Collections.singletonMap("localApiBaseUrl", BuildConfig.CLOUD_CHAT_LOCAL_API_URL);
+  }
 
   @ReactMethod
   public void execute(String scope, String operation, String arguments, Promise promise) {

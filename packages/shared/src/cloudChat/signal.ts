@@ -2,6 +2,10 @@ import { OneKeyLocalError } from '../errors';
 
 import type { ICloudChatNativeOperations } from '../../types/cloudChat';
 
+export function getCloudChatLocalApiBaseUrl(): string | undefined {
+  return undefined;
+}
+
 export async function cloudChatNative<
   K extends keyof ICloudChatNativeOperations,
 >(

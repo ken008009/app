@@ -20,6 +20,7 @@ jest.mock('../ServiceBase', () => ({
 }));
 jest.mock('@onekeyhq/shared/src/cloudChat/signal', () => ({
   cloudChatNative: jest.fn(),
+  getCloudChatLocalApiBaseUrl: () => undefined,
 }));
 jest.mock('@onekeyhq/shared/src/utils/networkUtils', () => ({
   __esModule: true,

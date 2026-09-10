@@ -111,6 +111,7 @@ public class CloudChatEngineTest {
       try (java.io.OutputStream stream = connection.getOutputStream()) { stream.write(body.toString().getBytes(StandardCharsets.UTF_8)); }
     }
     try {
+      System.out.println("CloudChatTest " + System.currentTimeMillis() + " " + method + " " + path + " HTTP " + connection.getResponseCode());
       if (connection.getResponseCode() != 200) throw new IllegalStateException("Test HTTP status " + connection.getResponseCode());
       try (java.io.InputStream stream = connection.getInputStream(); java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream()) {
         byte[] buffer = new byte[4096]; int count;
@@ -165,6 +166,8 @@ public class CloudChatEngineTest {
     JSONObject remote = request("http://127.0.0.1:18791", initiator ? "/bob" : "/alice", "GET", null, null);
     String base = self.getString("base"), selfId = self.getString("serviceId"), remoteId = remote.getString("serviceId");
     String token = self.getString("token");
+    assertTrue("ok".equals(request(base, "/healthz", "GET", null, null).getString("status")));
+    assertTrue("ready".equals(request(base, "/readyz", "GET", null, null).getString("database")));
     CloudChatVault vault = vault(selfId);
     JSONObject keys = init(vault, selfId);
     request(base, "/v1/signal/keys", "PUT", token, keys);

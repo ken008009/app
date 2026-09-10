@@ -2,7 +2,10 @@ import {
   backgroundClass,
   backgroundMethod,
 } from '@onekeyhq/shared/src/background/backgroundDecorators';
-import { cloudChatNative } from '@onekeyhq/shared/src/cloudChat/signal';
+import {
+  cloudChatNative,
+  getCloudChatLocalApiBaseUrl,
+} from '@onekeyhq/shared/src/cloudChat/signal';
 import { getNetworkIdsMap } from '@onekeyhq/shared/src/config/networkIds';
 import { OneKeyLocalError } from '@onekeyhq/shared/src/errors';
 import {
@@ -127,6 +130,7 @@ class ServiceCloudChat extends ServiceBase {
     return resolveCloudChatApiBaseUrl({
       savedUrl: await this.backgroundApi.simpleDb.cloudChat.getApiBaseUrl(),
       isNativeAndroid: platformEnv.isNativeAndroid,
+      localIntegrationUrl: getCloudChatLocalApiBaseUrl(),
     });
   }
 

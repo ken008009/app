@@ -54,10 +54,20 @@ export function getDefaultCloudChatRelayUrl({
 export function resolveCloudChatApiBaseUrl({
   savedUrl,
   isNativeAndroid,
+  localIntegrationUrl,
 }: {
   savedUrl?: string;
   isNativeAndroid?: boolean;
+  localIntegrationUrl?: string;
 }): string {
+  // Only migrate historical loopback defaults in an explicit local build.
+  if (
+    localIntegrationUrl &&
+    (!savedUrl ||
+      /^http:\/\/(10\.0\.2\.2|127\.0\.0\.1):8000\/?$/.test(savedUrl))
+  ) {
+    return localIntegrationUrl;
+  }
   if (savedUrl) {
     return savedUrl.replace(/\/+$/, '');
   }

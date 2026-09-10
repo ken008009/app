@@ -41,6 +41,7 @@ function readHttpStatus(error: unknown): number {
 }
 
 export class CloudChatHttpClient {
+  private retryNotBefore = 0;
   constructor(
     private getBaseUrl: () => Promise<string>,
     private getAccessToken: () => Promise<string | undefined>,
@@ -247,6 +248,10 @@ export class CloudChatHttpClient {
     body?: Record<string, unknown>;
     query?: Record<string, string | number>;
   }): Promise<T> {
+    // One cooldown for all operations on this authenticated client, including polling.
+    while (Date.now() < this.retryNotBefore) {
+      await sleep(Math.min(60_000, this.retryNotBefore - Date.now()));
+    }
     const client = await this.createClient(auth);
     try {
       const response = await client.request<T>({
@@ -284,6 +289,23 @@ export class CloudChatHttpClient {
   private toApiError(error: unknown): Error {
     const axiosError = error as AxiosError;
     const httpStatus = axiosError.response?.status ?? 0;
+    if (httpStatus === 429 || httpStatus === 503) {
+      const header = axiosError.response?.headers?.['retry-after'];
+      const value =
+        typeof header === 'string' || typeof header === 'number'
+          ? String(header).trim()
+          : '';
+      const seconds = /^\d+$/.test(value) ? Number(value) : undefined;
+      const deadline =
+        seconds === undefined ? Date.parse(value) : Date.now() + seconds * 1000;
+      const fallback = httpStatus === 429 ? 60_000 : 1000;
+      this.retryNotBefore = Math.max(
+        this.retryNotBefore,
+        Number.isFinite(deadline)
+          ? Math.max(Date.now(), deadline)
+          : Date.now() + fallback,
+      );
+    }
     const code = parseCloudChatApiErrorCode(axiosError.response?.data);
     if (httpStatus > 0) {
       return createCloudChatApiError({ httpStatus, code });
