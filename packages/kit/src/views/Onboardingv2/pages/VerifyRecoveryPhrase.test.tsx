@@ -9,9 +9,7 @@ const mockReplace = jest.fn();
 const mockPopStack = jest.fn();
 const mockUpdateBackup = jest.fn().mockResolvedValue(undefined);
 const mockError = jest.fn();
-let mockMnemonic = Array.from({ length: 12 }, (_, i) => `word${i}`).join(
-  ' ',
-);
+let mockMnemonic = Array.from({ length: 12 }, (_, i) => `word${i}`).join(' ');
 let mockCreating = true;
 
 jest.mock('@react-navigation/core', () => ({
@@ -92,9 +90,7 @@ describe('new wallet backup verification', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockCreating = true;
-    mockMnemonic = Array.from({ length: 12 }, (_, i) => `word${i}`).join(
-      ' ',
-    );
+    mockMnemonic = Array.from({ length: 12 }, (_, i) => `word${i}`).join(' ');
   });
 
   test('requires all three correct answers before finalizing the same mnemonic', async () => {
