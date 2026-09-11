@@ -56,12 +56,12 @@ describe('cloudChatUtils conversation helpers', () => {
     ).toBe('http://example.com');
   });
 
-  it('defaults to loopback on desktop and the emulator alias on Android', () => {
+  it('defaults to loopback on desktop and the cloud API on Android', () => {
     expect(resolveCloudChatApiBaseUrl({ isNativeAndroid: false })).toBe(
       'http://127.0.0.1:8000',
     );
     expect(resolveCloudChatApiBaseUrl({ isNativeAndroid: true })).toBe(
-      'http://10.0.2.2:8000',
+      'https://api.mschatapp.com',
     );
   });
 

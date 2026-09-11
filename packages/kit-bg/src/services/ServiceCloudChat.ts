@@ -40,6 +40,7 @@ import { EMessageTypesEth } from '@onekeyhq/shared/types/message';
 
 import { cloudChatAtom } from '../states/jotai/atoms/cloudChat';
 
+import { CloudChatEvents } from './cloudChat/CloudChatEvents';
 import { CloudChatHttpClient } from './cloudChat/CloudChatHttpClient';
 import { CloudChatSerialQueue } from './cloudChat/CloudChatSerialQueue';
 import ServiceBase from './ServiceBase';
@@ -79,6 +80,10 @@ class ServiceCloudChat extends ServiceBase {
 
   private pollFailures = 0;
 
+  private events: CloudChatEvents | undefined;
+
+  private scheduledPumpRunning = false;
+
   private keysCheckedAt = 0;
 
   private check(version: number) {
@@ -89,6 +94,8 @@ class ServiceCloudChat extends ServiceBase {
   private stop() {
     if (this.timer) clearTimeout(this.timer);
     this.timer = undefined;
+    this.events?.stop();
+    this.events = undefined;
   }
 
   private async sync(
@@ -372,6 +379,28 @@ class ServiceCloudChat extends ServiceBase {
           await this.sync({ signalReady: true, lastError: undefined }, version);
         } catch (error) {
           await this.report(error, context);
+        }
+        if (this.active === context && context.version === this.version) {
+          this.events = new CloudChatEvents({
+            baseUrl: context.baseUrl,
+            token: context.session.accessToken,
+            onSync: () => {
+              if (!this.scheduledPumpRunning && this.pollFailures === 0) {
+                this.schedule(context, 250);
+              }
+            },
+            onUnauthorized: () => {
+              if (this.active !== context || context.version !== this.version)
+                return;
+              void this.action(async () => {
+                throw new OneKeyLocalError({
+                  message: '云聊连接已过期，请连接云聊',
+                  httpStatusCode: 401,
+                });
+              }).catch(() => undefined);
+            },
+          });
+          this.events.start();
         }
         this.schedule(context);
       } catch (error) {
@@ -668,12 +697,17 @@ class ServiceCloudChat extends ServiceBase {
 
   private schedule(context: IContext, delay?: number) {
     if (context.version !== this.version || this.active !== context) return;
-    this.stop();
+    if (this.timer) clearTimeout(this.timer);
     this.timer = setTimeout(
       () => {
+        this.timer = undefined;
+        this.scheduledPumpRunning = true;
         void this.action(async (current) => this.pump(current))
           .catch(() => undefined)
-          .finally(() => this.schedule(context));
+          .finally(() => {
+            this.scheduledPumpRunning = false;
+            this.schedule(context);
+          });
       },
       delay ??
         Math.min(300_000, 3000 * 2 ** this.pollFailures) +
@@ -736,7 +770,12 @@ class ServiceCloudChat extends ServiceBase {
         if (status === 401) throw error;
         deliveryError =
           error instanceof Error ? error : new OneKeyLocalError('消息投递失败');
-        if (status === 400 || status === 404 || status === 409) {
+        if (
+          status === 400 ||
+          status === 403 ||
+          status === 404 ||
+          status === 409
+        ) {
           await cloudChatNative(scope, 'rejected', {
             id: body.client_message_id,
           });

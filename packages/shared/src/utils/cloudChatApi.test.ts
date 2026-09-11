@@ -26,6 +26,13 @@ describe('cloudChatApi', () => {
     expect(mapCloudChatApiError({ httpStatus: 409 })).toContain('登录');
     expect(isCloudChatRetryableStatus(429)).toBe(true);
     expect(isCloudChatRetryableStatus(401)).toBe(false);
+    expect(mapCloudChatApiError({ httpStatus: 403 })).toContain('好友');
+    expect(
+      mapCloudChatApiError({
+        httpStatus: 409,
+        code: 'recipient_device_changed',
+      }),
+    ).toContain('设备已更换');
   });
 
   it('treats JWT as expired with skew', () => {
@@ -55,16 +62,16 @@ describe('cloudChatUtils', () => {
     expect(normalizeCloudChatUserId('  0xAbC  ')).toBe('0xabc');
   });
 
-  it('defaults to host loopback and the Android emulator alias', () => {
+  it('defaults to host loopback and the Android cloud API', () => {
     expect(getDefaultCloudChatApiBaseUrl({ isNativeAndroid: true })).toBe(
-      'http://10.0.2.2:8000',
+      'https://api.mschatapp.com',
     );
     expect(getDefaultCloudChatApiBaseUrl({ isNativeAndroid: false })).toBe(
       'http://127.0.0.1:8000',
     );
     expect(getDefaultCloudChatApiBaseUrl()).toBe('http://127.0.0.1:8000');
     expect(getDefaultCloudChatRelayUrl({ isNativeAndroid: true })).toBe(
-      'http://10.0.2.2:8000',
+      'https://api.mschatapp.com',
     );
   });
 });

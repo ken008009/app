@@ -35,10 +35,12 @@ export function previewCloudChatText(text: string, maxLength = 36): string {
 export function getDefaultCloudChatApiBaseUrl(options?: {
   isNativeAndroid?: boolean;
 }): string {
-  // Host loopback for Web/Desktop. Android emulator reaches the host via
-  // 10.0.2.2; USB devices can still pick 127.0.0.1 after adb reverse.
-  // Saved settings override this; do not hardcode the host in request sites.
-  const host = options?.isNativeAndroid ? '10.0.2.2' : '127.0.0.1';
+  if (options?.isNativeAndroid) {
+    return 'https://api.mschatapp.com';
+  }
+  // Web/Desktop keep host loopback. Explicit local builds and saved settings
+  // override this default; do not hardcode the host in request sites.
+  const host = '127.0.0.1';
   return `http://${host}:${CLOUD_CHAT_DEFAULT_API_PORT}`;
 }
 

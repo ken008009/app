@@ -31,10 +31,16 @@ export function mapCloudChatApiError(params: {
   if (httpStatus === 401) {
     return '登录已过期，请重新签名登录';
   }
+  if (httpStatus === 403) {
+    return '当前操作未获允许，请检查好友关系、屏蔽状态或服务访问权限';
+  }
   if (httpStatus === 404) {
     return '账号或会话不存在';
   }
   if (httpStatus === 409) {
+    if (code === 'recipient_device_changed') {
+      return '对方聊天设备已更换，请核对身份；当前版本尚不支持重新建立此会话';
+    }
     return '设备身份或请求内容冲突，请检查账号登录与密钥状态，勿重置密钥';
   }
   if (httpStatus === 429) {

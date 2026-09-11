@@ -1,5 +1,33 @@
 # Android 云聊第一阶段
 
+## 2026-09-11 可独立完成的同步
+
+Android 未保存地址时默认使用 `https://api.mschatapp.com`；已保存地址继续生效，显式本地联调构建仍走原有 HTTP 配置。不自动迁移地址对应的加密身份、历史或令牌。
+
+bg 的 `ServiceCloudChat` 现在拥有 `CloudChatEvents` 连接：首帧认证，合并 ready/inbox_changed/sync_required 后调度现有 HTTP 收件流程；失败指数退避，4429 至少等待 30 秒，4401 进入重新登录。60 秒未收到有效提示则重连。保留原来的轮询与退避，通知丢失不作为消息丢失依据。main 不创建第二个连接；main/bg 的 JS 堆隔离，原生进程共享串行执行器和加密存储没有变化。
+
+403 投递拒绝现在进入既有的本地失败队列，保留原密文及 ID，允许用户手动重试，不阻塞后续待发消息。设备版本冲突仅显示明确提示，不擅自替换身份或重新加密。
+
+### 验证与配置命令（仓库根目录）
+
+```sh
+yarn test packages/kit-bg/src/services/cloudChat packages/shared/src/utils/cloudChatApi.test.ts packages/shared/src/utils/cloudChatUtils.test.ts apps/mobile/scripts/__tests__/cloud-chat-network-policy.test.js --runInBand --watch=false
+yarn tsc:only
+node apps/mobile/scripts/check-cloud-chat-push.cjs
+# Firebase 项目建立后，可检查提供的 Android 配置是否匹配包名及预期项目：
+node apps/mobile/scripts/check-cloud-chat-push.cjs /path/to/google-services.json YOUR_PROJECT_ID
+```
+
+推送检查只读文件，输出非秘密的包名和项目 ID。退出码 2 表示尚未指定目标聊天项目，1 表示文件或匹配检查失败，0 仅表示配置匹配，不代表推送接通。现有 Expo Notifications 已带 Firebase Messaging，勿再注册冲突的 MESSAGING_EVENT 服务。不要将后端服务账号私钥放进 Android 工程。
+
+### 尚未同步与真实验收边界
+
+缺少最新 backend OpenAPI/字段契约和仓库读取权限。好友申请、refresh 轮换、device_version/签名换机、服务端 read/status/typing、push-token API 均未实现。新版后端要求先成为好友，当前 App 不能自行完成申请，因此这次更新不构成完整新版私聊交付。HTTP 401 和 WebSocket 4401 仍要求钱包签名登录。
+
+云聊 Firebase 尚未创建。现有 google-services.json 不能视为后端已启用推送；仍需同项目 Android 配置、后端私有凭据、token 接口以及真实手机前后台验证。未部署后端、未操作真实账户、未更改原生密码学实现。本次 JS 改动需要重新构建安装 APK 后验收，不能仅依据单元测试宣称实机通过。
+
+以下为第一阶段历史实现记录，接口能力以本节与最新后端契约为准。
+
 ## 实现范围
 
 - Android 使用 `org.signal:libsignal-android:0.102.1`，不修改 Signal 密码学算法，不回退明文。

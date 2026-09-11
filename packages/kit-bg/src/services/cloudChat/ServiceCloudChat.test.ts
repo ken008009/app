@@ -3,7 +3,15 @@ import { cloudChatNative } from '@onekeyhq/shared/src/cloudChat/signal';
 import { cloudChatAtom } from '../../states/jotai/atoms/cloudChat';
 import ServiceCloudChat from '../ServiceCloudChat';
 
+import { CloudChatEvents } from './CloudChatEvents';
 import { CloudChatHttpClient } from './CloudChatHttpClient';
+
+jest.mock('./CloudChatEvents', () => ({
+  CloudChatEvents: jest.fn().mockImplementation(() => ({
+    start: jest.fn(),
+    stop: jest.fn(),
+  })),
+}));
 
 jest.mock('@onekeyhq/shared/src/background/backgroundDecorators', () => ({
   backgroundClass: () => (target: unknown) => target,
@@ -132,5 +140,61 @@ describe('CloudChat account isolation', () => {
         .filter((value) => value.loggedIn)
         .every((value) => value.serviceId === 'b-service'),
     ).toBe(true);
+    const events = (CloudChatEvents as jest.Mock).mock.results.at(-1)
+      ?.value as {
+      start: jest.Mock;
+      stop: jest.Mock;
+    };
+    expect(events.start).toHaveBeenCalledTimes(1);
+    const pending = new Set(['blocked-message', 'allowed-message']);
+    (cloudChatNative as jest.Mock).mockImplementation(
+      async (_scope: string, operation: string, args: { id?: string }) => {
+        if (operation === 'registration') return 123;
+        if (operation === 'pendingAcknowledgements') return [];
+        if (operation === 'outbox') {
+          return [...pending].map((id) => ({
+            client_message_id: id,
+            ciphertext: 'test-ciphertext',
+          }));
+        }
+        if ((operation === 'sent' || operation === 'rejected') && args.id) {
+          pending.delete(args.id);
+        }
+        return null;
+      },
+    );
+    const send = jest
+      .spyOn(CloudChatHttpClient.prototype, 'sendCiphertext')
+      .mockRejectedValueOnce(
+        Object.assign(new Error('Forbidden'), { httpStatusCode: 403 }),
+      )
+      .mockResolvedValue({ id: '99', acknowledged: false });
+    jest
+      .spyOn(CloudChatHttpClient.prototype, 'listInbox')
+      .mockResolvedValue([]);
+    await expect(service.refresh()).rejects.toThrow('Forbidden');
+    expect(cloudChatNative).toHaveBeenCalledWith(
+      `https://chat.example\n${b.address}`,
+      'rejected',
+      { id: 'blocked-message' },
+    );
+    expect(cloudChatNative).toHaveBeenCalledWith(
+      `https://chat.example\n${b.address}`,
+      'sent',
+      { id: 'allowed-message' },
+    );
+    await service.refresh();
+    expect(send).toHaveBeenCalledTimes(2);
+    const callbacks = (CloudChatEvents as jest.Mock).mock.calls.at(-1)?.[0] as {
+      onSync: () => void;
+      onUnauthorized: () => void;
+    };
+    jest.spyOn(CloudChatHttpClient.prototype, 'logout').mockResolvedValue();
+    await service.disconnect();
+    expect(events.stop).toHaveBeenCalledTimes(1);
+    callbacks.onSync();
+    callbacks.onUnauthorized();
+    await jest.advanceTimersByTimeAsync(60_000);
+    expect(events.start).toHaveBeenCalledTimes(1);
   });
 });

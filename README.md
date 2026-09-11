@@ -20,6 +20,8 @@ Supports Bitcoin, Ethereum, Solana, Tron, BNB Smart Chain, and more.
 
 Android 云聊开发：[本地联调配置、构建与验证](docs/INTEGRATION.md)。
 
+后端 AI 接入：[MS Android 云聊实现与接口交接](docs/CLOUD_CHAT_BACKEND_HANDOFF.md)。
+
 | Platform | Link |
 |----------|------|
 | iOS | [App Store](https://apps.apple.com/us/app/onekey-open-source-wallet/id1609559473) |
